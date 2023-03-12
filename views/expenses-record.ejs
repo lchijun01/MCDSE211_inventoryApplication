@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bankstatement-Expenses Record</title>
+        
+    </head>
+    <body>
+        <%- include('partials/nav'); %>
+        <h1>Expenses Record Page</h1>
+
+        <form id="accruals-form" method="POST" action="/accruals" enctype="multipart/form-data">
+            <label for="date">Date</label>
+            <input type="date" name="date"><br>
+            <label for="invoice_no">Invoice No.</label>
+            <input type="text" name="invoice_no"><br>
+            <label for="category">Category</label>
+            <select name="category">
+                <option value="">Select a category</option>
+                <option value="1">1</option>
+                <option value="2">22</option>
+                <option value="3">333</option>
+            </select><br>
+            <label for="bank">Bank</label>
+            <select name="bank">
+                <option value="">Select a bank</option>
+                <option value="uobbank">UOB Bank</option>
+                <option value="hongleongbank">Hong Leong Bank</option>
+                <option value="maybank">Maybank</option>
+            </select><br>
+            <label for="name">Name</label>
+            <input type="text" name="name"><br>
+            <label for="amount">Amount</label>
+            <input type="number" name="amount"><br>
+            <label for="detail">Details</label>
+            <input type="text" name="detail"><br>
+            <label for="file">File</label>
+            <input type="file" name="file"><br>
+            <button type="submit">Submit</button>
+            <button type="reset">Clear</button>
+        </form>
+    </body>
+</html>
