@@ -172,11 +172,6 @@
   left: 78px;
   width: calc(100% - 78px);
 }
-.home-section .home-content{
-  height: 60px;
-  display: flex;
-  align-items: center;
-}
 .sidebar.close .logo-details .bx-ghost{
   cursor: pointer;
 }
@@ -190,8 +185,28 @@
   .sidebar.close{
     width: 0;
   }
+  .home-section{
+    left: 78px;
+    width: calc(100% - 78px);
+    z-index: 100;
+  }
   .sidebar.close{
     width: 100%;
     left: 0;
   }
+}
+
+#bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+.bottom{
+  color: white;
+}
+.sidebar.close .bottom{
+  display: none;
+  opacity: 1;
+  pointer-events: auto;
+  transition: all 0.4s ease;
 }

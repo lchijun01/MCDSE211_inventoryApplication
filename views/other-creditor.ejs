@@ -1,42 +1,53 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+        <link href="style.css" type="text/css" rel="stylesheet">
         <title>Bankstatement-Other Creditor</title>
-        
     </head>
-    <body>
+    <body class="main-contents">
         <%- include('partials/nav'); %>
-        <h1>Other Creditor Page</h1>
+        <main class="main-content">
+            <h1>Other Creditor Page</h1>
 
-        <form id="accruals-form" method="POST" action="/accruals" enctype="multipart/form-data">
-            <label for="date">Date</label>
-            <input type="date" name="date"><br>
-            <label for="invoice_no">Invoice No.</label>
-            <input type="text" name="invoice_no"><br>
-            <label for="category">Category</label>
-            <select name="category">
+            <form id="accruals-form" method="POST" action="/accruals" enctype="multipart/form-data">
+            <label class="form_name" for="date">Date</label>
+            <input class="form_id" type="date" name="date"><br>
+            <label class="form_name" for="invoice_no">Invoice No.</label>
+            <input class="form_id" type="text" name="invoice_no"><br>
+            <label class="form_name" for="category">Category</label>
+            <select class="form_id" name="category">
                 <option value="">Select a category</option>
                 <option value="1">1</option>
                 <option value="2">22</option>
                 <option value="3">333</option>
             </select><br>
-            <label for="bank">Bank</label>
-            <select name="bank">
+            <label class="form_name" for="bank">Bank</label>
+            <select class="form_id" name="bank">
                 <option value="">Select a bank</option>
                 <option value="uobbank">UOB Bank</option>
                 <option value="hongleongbank">Hong Leong Bank</option>
                 <option value="maybank">Maybank</option>
             </select><br>
-            <label for="name">Name</label>
-            <input type="text" name="name"><br>
-            <label for="amount">Amount</label>
-            <input type="number" name="amount"><br>
-            <label for="detail">Details</label>
-            <input type="text" name="detail"><br>
-            <label for="file">File</label>
-            <input type="file" name="file"><br>
-            <button type="submit">Submit</button>
-            <button type="reset">Clear</button>
-        </form>
+            <label class="form_name" for="name">Name</label>
+            <input class="form_id" type="text" name="name"><br>
+            <label class="form_name" for="amount">Amount</label>
+            <input class="form_id" type="number" name="amount"><br>
+            <label class="form_name" for="detail">Details</label><br>
+            <textarea class="form_detail" type="text" name="detail"></textarea><br>
+            <label class="formfile_name" for="file">File</label>
+            <input class="form_file" type="file" name="file"><br><br>
+            <div class="button">
+                <button class="form_button" type="submit">Submit</button>
+                <button class="form_button" type="reset">Clear</button>
+            </div>
+            </form><br>
+            <audio controls autoplay>
+                <source src="rihana.mp3" type="audio/mpeg">
+            </audio>
+        </main>
     </body>
 </html>
