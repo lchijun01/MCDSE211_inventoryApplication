@@ -70,7 +70,7 @@
   justify-content: space-between;
 }
 .sidebar.close .nav-links li .iocn-link{
-  display: block
+  display: block;
 }
 .sidebar .nav-links li i{
   height: 50px;
@@ -175,6 +175,9 @@
 .sidebar.close .logo-details .bx-ghost{
   cursor: pointer;
 }
+.sidebar .logo-details .bx-ghost{
+  cursor: pointer;
+}
 @media (max-width: 400px) {
   .sidebar.close .nav-links li .sub-menu{
     display: none;
@@ -184,11 +187,6 @@
   }
   .sidebar.close{
     width: 0;
-  }
-  .home-section{
-    left: 78px;
-    width: calc(100% - 78px);
-    z-index: 100;
   }
   .sidebar.close{
     width: 100%;
@@ -203,10 +201,16 @@
 }
 .bottom{
   color: white;
-}
-.sidebar.close .bottom{
-  display: none;
+  font-size: 18px;
   opacity: 1;
   pointer-events: auto;
   transition: all 0.4s ease;
+  padding-left: 10px;
+}
+.sidebar.close .bottom{
+  font-size: 8px;
+  opacity: 1;
+  pointer-events: auto;
+  transition: all 0.4s ease;
+  padding-left: 2px;
 }
