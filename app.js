@@ -30,7 +30,7 @@ app.get('/', function(req, res) {
     res.render('index');
   });
 
-app.get('/accruals', function(req, res){
+  app.get('/accruals', function(req, res){
     res.render('accruals');
 });
 //for accruals form
@@ -97,24 +97,20 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
   });
 
 //for sales-payment break
-app.get('/sales-paymentbreak', function(req, res){
+app.get('/sales-paymentbreak',function(req, res){
   res.render('sales-paymentbreak');
 });
-
-app.post('/sales-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
+app.post('/sales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
   const { date, invoice_no, bank, amount, remarks } = req.body;
 
-  // Get the filename from the request
-  const filename = req.file ? req.file.filename : 'N/A';
-
   // Insert the form data into MySQL
-  pool.query('INSERT INTO sales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
+  pool.query('INSERT INTO sales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, "N/A")', [date, invoice_no, bank, amount, remarks], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
     } else {
       console.log(req.body);
-      res.render('sales-paymentbreak');
+      res.status(200).send('Form data saved successfully');
     }
   });
 });
@@ -209,7 +205,6 @@ app.post('/stock-checkin',upload.single('file'),  urlencodedParser, function(req
 app.get('/shippedrecord', function(req, res){
   res.render('shippedrecord');
 });
-
         //for shipped record page - single ship
 app.get('/singleshipped', function(req, res){
   res.render('singleshipped');
