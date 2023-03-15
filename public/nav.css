@@ -27,18 +27,21 @@
 }
 .sidebar .logo-details i{
   font-size: 30px;
-  color: #fff;
+  color: #bea2ff;
   height: 50px;
   min-width: 78px;
   text-align: center;
   line-height: 50px;
 }
+.sidebar .logo-details:hover i,
+.sidebar .logo-details:hover .logo_name{
+  color: #ff8282;
+}
 .sidebar .logo-details .logo_name{
   font-size: 22px;
-  color: #fff;
+  color: #bea2ff;
   font-weight: 600;
-  transition: 0.3s ease;
-  transition-delay: 0.1s;
+  transition-delay: 0s;
 }
 .sidebar.close .logo-details .logo_name{
   transition-delay: 0s;
@@ -77,10 +80,14 @@
   min-width: 78px;
   text-align: center;
   line-height: 50px;
-  color: #fff;
+  color: #ffffff;
   font-size: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
+}
+.sidebar .nav-links li:hover i,
+.sidebar .nav-links li:hover a .link_name{
+  color: #ff9595;
 }
 .sidebar .nav-links li.showMenu i.arrow{
   transform: rotate(-180deg);

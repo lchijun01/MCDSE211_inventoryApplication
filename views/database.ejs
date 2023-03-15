@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Image to Discord Webhook</title>
+  </head>
+  <body>
+    <h1>Upload an image to send to Discord</h1>
+    <form action="/database" method="POST" enctype="multipart/form-data">
+      <input type="file" name="image" accept="image/*" required />
+      <button type="submit">Send Image</button>
+    </form>
+  </body>
+</html>

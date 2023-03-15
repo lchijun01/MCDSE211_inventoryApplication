@@ -4,6 +4,12 @@ const bodyParser = require('body-parser');
 const app = express();
 const multer  = require('multer');
 const upload = multer({ dest: 'uploads/' });
+const axios = require('axios');
+const fs = require('fs');
+
+const webhookURL = 'https://discord.com/api/webhooks/1077513581538586645/Aan9AKgRgp-56Ow7wnqZc3oTnPqUndRs7EeeS7IBeg2XX_qyz4Gp6MvdlXQ1g-iRHwIR';
+
+const storage = multer.memoryStorage();
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.static('public'))
@@ -27,7 +33,6 @@ app.get('/', function(req, res) {
 app.get('/accruals', function(req, res){
     res.render('accruals');
 });
-
 //for accruals form
 app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
@@ -50,7 +55,6 @@ app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res
 app.get('/other-creditor', function(req, res){
     res.render('other-creditor');
 });
-
 //for other-creditor form
 app.post('/other-creditor',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
@@ -73,7 +77,6 @@ app.post('/other-creditor',upload.single('file'),  urlencodedParser, function(re
 app.get('/expenses-record', function(req, res){
     res.render('expenses-record');
 });
-
 //for other-creditor form
 app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
@@ -93,63 +96,33 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
     });
   });
 
-  app.get('/expenses-record', function(req, res){
-    res.render('expenses-record');
-});
-
-
-//for sales-sell page
-app.get('/sell', function(req, res){
-  res.render('sell');
-});
-//for sales-sell page
-app.post('/sell',upload.single('file'),  urlencodedParser, function(req, res){
-    const { date, invoice_no, category, bank, name, amount, detail } = req.body;
-
-    // Get the filename from the request
-    const filename = req.file ? req.file.filename : 'N/A';
-  
-    // Insert the form data into MySQL
-    pool.query('INSERT INTO sell (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
-      if (error) {
-        console.error(error);
-        res.status(500).send('Error saving form data');
-      } else {
-        console.log(req.body);
-        res.render('expenses-record');
-      }
-    });
-  });
-
 //for sales-payment break
 app.get('/sales-paymentbreak', function(req, res){
   res.render('sales-paymentbreak');
 });
 
 app.post('/sales-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
-    const { date, invoice_no, bank, amount, remarks } = req.body;
+  const { date, invoice_no, bank, amount, remarks } = req.body;
 
-    // Get the filename from the request
-    const filename = req.file ? req.file.filename : 'N/A';
+  // Get the filename from the request
+  const filename = req.file ? req.file.filename : 'N/A';
 
-    // Insert the form data into MySQL
-    pool.query('INSERT INTO sales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
-      if (error) {
-        console.error(error);
-        res.status(500).send('Error saving form data');
-      } else {
-        console.log(req.body);
-        req.body.reset
-        res.render('sales-paymentbreak', { successMessage: 'Form submitted successfully' });
-      }
-    });
+  // Insert the form data into MySQL
+  pool.query('INSERT INTO sales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      console.log(req.body);
+      res.render('sales-paymentbreak');
+    }
   });
+});
 
   //for buy-payment break
 app.get('/buy-paymentbreak', function(req, res){
   res.render('buy-paymentbreak');
 });
-
 app.post('/buy-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, bank, amount, remarks } = req.body;
 
@@ -168,56 +141,205 @@ app.post('/buy-paymentbreak',upload.single('file'),  urlencodedParser, function(
       }
     });
   });
-//for sales-balance check
-app.get('/sales-balancecheck', function(req, res){
-  res.render('sales-balancecheck');
-});
 
-app.post('/sales-balancecheck',upload.single('file'),  urlencodedParser, function(req, res){
+    //for company fund 2 personal 
+app.get('/company2personal', function(req, res){
+  res.render('company2personal');
+});
+app.post('/company2personal',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
     // Get the filename from the request
     const filename = req.file ? req.file.filename : 'N/A';
-  
+
     // Insert the form data into MySQL
-    pool.query('INSERT INTO sell (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+    pool.query('INSERT INTO companyfund2personal (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
       if (error) {
         console.error(error);
         res.status(500).send('Error saving form data');
       } else {
         console.log(req.body);
-        res.render('sales-balancecheck');
+        res.render('company2personal', { successMessage: 'Form submitted successfully' });
       }
     });
-
   });
 
-  //for sales-invoice generator
-app.get('/invoice-generator', function(req, res){
-  res.render('invoice-generator');
+      //for personal 2 company
+app.get('/personal2company', function(req, res){
+  res.render('personal2company');
 });
-
-app.post('/invoice-generator',upload.single('file'),  urlencodedParser, function(req, res){
+app.post('/personal2company',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
     // Get the filename from the request
     const filename = req.file ? req.file.filename : 'N/A';
-  
+
     // Insert the form data into MySQL
-    pool.query('INSERT INTO sell (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+    pool.query('INSERT INTO personalfund2company (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
       if (error) {
         console.error(error);
         res.status(500).send('Error saving form data');
       } else {
         console.log(req.body);
-        res.render('invoice-generator');
+        res.render('personal2company', { successMessage: 'Form submitted successfully' });
       }
     });
   });
 
+        //for stock-checkin
+app.get('/stock-checkin', function(req, res){
+  res.render('stock-checkin');
+});
+app.post('/stock-checkin',upload.single('file'),  urlencodedParser, function(req, res){
+    const { purchase_order_no, date, name, productsku, size } = req.body;
+
+    // Insert the form data into MySQL
+    pool.query('INSERT INTO stock_checkin (Purchase_order_no, Check_in_Date, Seller_name, Product_SKU, Size_US) VALUES (?, ?, ?, ?, ?)', [purchase_order_no, date, name, productsku, size], (error, results, fields) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error saving form data');
+      } else {
+        console.log(req.body);
+        res.render('stock-checkin', { successMessage: 'Form submitted successfully' });
+      }
+    });
+  });
+
+        //for shipped record page
+app.get('/shippedrecord', function(req, res){
+  res.render('shippedrecord');
+});
+
+        //for shipped record page - single ship
+app.get('/singleshipped', function(req, res){
+  res.render('singleshipped');
+});
+app.post('/singleshipped',upload.single('file'),  urlencodedParser, function(req, res){
+  const { trackingno, date, sku, size, category, remarks } = req.body;
+
+  // Insert the form data into MySQL
+  pool.query('INSERT INTO singleship (TrackingNumber, Date, Content_SKU, SizeUS, Category, Remarks) VALUES (?, ?, ?, ?, ?, ?)', [trackingno, date, sku, size, category, remarks], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      console.log(req.body);
+      res.render('singleshipped', { successMessage: 'Form submitted successfully' });
+    }
+  });
+});
+
+        //for shipped record page - bulk ship
+app.get('/bulkshipped', function(req, res){
+  res.render('bulkshipped');
+});
+app.post('/bulkshipped', upload.single('file'), urlencodedParser, function (req, res) {
+  const { trackingno, date, boxno, category, remarks, field1 = [], field2 = [], field3 = [] } = req.body;
+
+  // Insert the main form data into MySQL
+  pool.query('INSERT INTO bulkship (TrackingNumber, Date, BoxNumber, Category, Remarks) VALUES (?, ?, ?, ?, ?)', [trackingno, date, boxno, category, remarks], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      const bulkShipBoxNumber = boxno;
+      const shippedItems = field1.map((item, index) => [bulkShipBoxNumber, item, field2[index], field3[index]]);
+
+      // Insert the shipped items data into MySQL
+      pool.query('INSERT INTO shipped_items (BulkShipBoxNumber, Content_SKU, SizeUS, Quantity) VALUES ?', [shippedItems], (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error saving shipped items data');
+        } else {
+          console.log(req.body);
+          res.render('bulkshipped', { successMessage: 'Form submitted successfully' });
+        }
+      });
+    }
+  });
+});
+
+//for sales - sell invoice
+app.get('/sell_invoice', function(req, res){
+  res.render('sell_invoice');
+});
+app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
+  const { name, companyname, phone, adr1, adr2, adr3, postcode, city, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
+  // Insert the main form data into MySQL
+  pool.query('INSERT INTO sell_invoice (Name, CompanyName, Phone, Address1, Address2, Address3, PostCode, City, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [name, companyname, phone, adr1, adr2, adr3, postcode, city, country, remarks], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      const invoice_number = results.insertId;
+      const sellItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+
+      // Insert the shipped items data into MySQL
+      pool.query('INSERT INTO items_sell (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [sellItems], (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error saving shipped items data');
+        } else {
+          console.log(req.body);
+          res.render('sell_invoice', { successMessage: 'Form submitted successfully' });
+        }
+      });
+    }
+  });
+});
+
+
+//for database
+app.get('/database', function(req, res){
+  res.render('database');
+});
+app.post('/database', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    res.status(400).send('No image file uploaded');
+    return;
+  }
+
+  try {
+    // Upload the image to Cloudinary
+    const response = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'your_folder_name', // Optional: Organize uploaded images in a folder
+    });
+
+    // Get the Cloudinary image URL
+    const imageUrl = response.secure_url;
+
+    // Create a Discord embed with the image
+    const embed = {
+      embeds: [
+        {
+          title: 'Uploaded Image',
+          image: {
+            url: imageUrl,
+          },
+        },
+      ],
+    };
+
+    // Send the embed to Discord
+    await axios.post(webhookURL, embed, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    // Clean up the uploaded file
+    fs.unlink(req.file.path, (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
+
+    res.send('Image sent to Discord!');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Failed to send image to Discord');
+  }
+});
 
 app.get('/profile/:name', function(req, res){
     res.render('profile', {person: req.params.name});
 });
-
 app.listen(5000);
