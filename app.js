@@ -4,12 +4,6 @@ const bodyParser = require('body-parser');
 const app = express();
 const multer  = require('multer');
 const upload = multer({ dest: 'uploads/' });
-const axios = require('axios');
-const fs = require('fs');
-
-const webhookURL = 'https://discord.com/api/webhooks/1077513581538586645/Aan9AKgRgp-56Ow7wnqZc3oTnPqUndRs7EeeS7IBeg2XX_qyz4Gp6MvdlXQ1g-iRHwIR';
-
-const storage = multer.memoryStorage();
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.static('public'))
@@ -287,51 +281,6 @@ app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req
 //for database
 app.get('/database', function(req, res){
   res.render('database');
-});
-app.post('/database', upload.single('image'), async (req, res) => {
-  if (!req.file) {
-    res.status(400).send('No image file uploaded');
-    return;
-  }
-
-  try {
-    // Upload the image to Cloudinary
-    const response = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'your_folder_name', // Optional: Organize uploaded images in a folder
-    });
-
-    // Get the Cloudinary image URL
-    const imageUrl = response.secure_url;
-
-    // Create a Discord embed with the image
-    const embed = {
-      embeds: [
-        {
-          title: 'Uploaded Image',
-          image: {
-            url: imageUrl,
-          },
-        },
-      ],
-    };
-
-    // Send the embed to Discord
-    await axios.post(webhookURL, embed, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    // Clean up the uploaded file
-    fs.unlink(req.file.path, (err) => {
-      if (err) {
-        console.error(err);
-      }
-    });
-
-    res.send('Image sent to Discord!');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Failed to send image to Discord');
-  }
 });
 
 app.get('/profile/:name', function(req, res){
