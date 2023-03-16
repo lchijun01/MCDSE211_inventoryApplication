@@ -275,6 +275,36 @@ app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req
   });
 });
 
+//for sales - sell invoice
+app.get('/buy-payby', function(req, res){
+  res.render('buy-payby');
+});
+app.post('/buy-payby', upload.single('file'), urlencodedParser, function (req, res) {
+  const { name, companyname, bank, bankacc, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
+  // Insert the main form data into MySQL
+  pool.query('INSERT INTO buy_record (Name, CompanyName, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?, ?)', [name, companyname, bank, bankacc, remarks], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      const invoice_number = results.insertId;
+      const buyItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+
+      // Insert the shipped items data into MySQL
+      pool.query('INSERT INTO items_buy (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [buyItems], (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error saving shipped items data');
+        } else {
+          console.log(req.body);
+          res.render('buy-payby', { successMessage: 'Form submitted successfully' });
+        }
+      });
+    }
+  });
+});
+
+//for sales-balance check
 app.get('/sales-balancecheck', (req, res) => {
   const invoice_number = "";
   const results = [];
@@ -310,6 +340,41 @@ app.get('/search', (req, res) => {
   });
 });
 
+//for buy-balance check
+app.get('/buy-balancecheck', (req, res) => {
+  const invoice_number = "";
+  const results = [];
+  res.render('buy-balancecheck', { invoice_number, results });
+});
+// Set up the searchs route
+app.get('/searchs', (req, res) => {
+  const invoice_number = req.query.invoice_number;
+  pool.query('SELECT * FROM buy_record WHERE Invoice_number = ?', [invoice_number], (error, results) => {
+    if (error) {
+      console.log(`Error retrieving data from buy_record table: ${error}`);
+    } else {
+      const sell_invoice_data = results;
+      pool.query('SELECT SUM(Amount) AS total_amount FROM items_buy WHERE InvoiceNumber = ?', [invoice_number], (error, results) => {
+        if (error) {
+          console.log(`Error retrieving data from items_buy table: ${error}`);
+        } else {
+          const total_amount = results[0].total_amount || 0;
+          const items_sell_data = results;
+          pool.query('SELECT SUM(Amount) AS total_paid_amount FROM purchase_paymentbreakdown WHERE Invoice_No = ?', [invoice_number], (error, results) => {
+            if (error) {
+              console.log(`Error retrieving data from purchase_paymentbreakdown table: ${error}`);
+            } else {
+              const total_paid_amount = results[0].total_paid_amount || 0;
+              const balance_left = total_amount - total_paid_amount;
+              res.render('buy-balancecheck', { sell_invoice_data, items_sell_data, total_amount, total_paid_amount, balance_left, invoice_number, results });
+
+            }
+          });
+        }
+      });
+    }
+  });
+});
 
 //for database
 app.get('/database', function(req, res){
