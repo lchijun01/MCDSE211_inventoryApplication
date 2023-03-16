@@ -21,7 +21,7 @@
                     <label class="form_name" for="date">Date</label>
                     <input class="form_id" type="date" name="date" required><br>
                     <label class="form_name" for="invoice_no">Invoice No.</label>
-                    <input class="form_id" type="text" name="invoice_no" placeholder=" Optional"><br>
+                    <input class="form_id" type="text" id="invoice_no" name="invoice_no" placeholder=" Optional"><br>
                     <label class="form_name" for="category">Category</label>
                     <select class="form_id" name="category" required>
                         <option value="">Select a category</option>
@@ -43,12 +43,57 @@
                     <label class="form_name" for="detail">Details</label><br>
                     <textarea class="form_detail" type="text" name="detail"></textarea><br>
                     <label class="formfile_name" for="file">File</label>
-                    <input class="form_file" type="file" name="file"><br><br>
+                    <input class="form_file" id="file-input" type="file" name="file"><br><br>
                     <div class="button">
                         <button class="form_button" type="submit">Submit</button>
                         <button class="form_button" type="reset">Clear</button>
                     </div>
                 </form>
         </main>
+        <script>
+            document.getElementById('p2c-form').addEventListener('submit', async (event) => {
+          event.preventDefault();
+        
+          const form = document.getElementById('p2c-form');
+          const formData = new FormData(form);
+        
+          const fileInput = document.getElementById('file-input');
+          const file = fileInput.files[0];
+        
+          if (!file) {
+            alert('Please select a file to upload');
+            return;
+          }
+        
+          try {
+            // Send form data to your server-side code
+            await fetch('/personal2company', {
+              method: 'POST',
+              body: formData,
+            });
+        
+            // Get the invoice number from the form
+            const invoiceNumber = document.getElementById('invoice_no').value;
+        
+            // Send the image file to Discord
+            const discordFormData = new FormData();
+            discordFormData.append('file', file, file.name);
+            discordFormData.append('payload_json', JSON.stringify({
+              content: `Invoice Number: ${invoiceNumber}`,
+            }));
+        
+            await fetch('https://discord.com/api/webhooks/1085803887400857660/3Ib_wWX_EXGq3wdXipafmpvD3fyfvdSHyHmp2W3skr4waYRYMpNkDkB5rgbAiMV3M0iq', {
+              method: 'POST',
+              body: discordFormData,
+            });
+        
+            alert('Data saved and file sent to Discord');
+            location.reload();
+          } catch (error) {
+            console.error(error);
+            alert('An error occurred');
+          }
+        });
+          </script>
     </body>
 </html>

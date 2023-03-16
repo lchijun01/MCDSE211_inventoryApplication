@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+        <link href="style.css" type="text/css" rel="stylesheet">
+        <title>Sales-BalanceCheck</title>
+        <script>
+            if ( window.history.replaceState ) {
+              window.history.replaceState( null, null, window.location.href );
+            }
+        </script>
+    </head>
+    <body class="main-contents">
+        <%- include('partials/nav'); %>
+        <main class="main-content">
+               <h1>Sales - Balance Check</h1>
+               <form id="searchForm" class="d-flex">
+                <input id="searchInput" class="form-control me-2" style="width: 250px;" type="search" placeholder="Search Invoice Number" aria-label="Search">
+                <button id="searchButton" class="btn btn-outline-success" type="submit">Search</button>
+              </form>              
+               <table class="table" id="inputTable">
+                <thead>
+                    <tr>
+                        <th>Invoice Number</th>
+                        <th>Buyer Name</th>
+                        <th>Total Amount</th>
+                        <th>Amount Paid</th>
+                        <th>Balance Left</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" class="form-control" name="field1[]"></td>
+                        <td><input type="text" class="form-control" name="field2[]"></td>
+                        <td><input type="text" class="form-control" name="field3[]"></td>
+                        <td><input type="text" class="form-control" name="field4[]"></td>
+                        <td><input type="text" class="form-control" name="field5[]"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </main>
+        <script>
+            const searchForm = document.getElementById('searchForm');
+            const searchInput = document.getElementById('searchInput');
+            const inputTable = document.getElementById('inputTable');
+          
+            // Attach a submit event listener to the search form
+            searchForm.addEventListener('submit', async (event) => {
+              event.preventDefault();
+              const searchQuery = searchInput.value.trim();
+          
+              if (searchQuery !== '') {
+                try {
+                  const response = await fetch(`/search?invoice_number=${searchQuery}`);
+                  const data = await response.json();
+                  renderSearchResults(data);
+                } catch (error) {
+                  console.error(error);
+                }
+              }
+            });
+          
+            // Render the search results in the input table
+            function renderSearchResults(data) {
+              inputTable.innerHTML = '';
+          
+              data.forEach((row) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                  <td><input type="text" class="form-control" name="field1[]" value="${row.invoice_number}"></td>
+                  <td><input type="text" class="form-control" name="field2[]" value="${row.buyer_name}"></td>
+                  <td><input type="text" class="form-control" name="field3[]" value="${row.total_amount}"></td>
+                  <td><input type="text" class="form-control" name="field4[]" value="${row.amount_paid}"></td>
+                  <td><input type="text" class="form-control" name="field5[]" value="${row.amount_left}"></td>
+                `;
+                inputTable.appendChild(tr);
+              });
+            }
+          </script>
+          
+    </body>
+</html>

@@ -27,7 +27,6 @@ app.get('/', function(req, res) {
   app.get('/accruals', function(req, res){
     res.render('accruals');
 });
-//for accruals form
 app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
@@ -49,7 +48,6 @@ app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res
 app.get('/other-creditor', function(req, res){
     res.render('other-creditor');
 });
-//for other-creditor form
 app.post('/other-creditor',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
@@ -71,7 +69,6 @@ app.post('/other-creditor',upload.single('file'),  urlencodedParser, function(re
 app.get('/expenses-record', function(req, res){
     res.render('expenses-record');
 });
-//for other-creditor form
 app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
@@ -90,15 +87,16 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
     });
   });
 
-//for sales-payment break
 app.get('/sales-paymentbreak',function(req, res){
   res.render('sales-paymentbreak');
 });
 app.post('/sales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
   const { date, invoice_no, bank, amount, remarks } = req.body;
+  // Get the filename from the request
+  const filename = req.file ? req.file.filename : 'N/A';
 
   // Insert the form data into MySQL
-  pool.query('INSERT INTO sales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, "N/A")', [date, invoice_no, bank, amount, remarks], (error, results, fields) => {
+  pool.query('INSERT INTO sales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
@@ -126,7 +124,6 @@ app.post('/buy-paymentbreak',upload.single('file'),  urlencodedParser, function(
         res.status(500).send('Error saving form data');
       } else {
         console.log(req.body);
-        req.body.reset
         res.render('buy-paymentbreak', { successMessage: 'Form submitted successfully' });
       }
     });
@@ -277,11 +274,23 @@ app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req
   });
 });
 
+app.get('/sales-balancecheck', function(req, res){
+  res.render('sales-balancecheck');
+});
+
+app.get('/search', (req, res) => {
+  const invoice_number = req.query.invoice_number;
+  connection.query('SELECT * FROM items_sell WHERE InvoiceNumber = ?', [invoice_number], (error, results) => {
+    if (error) throw error;
+    res.json(results);
+  });
+});
 
 //for database
 app.get('/database', function(req, res){
   res.render('database');
 });
+
 
 app.get('/profile/:name', function(req, res){
     res.render('profile', {person: req.params.name});
