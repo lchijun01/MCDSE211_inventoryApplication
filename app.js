@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const multer  = require('multer');
 const upload = multer({ dest: 'uploads/' });
+const path = require('path');
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.static('public'))
@@ -274,17 +275,41 @@ app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req
   });
 });
 
-app.get('/sales-balancecheck', function(req, res){
-  res.render('sales-balancecheck');
+app.get('/sales-balancecheck', (req, res) => {
+  const invoice_number = "";
+  const results = [];
+  res.render('sales-balancecheck', { invoice_number, results });
 });
-
+// Set up the search route
 app.get('/search', (req, res) => {
   const invoice_number = req.query.invoice_number;
-  connection.query('SELECT * FROM items_sell WHERE InvoiceNumber = ?', [invoice_number], (error, results) => {
-    if (error) throw error;
-    res.json(results);
+  pool.query('SELECT * FROM sell_invoice WHERE Invoice_number = ?', [invoice_number], (error, results) => {
+    if (error) {
+      console.log(`Error retrieving data from sell_invoice table: ${error}`);
+    } else {
+      const sell_invoice_data = results;
+      pool.query('SELECT SUM(Amount) AS total_amount FROM items_sell WHERE InvoiceNumber = ?', [invoice_number], (error, results) => {
+        if (error) {
+          console.log(`Error retrieving data from items_sell table: ${error}`);
+        } else {
+          const total_amount = results[0].total_amount || 0;
+          const items_sell_data = results;
+          pool.query('SELECT SUM(Amount) AS total_paid_amount FROM sales_paymentbreakdown WHERE Invoice_No = ?', [invoice_number], (error, results) => {
+            if (error) {
+              console.log(`Error retrieving data from sales_paymentbreakdown table: ${error}`);
+            } else {
+              const total_paid_amount = results[0].total_paid_amount || 0;
+              const balance_left = total_amount - total_paid_amount;
+              res.render('sales-balancecheck', { sell_invoice_data, items_sell_data, total_amount, total_paid_amount, balance_left, invoice_number, results });
+
+            }
+          });
+        }
+      });
+    }
   });
 });
+
 
 //for database
 app.get('/database', function(req, res){
