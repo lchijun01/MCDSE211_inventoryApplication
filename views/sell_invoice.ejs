@@ -21,14 +21,23 @@
             <h1>Sales - Invoice</h1>
                 <form style="display:flex;" id="sellinvoice-form" method="POST" action="/sell_invoice" enctype="multipart/form-data">
                     <div>
+                    <label class="form_name5">Name</label>
                     <input style="margin-bottom: 3px;" type="text" name="name" required placeholder=" Buyer Name"><br>
+                    <label class="form_name5">Company</label>
                     <input style="margin-bottom: 3px;" type="text" name="companyname" placeholder=" Company Name"><br>
+                    <label class="form_name5">Phone</label>
                     <input style="margin-bottom: 3px;" type="number" name="phone" placeholder=" Phone"><br>
+                    <label class="form_name5">Address</label>
                     <input style="margin-bottom: 3px;" type="text" name="adr1" required placeholder=" Address 1"><br>
+                    <label class="form_name5"></label>
                     <input style="margin-bottom: 3px;" type="text" name="adr2" required placeholder=" Address 2"><br>
+                    <label class="form_name5"></label>
                     <input style="margin-bottom: 3px;" type="text" name="adr3" placeholder=" Address 3"><br>
+                    <label class="form_name5">Postcode</label>
                     <input style="margin-bottom: 3px;" type="number" step="0.01" name="postcode" required placeholder=" Postcode"><br>
+                    <label class="form_name5">City</label>
                     <input style="margin-bottom: 3px;" type="text" name="city" required placeholder=" City"><br>
+                    <label class="form_name5">Country</label>
                     <input style="margin-bottom: 3px;" type="text" name="country" required placeholder=" Country"><br>
                     <label class="form_name3" for="remarks">Remarks</label><br>
                     <textarea class="form_detail2" type="text" name="remarks"></textarea><br><br>
@@ -46,6 +55,7 @@
                                 <th>Unit Price</th>
                                 <th>Quantity</th>
                                 <th>Amount</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>

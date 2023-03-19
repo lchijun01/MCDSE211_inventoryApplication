@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const multer  = require('multer');
 const upload = multer({ dest: 'uploads/' });
-const path = require('path');
+const ejs = require('ejs');
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.static('public'))
@@ -304,37 +304,119 @@ app.post('/buy-payby', upload.single('file'), urlencodedParser, function (req, r
   });
 });
 
-//for sales-balance check
 app.get('/sales-balancecheck', (req, res) => {
-  const invoice_number = "";
-  const results = [];
-  res.render('sales-balancecheck', { invoice_number, results });
-});
-// Set up the search route
-app.get('/search', (req, res) => {
-  const invoice_number = req.query.invoice_number;
-  pool.query('SELECT * FROM sell_invoice WHERE Invoice_number = ?', [invoice_number], (error, results) => {
+  const invoice_number = req.query.invoice_number || '';
+  const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
+  const invoice_number_params = invoice_number ? [invoice_number] : [];
+  
+  pool.query(`SELECT * FROM sell_invoice WHERE Invoice_number ${invoice_number_query}`, invoice_number_params, (error, results) => {
     if (error) {
       console.log(`Error retrieving data from sell_invoice table: ${error}`);
     } else {
       const sell_invoice_data = results;
-      pool.query('SELECT SUM(Amount) AS total_amount FROM items_sell WHERE InvoiceNumber = ?', [invoice_number], (error, results) => {
-        if (error) {
-          console.log(`Error retrieving data from items_sell table: ${error}`);
-        } else {
-          const total_amount = results[0].total_amount || 0;
-          const items_sell_data = results;
-          pool.query('SELECT SUM(Amount) AS total_paid_amount FROM sales_paymentbreakdown WHERE Invoice_No = ?', [invoice_number], (error, results) => {
-            if (error) {
-              console.log(`Error retrieving data from sales_paymentbreakdown table: ${error}`);
-            } else {
-              const total_paid_amount = results[0].total_paid_amount || 0;
-              const balance_left = total_amount - total_paid_amount;
-              res.render('sales-balancecheck', { sell_invoice_data, items_sell_data, total_amount, total_paid_amount, balance_left, invoice_number, results });
+      
+      const getTotalAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_amount FROM items_sell WHERE InvoiceNumber = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from items_sell table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_amount || 0);
+          }
+        });
+      };
+      
+      const getTotalPaidAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_paid_amount FROM sales_paymentbreakdown WHERE Invoice_No = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from sales_paymentbreakdown table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_paid_amount || 0);
+          }
+        });
+      };
 
-            }
+      const processInvoiceData = (index, callback) => {
+        if (index >= sell_invoice_data.length) {
+          callback();
+        } else {
+          const invoice = sell_invoice_data[index];
+          getTotalAmount(invoice.Invoice_number, (total_amount) => {
+            getTotalPaidAmount(invoice.Invoice_number, (total_paid_amount) => {
+              const balance_left = total_amount - total_paid_amount;
+              if (balance_left != 0) {
+                invoice.total_amount = total_amount;
+                invoice.total_paid_amount = total_paid_amount;
+                invoice.balance_left = balance_left;
+                processInvoiceData(index + 1, callback);
+              } else {
+                sell_invoice_data.splice(index, 1);
+                processInvoiceData(index, callback);
+              }
+            });
           });
         }
+      };
+
+      processInvoiceData(0, () => {
+        res.render('sales-balancecheck', { sell_invoice_data, invoice_number, results });
+      });
+
+    }
+  });
+});
+app.get('/search', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the sell_invoice table
+  const sellInvoiceQuery = `SELECT * FROM sell_invoice WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(sellInvoiceQuery, (error, sellInvoiceResults) => {
+    if (error) throw error;
+
+    if (!sellInvoiceResults.length) {
+      // Render the sales-details.ejs view with no sellInvoiceResults
+      res.render('sales-details', {
+        sellInvoiceResults: sellInvoiceResults,
+        invoiceNumber: invoiceNumber,
+        sellInvoiceResults: null
+      });
+    } else {
+      // Query the items_sell table
+      const itemsSellQuery = `SELECT * FROM items_sell WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsSellQuery, (error, itemsSellResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsSellResults.length; i++) {
+          totalAmount += (itemsSellResults[i].UnitPrice * itemsSellResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const salesPaymentQuery = `SELECT * FROM sales_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(salesPaymentQuery, (error, salesPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < salesPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(salesPaymentResults[i].Amount);
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('sales-details', {
+            invoiceNumber: invoiceNumber,
+            sellInvoiceResults: sellInvoiceResults,
+            name: sellInvoiceResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: salesPaymentResults,
+            balance: balance,
+            totalpaid: totalAmountPaid,
+          });
+        });
       });
     }
   });
@@ -374,6 +456,11 @@ app.get('/searchs', (req, res) => {
       });
     }
   });
+});
+
+// for sales invoice generate
+app.get('/invoice_generate', function(req, res) {
+  res.render('invoice_generate');
 });
 
 //for database
