@@ -18,41 +18,34 @@
     <main class="main-content">
         <h1>Purchase - Balance Check</h1>
         <form action="/searchs" method="get" class="d-flex mt-4">
-            <input type="search" name="invoice_number" style="width: 250px;" class="form-control me-2" placeholder="Enter Invoice Number" aria-label="Search" required>
+            <input type="search" name="invoice_number" style="width: 250px;" class="form-control me-2" placeholder="Enter Invoice Number" aria-label="Search">
             <button type="submit" class="btn btn-primary">Search</button>
-        </form>
-        <% if (results && results.length > 0) { %>
-          <div class="mt-5">
-              <h3>Search results for Invoice Number <%= invoice_number %>:</h3>
-              <table class="table table-striped">
-                  <thead>
-                      <tr>
-                          <th>Invoice Number</th>
-                          <th>Seller Name</th>
-                          <th>Amount</th>
-                          <th>Paid Amount</th>
-                          <th>Total Balance Left<br><a style="font-size: 10px;">exp. ( -10 ) is over paid rm10</a></th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      <% sell_invoice_data.forEach((invoice) => { %>
-                          <tr>
-                              <td><%= invoice.Invoice_number %></td>
-                              <td><%= invoice.Name %></td>
-                              <td><%= total_amount %></td>
-                              <td><%= total_paid_amount %></td>
-                              <td><%= balance_left %></td>
-                          </tr>
-                      <% }); %>
-                  </tbody>
-              </table>
-          </div>
-      <% } else if (results) { %>
-          <div class="mt-5">
-              <p>No results found for Invoice Number <%= invoice_number %>.</p>
-          </div>
-      <% } %>
-      
+          </form>                           
+          <% if (buy_record_data.length > 0) { %>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Invoice Number</th>
+                  <th>Name</th>
+                  <th>Amount</th>
+                  <th>Paid Amount</th>
+                  <th>Over Paid</th>
+                  <th>Total Balance Left</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% buy_record_data.forEach((invoice) => { %>
+                  <tr>
+                    <td><%= invoice.Invoice_number %></td>
+                    <td><%= invoice.Name %></td>
+                    <td><%= invoice.total_amount %></td>
+                    <td><%= invoice.total_paid_amount %></td>
+                    <td><%= invoice.balance_left < 0 ? -invoice.balance_left : 0 %></td>
+                    <td><%= invoice.balance_left >= 0 ? invoice.balance_left : 0 %></td>
+                  </tr>
+                <% });} %>
+              </tbody>
+            </table>    
     </main>
 </body>
 </html>

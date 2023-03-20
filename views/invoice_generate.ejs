@@ -11,50 +11,107 @@
     <body class="main-contents">
       <%- include('partials/nav');%>
       <main class="main-content">
-        <div id="printable-content">
-          <h2 id="header" style="font-family: Arial;font-weight: bold;">YONG &amp; YI PARTNERS ENTERPRISE</h2>
-          <P style="font-family: Arial;"><a style="font-weight: bold;">202203263613 (CA0355099-M)</a>
-            <br>11A,LORONG TEKUKUR INDAH 4,
-            <br>TAMAN TEKUKUR INDAH
-            <br>14300 NIBONG TEBAL, PULAU PINANG, MALAYSIA
-            <br>TEL:+60 17-4593823
-            <br>EMAIL: SYENYIK10@GMAIL.COM</P>
-          <h2 id="header1" style="font-family: Arial">INVOICE</h2>
-          <table id="myTable">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Age</th>
-                <th>Email</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>John Doe</td>
-                <td>30</td>
-                <td>john.doe@example.com</td>
-              </tr>
-              <tr>
-                <td>Jane Smith</td>
-                <td>25</td>
-                <td>jane.smith@example.com</td>
-              </tr>
-              <tr>
-                <td>Bob Johnson</td>
-                <td>40</td>
-                <td>bob.johnson@example.com</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
         <button class="btn btn-success" onclick="printTable()">Print</button>
+          <div id="printable-content" style="width:8.67in ;height: 12.09in;background-color: white;padding: 1.016cm;">
+            <p id="header" style="font-family: Arial;font-weight: bold;margin: 0%;margin-bottom: 5px;font-size: 2em;text-align: center;">YONG &amp; YI PARTNERS ENTERPRISE</p>
+              <p style="margin:0%;font-family: Arial;text-align: center;font-size: 15px;"><a style="font-weight: bold;">202203263613 (CA0355099-M)</a>
+                <br>11A,LORONG TEKUKUR INDAH 4,
+                <br>TAMAN TEKUKUR INDAH
+                <br>14300 NIBONG TEBAL, PULAU PINANG, MALAYSIA
+                <br>TEL:+60 17-4593823
+                <br>EMAIL: SYENYIK10@GMAIL.COM</p>
+              <p id="invoice"style="font-family: Arial;font-weight: bold;margin-top:5px;margin-bottom:20px;color:darkblue;font-size: 3em; text-align: center;">INVOICE</p>
+              <div>
+              <div style="display: inline-block;font-weight: bold;font-family: Arial, Helvetica, sans-serif;">Invoice for</div>
+              <div style="float: right;">
+                <table id="myTable" style="display: inline-block; margin-bottom: 15px;font-family: Arial, Helvetica, sans-serif;">
+                  <thead>
+                    <tr>
+                      <th style="width: 140px;border: 1px solid black;padding: 2px;">Invoice #</th>
+                      <th colspan="2" style="width: 180px;border: 1px solid black;padding: 2px;">Invoice Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="border: 1px solid black;padding: 2px;">John Doe</td>
+                      <td style="border: 1px solid black;padding: 2px;">30</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div><br><br><br>
+            <div>
+              <div style="display: inline-block;"></div>
+              <div style="float: right;font-family: Arial, Helvetica, sans-serif;">
+                <table id="myTable" style="display: inline-block; margin-bottom: 15px;">
+                  <thead>
+                    <tr>
+                      <th colspan="2" style="width: 180px;border: 1px solid black;padding: 2px;">Due Date</th>
+                    </tr>
+                  </thead>
+                  <tbody style="border: 1px solid black;padding: 2px;">
+                    <tr>
+                      <td style="border: 1px solid black;padding: 2px;">30</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div><br><br><br><br>
+            <div>
+              <div style="display: inline-block;"></div>
+              <div style="float: right;font-family: Arial, Helvetica, sans-serif;">
+                <div style="font-weight: bold;"> Payable to</div>
+                <table id="myTable" style="display: inline-block; margin-bottom: 15px;">
+                  <thead>
+                    <tr>
+                      <th id="h1" style="width: 140px;border: 1px solid black;padding: 2px;color: rgb(48, 48, 48);font-weight: 400;">Bank Name:</th>
+                      <td colspan="2" style="width: 180px;border: 1px solid black;padding: 2px;"></td>
+                    </tr>
+                    <tr>
+                      <th id="h1" style="width: 140px;border: 1px solid black;padding: 2px;color: rgb(48, 48, 48);font-weight: 400;">Account Name:</th>
+                      <td colspan="2" style="width: 180px;border: 1px solid black;padding: 2px;"></td>
+                    </tr>
+                    <tr>
+                      <th id="h1" style="width: 140px;border: 1px solid black;padding: 2px;color: rgb(48, 48, 48);font-weight: 400;">Account No:</th>
+                      <td colspan="2" style="width: 180px;border: 1px solid black;padding: 2px;"></td>
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+            </div><br><br><br><br><br><br>
+            <div style="width: 100%; border-bottom: 1px solid rgb(228, 228, 228);"></div><br>
+            <div style="font-family: Arial, Helvetica, sans-serif;">
+              <table>
+                <thead>
+                  <tr>
+                    <th id="h1" style="width: 60px;color:darkblue">No #</th>
+                    <th style="width: 360px;text-align: center;color:darkblue">Description</th>
+                    <th style="width: 80px;text-align: center;color:darkblue">Qty</th>
+                    <th style="width: 140px;text-align: center;color:darkblue">Unit Price</th>
+                    <th style="width: 140px;text-align: center;color:darkblue">Total Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <td>30</td>
+                  <td>30</td>
+                  <td style="text-align: center;">30</td>
+                  <td style="text-align: center;">RM30</td>
+                  <td style="text-align: center;">Rm900</td>
+                </tbody>
+              </table>
+            </div><br>
+            <div style="width: 100%; border-bottom: 1px solid rgb(228, 228, 228);"></div>
+            <div style="bottom: 0;position: absolute;">
+              <a>Notes:</a>
+            </div>
+          </div>
       </main>
       <script>
         function printTable() {
           var content = document.getElementById("printable-content").innerHTML;
           var win = window.open('', '', 'height=700,width=700');
           win.document.write('<html><head>');
-          win.document.write('<style>table{border-collapse: collapse;} th, td{border: 1px solid black;padding: 5px;} #header{font-size: 2em; text-align: center; margin-bottom:0}p{text-align: center; font-size: 15px} #header1{color:darkblue;font-size: 2em; text-align: center; background-color: grey;}</style>');
+          win.document.write('<style>table{border-collapse: collapse} #header{text-align: center; background-color:rgb(220, 220, 220);} #h1{text-align:left;}</style>');
           win.document.write('</head><body>');
           win.document.write(content);
           win.document.write('</body></html>');

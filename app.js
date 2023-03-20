@@ -24,7 +24,7 @@ app.set('view engine', 'ejs');
 app.get('/', function(req, res) {
     res.render('index');
   });
-
+//for bank statement
   app.get('/accruals', function(req, res){
     res.render('accruals');
 });
@@ -88,6 +88,7 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
     });
   });
 
+//for sales-payment break
 app.get('/sales-paymentbreak',function(req, res){
   res.render('sales-paymentbreak');
 });
@@ -304,6 +305,7 @@ app.post('/buy-payby', upload.single('file'), urlencodedParser, function (req, r
   });
 });
 
+//for sales - balance check
 app.get('/sales-balancecheck', (req, res) => {
   const invoice_number = req.query.invoice_number || '';
   const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
@@ -424,35 +426,119 @@ app.get('/search', (req, res) => {
 
 //for buy-balance check
 app.get('/buy-balancecheck', (req, res) => {
-  const invoice_number = "";
-  const results = [];
-  res.render('buy-balancecheck', { invoice_number, results });
-});
-// Set up the searchs route
-app.get('/searchs', (req, res) => {
-  const invoice_number = req.query.invoice_number;
-  pool.query('SELECT * FROM buy_record WHERE Invoice_number = ?', [invoice_number], (error, results) => {
+  const invoice_number = req.query.invoice_number || '';
+  const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
+  const invoice_number_params = invoice_number ? [invoice_number] : [];
+  
+  pool.query(`SELECT * FROM buy_record WHERE Invoice_number ${invoice_number_query}`, invoice_number_params, (error, results) => {
     if (error) {
       console.log(`Error retrieving data from buy_record table: ${error}`);
     } else {
-      const sell_invoice_data = results;
-      pool.query('SELECT SUM(Amount) AS total_amount FROM items_buy WHERE InvoiceNumber = ?', [invoice_number], (error, results) => {
-        if (error) {
-          console.log(`Error retrieving data from items_buy table: ${error}`);
-        } else {
-          const total_amount = results[0].total_amount || 0;
-          const items_sell_data = results;
-          pool.query('SELECT SUM(Amount) AS total_paid_amount FROM purchase_paymentbreakdown WHERE Invoice_No = ?', [invoice_number], (error, results) => {
-            if (error) {
-              console.log(`Error retrieving data from purchase_paymentbreakdown table: ${error}`);
-            } else {
-              const total_paid_amount = results[0].total_paid_amount || 0;
-              const balance_left = total_amount - total_paid_amount;
-              res.render('buy-balancecheck', { sell_invoice_data, items_sell_data, total_amount, total_paid_amount, balance_left, invoice_number, results });
+      const buy_record_data = results;
+      
+      const getTotalAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_amount FROM items_buy WHERE InvoiceNumber = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from items_buy table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_amount || 0);
+          }
+        });
+      };
+      
+      const getTotalPaidAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_paid_amount FROM purchase_paymentbreakdown WHERE Invoice_No = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from purchase_paymentbreakdown table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_paid_amount || 0);
+          }
+        });
+      };
 
-            }
+      const processInvoiceData = (index, callback) => {
+        if (index >= buy_record_data.length) {
+          callback();
+        } else {
+          const invoice = buy_record_data[index];
+          getTotalAmount(invoice.Invoice_number, (total_amount) => {
+            getTotalPaidAmount(invoice.Invoice_number, (total_paid_amount) => {
+              const balance_left = total_amount - total_paid_amount;
+              if (balance_left != 0) {
+                invoice.total_amount = total_amount;
+                invoice.total_paid_amount = total_paid_amount;
+                invoice.balance_left = balance_left;
+                processInvoiceData(index + 1, callback);
+              } else {
+                buy_record_data.splice(index, 1);
+                processInvoiceData(index, callback);
+              }
+            });
           });
         }
+      };
+
+      processInvoiceData(0, () => {
+        res.render('buy-balancecheck', { buy_record_data, invoice_number, results });
+      });
+
+    }
+  });
+});
+// Set up the searchs route
+app.get('/searchs', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the buy_record table
+  const buyrecordQuery = `SELECT * FROM buy_record WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(buyrecordQuery, (error, buyrecordResults) => {
+    if (error) throw error;
+
+    if (!buyrecordResults.length) {
+      // Render the sales-details.ejs view with no buyrecordResults
+      res.render('buy-details', {
+        buyrecordResults: buyrecordResults,
+        invoiceNumber: invoiceNumber,
+        buyrecordResults: null
+      });
+    } else {
+      // Query the items_buy table
+      const itemsBuyQuery = `SELECT * FROM items_buy WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsBuyResults.length; i++) {
+          totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const BuyPaymentQuery = `SELECT * FROM purchase_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(BuyPaymentQuery, (error, buyPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < buyPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(buyPaymentResults[i].Amount);
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('buy-details', {
+            invoiceNumber: invoiceNumber,
+            buyrecordResults: buyrecordResults,
+            name: buyrecordResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: buyPaymentResults,
+            balance: balance,
+            totalpaid: totalAmountPaid,
+          });
+        });
       });
     }
   });
