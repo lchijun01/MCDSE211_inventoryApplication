@@ -27,7 +27,7 @@
 }
 .sidebar .logo-details i{
   font-size: 30px;
-  color: #bea2ff;
+  color: #dc69ff;
   height: 50px;
   min-width: 78px;
   text-align: center;
@@ -35,18 +35,20 @@
 }
 .sidebar .logo-details:hover i,
 .sidebar .logo-details:hover .logo_name{
-  color: #ff8282;
+  color: #82ff97;
 }
 .sidebar .logo-details .logo_name{
   font-size: 22px;
-  color: #bea2ff;
+  color: #dc69ff;
   font-weight: 600;
   transition-delay: 0s;
 }
 .sidebar.close .logo-details .logo_name{
   transition-delay: 0s;
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
+  font-size: 1px;
+  color: transparent;
+  transition: all 0.4s ease;
 }
 .sidebar .nav-links{
   height: 100%;
@@ -80,14 +82,14 @@
   min-width: 78px;
   text-align: center;
   line-height: 50px;
-  color: #ffffff;
+  color: #f5d4ff;
   font-size: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 .sidebar .nav-links li:hover i,
 .sidebar .nav-links li:hover a .link_name{
-  color: #ff9595;
+  color: #ff77dd;
 }
 .sidebar .nav-links li.showMenu i.arrow{
   transform: rotate(-180deg);
@@ -103,7 +105,7 @@
 .sidebar .nav-links li a .link_name{
   font-size: 15px;
   font-weight: 400;
-  color: #fff;
+  color: #f5d4ff;
   transition: all 0.4s ease;
 }
 .sidebar.close .nav-links li a .link_name{
@@ -221,3 +223,47 @@
   transition: all 0.4s ease;
   padding-left: 2px;
 }
+
+.ykz{
+  color: rgb(255, 137, 137);
+  font-size: 18px;
+  opacity: 1;
+  pointer-events: auto;
+  transition: all 0.4s ease;
+  padding-left: 10px;
+  cursor: pointer;
+}
+.ykz:hover{
+  color: #82ff97;
+}
+.sidebar.close .ykz{
+  font-size: 1px;
+  color: transparent;
+  opacity: 1;
+  pointer-events:auto;
+  transition: all 0.4s ease
+}
+
+  .yny{
+    color: rgb(255, 229, 158);
+    font-size: 18px;
+    opacity: 1;
+    pointer-events: auto;
+    transition: all 0.4s ease;
+    padding-left: 10px;
+    cursor: pointer;
+  }
+  .yny:hover{
+    color: #82ff97;
+  }
+  .sidebar.close .yny{
+    font-size: 1px;
+    color: transparent;
+    opacity: 1;
+    pointer-events: auto;
+    transition: all 0.4s ease
+  }
+
+  .sidebar.close .line{
+    display: none;
+  }
