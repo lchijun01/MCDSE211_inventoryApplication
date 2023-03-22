@@ -4,18 +4,13 @@ const bodyParser = require('body-parser');
 const app = express();
 const multer  = require('multer');
 const upload = multer({ dest: 'uploads/' });
-const axios = require('axios');
-const fs = require('fs');
-
-const webhookURL = 'https://discord.com/api/webhooks/1077513581538586645/Aan9AKgRgp-56Ow7wnqZc3oTnPqUndRs7EeeS7IBeg2XX_qyz4Gp6MvdlXQ1g-iRHwIR';
-
-const storage = multer.memoryStorage();
+const ejs = require('ejs');
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.static('public'))
 
 const pool = mysql.createPool({
-    connectionLimit: 10,
+    poolLimit: 10,
     host: 'localhost',
     user: 'root',
     password: '123456',
@@ -28,12 +23,14 @@ app.set('view engine', 'ejs');
 
 app.get('/', function(req, res) {
     res.render('index');
-  });
+});
+
+
+//-------------------------------------Bank statement---------------------------------------------------
 
   app.get('/accruals', function(req, res){
     res.render('accruals');
 });
-//for accruals form
 app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
@@ -50,12 +47,11 @@ app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res
         res.render('accruals');
       }
     });
-  });
+});
 
 app.get('/other-creditor', function(req, res){
     res.render('other-creditor');
 });
-//for other-creditor form
 app.post('/other-creditor',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
@@ -72,12 +68,11 @@ app.post('/other-creditor',upload.single('file'),  urlencodedParser, function(re
         res.render('other-creditor');
       }
     });
-  });
+});
 
 app.get('/expenses-record', function(req, res){
     res.render('expenses-record');
 });
-//for other-creditor form
 app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(req, res){
     const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
@@ -94,95 +89,12 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
         res.render('expenses-record');
       }
     });
-  });
-
-//for sales-payment break
-app.get('/sales-paymentbreak',function(req, res){
-  res.render('sales-paymentbreak');
-});
-app.post('/sales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
-  const { date, invoice_no, bank, amount, remarks } = req.body;
-
-  // Insert the form data into MySQL
-  pool.query('INSERT INTO sales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, "N/A")', [date, invoice_no, bank, amount, remarks], (error, results, fields) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send('Error saving form data');
-    } else {
-      console.log(req.body);
-      res.status(200).send('Form data saved successfully');
-    }
-  });
 });
 
-  //for buy-payment break
-app.get('/buy-paymentbreak', function(req, res){
-  res.render('buy-paymentbreak');
-});
-app.post('/buy-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
-    const { date, invoice_no, bank, amount, remarks } = req.body;
+//-------------------------------------------------------------------------------------------------
 
-    // Get the filename from the request
-    const filename = req.file ? req.file.filename : 'N/A';
 
-    // Insert the form data into MySQL
-    pool.query('INSERT INTO purchase_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
-      if (error) {
-        console.error(error);
-        res.status(500).send('Error saving form data');
-      } else {
-        console.log(req.body);
-        req.body.reset
-        res.render('buy-paymentbreak', { successMessage: 'Form submitted successfully' });
-      }
-    });
-  });
-
-    //for company fund 2 personal 
-app.get('/company2personal', function(req, res){
-  res.render('company2personal');
-});
-app.post('/company2personal',upload.single('file'),  urlencodedParser, function(req, res){
-    const { date, invoice_no, category, bank, name, amount, detail } = req.body;
-
-    // Get the filename from the request
-    const filename = req.file ? req.file.filename : 'N/A';
-
-    // Insert the form data into MySQL
-    pool.query('INSERT INTO companyfund2personal (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
-      if (error) {
-        console.error(error);
-        res.status(500).send('Error saving form data');
-      } else {
-        console.log(req.body);
-        res.render('company2personal', { successMessage: 'Form submitted successfully' });
-      }
-    });
-  });
-
-      //for personal 2 company
-app.get('/personal2company', function(req, res){
-  res.render('personal2company');
-});
-app.post('/personal2company',upload.single('file'),  urlencodedParser, function(req, res){
-    const { date, invoice_no, category, bank, name, amount, detail } = req.body;
-
-    // Get the filename from the request
-    const filename = req.file ? req.file.filename : 'N/A';
-
-    // Insert the form data into MySQL
-    pool.query('INSERT INTO personalfund2company (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
-      if (error) {
-        console.error(error);
-        res.status(500).send('Error saving form data');
-      } else {
-        console.log(req.body);
-        res.render('personal2company', { successMessage: 'Form submitted successfully' });
-      }
-    });
-  });
-
-        //for stock-checkin
+//for stock-checkin
 app.get('/stock-checkin', function(req, res){
   res.render('stock-checkin');
 });
@@ -199,13 +111,18 @@ app.post('/stock-checkin',upload.single('file'),  urlencodedParser, function(req
         res.render('stock-checkin', { successMessage: 'Form submitted successfully' });
       }
     });
-  });
+});
 
-        //for shipped record page
+//for stock-check
+app.get('/stock-check', function(req, res){
+  res.render('stock-check');
+});
+
+//for shipped record page
 app.get('/shippedrecord', function(req, res){
   res.render('shippedrecord');
 });
-        //for shipped record page - single ship
+//for shipped record page - single ship
 app.get('/singleshipped', function(req, res){
   res.render('singleshipped');
 });
@@ -224,7 +141,7 @@ app.post('/singleshipped',upload.single('file'),  urlencodedParser, function(req
   });
 });
 
-        //for shipped record page - bulk ship
+//for shipped record page - bulk ship
 app.get('/bulkshipped', function(req, res){
   res.render('bulkshipped');
 });
@@ -254,14 +171,25 @@ app.post('/bulkshipped', upload.single('file'), urlencodedParser, function (req,
   });
 });
 
+//for database
+app.get('/database', function(req, res){
+  res.render('database');
+});
+
+
+
+//-------below is for Y Kick Zone Shop----------------------------------------------------------------------------------
+
+
+//------------------Sales--------------------------------------------------------------------------
 //for sales - sell invoice
 app.get('/sell_invoice', function(req, res){
   res.render('sell_invoice');
 });
 app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
-  const { name, companyname, phone, adr1, adr2, adr3, postcode, city, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
+  const { name, phone, adr1, adr2, adr3, postcode, city, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
   // Insert the main form data into MySQL
-  pool.query('INSERT INTO sell_invoice (Name, CompanyName, Phone, Address1, Address2, Address3, PostCode, City, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [name, companyname, phone, adr1, adr2, adr3, postcode, city, country, remarks], (error, results, fields) => {
+  pool.query('INSERT INTO sell_invoice (Name, Phone, Address1, Address2, Address3, PostCode, City, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [name, phone, adr1, adr2, adr3, postcode, city, country, remarks], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
@@ -282,58 +210,1007 @@ app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req
     }
   });
 });
-
-
-//for database
-app.get('/database', function(req, res){
-  res.render('database');
+//for sales-payment break
+app.get('/sales-paymentbreak',function(req, res){
+  res.render('sales-paymentbreak');
 });
-app.post('/database', upload.single('image'), async (req, res) => {
-  if (!req.file) {
-    res.status(400).send('No image file uploaded');
-    return;
-  }
+app.post('/sales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
+  const { date, invoice_no, bank, amount, remarks } = req.body;
+  // Get the filename from the request
+  const filename = req.file ? req.file.filename : 'N/A';
 
-  try {
-    // Upload the image to Cloudinary
-    const response = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'your_folder_name', // Optional: Organize uploaded images in a folder
-    });
+  // Insert the form data into MySQL
+  pool.query('INSERT INTO sales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      console.log(req.body);
+      res.status(200).send('Form data saved successfully');
+    }
+  });
+});
+//for sales - balance check
+app.get('/sales-balancecheck', (req, res) => {
+  const invoice_number = req.query.invoice_number || '';
+  const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
+  const invoice_number_params = invoice_number ? [invoice_number] : [];
+  
+  pool.query(`SELECT * FROM sell_invoice WHERE Invoice_number ${invoice_number_query}`, invoice_number_params, (error, results) => {
+    if (error) {
+      console.log(`Error retrieving data from sell_invoice table: ${error}`);
+    } else {
+      const sell_invoice_data = results;
+      
+      const getTotalAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_amount FROM items_sell WHERE InvoiceNumber = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from items_sell table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_amount || 0);
+          }
+        });
+      };
+      
+      const getTotalPaidAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_paid_amount FROM sales_paymentbreakdown WHERE Invoice_No = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from sales_paymentbreakdown table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_paid_amount || 0);
+          }
+        });
+      };
 
-    // Get the Cloudinary image URL
-    const imageUrl = response.secure_url;
+      const processInvoiceData = (index, callback) => {
+        if (index >= sell_invoice_data.length) {
+          callback();
+        } else {
+          const invoice = sell_invoice_data[index];
+          getTotalAmount(invoice.Invoice_number, (total_amount) => {
+            getTotalPaidAmount(invoice.Invoice_number, (total_paid_amount) => {
+              const balance_left = total_amount - total_paid_amount;
+              if (balance_left != 0) {
+                invoice.total_amount = total_amount;
+                invoice.total_paid_amount = total_paid_amount;
+                invoice.balance_left = balance_left;
+                processInvoiceData(index + 1, callback);
+              } else {
+                sell_invoice_data.splice(index, 1);
+                processInvoiceData(index, callback);
+              }
+            });
+          });
+        }
+      };
 
-    // Create a Discord embed with the image
-    const embed = {
-      embeds: [
-        {
-          title: 'Uploaded Image',
-          image: {
-            url: imageUrl,
-          },
-        },
-      ],
-    };
+      processInvoiceData(0, () => {
+        res.render('sales-balancecheck', { sell_invoice_data, invoice_number, results });
+      });
 
-    // Send the embed to Discord
-    await axios.post(webhookURL, embed, {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    }
+  });
+});
+app.get('/search', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
 
-    // Clean up the uploaded file
-    fs.unlink(req.file.path, (err) => {
-      if (err) {
-        console.error(err);
+  // Query the sell_invoice table
+  const sellInvoiceQuery = `SELECT * FROM sell_invoice WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(sellInvoiceQuery, (error, sellInvoiceResults) => {
+    if (error) throw error;
+
+    if (!sellInvoiceResults.length) {
+      // Render the sales-details.ejs view with no sellInvoiceResults
+      res.render('sales-details', {
+        sellInvoiceResults: sellInvoiceResults,
+        invoiceNumber: invoiceNumber,
+        sellInvoiceResults: null
+      });
+    } else {
+      // Query the items_sell table
+      const itemsSellQuery = `SELECT * FROM items_sell WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsSellQuery, (error, itemsSellResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsSellResults.length; i++) {
+          totalAmount += (itemsSellResults[i].UnitPrice * itemsSellResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const salesPaymentQuery = `SELECT * FROM sales_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(salesPaymentQuery, (error, salesPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < salesPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(salesPaymentResults[i].Amount);
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('sales-details', {
+            invoiceNumber: invoiceNumber,
+            sellInvoiceResults: sellInvoiceResults,
+            name: sellInvoiceResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: salesPaymentResults,
+            balance: balance,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
+});
+// for sales invoice generate
+app.get('/invoice_generate', function(req, res) {
+  res.render('invoice_generate');
+});
+app.get('/generate', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the sell_invoice table
+  const sellInvoiceQuery = `SELECT * FROM sell_invoice WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(sellInvoiceQuery, (error, sellInvoiceResults) => {
+    if (error) throw error;
+
+    if (!sellInvoiceResults.length) {
+      // Render the sales-details.ejs view with no sellInvoiceResults
+      res.render('invoice_template', {
+        sellInvoiceResults: sellInvoiceResults,
+        invoiceNumber: invoiceNumber,
+        sellInvoiceResults: null
+      });
+    } else {
+      // Query the items_sell table
+      const itemsSellQuery = `SELECT * FROM items_sell WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsSellQuery, (error, itemsSellResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsSellResults.length; i++) {
+          totalAmount += (itemsSellResults[i].UnitPrice * itemsSellResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const salesPaymentQuery = `SELECT * FROM sales_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(salesPaymentQuery, (error, salesPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < salesPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(salesPaymentResults[i].Amount);
+          }
+           // Set the bank variable based on the salesPaymentResults
+          let bank = 'N/A';
+          if (salesPaymentResults.length > 0) {
+           bank = salesPaymentResults[0].Bank;
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('invoice_template', {
+            invoiceNumber: invoiceNumber,
+            sellInvoiceResults: sellInvoiceResults,
+            itemsSellResults: itemsSellResults,
+            name: sellInvoiceResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: salesPaymentResults,
+            balance: balance,
+            bank: bank,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
+});
+
+//--------------------Purchase----------------------------------------------------------------------
+//for sales - sell invoice
+app.get('/buy-payby', function(req, res){
+  res.render('buy-payby');
+});
+app.post('/buy-payby', upload.single('file'), urlencodedParser, function (req, res) {
+  const { name, bank, bankacc, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
+  // Insert the main form data into MySQL
+  pool.query('INSERT INTO buy_record (Name, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?)', [name, bank, bankacc, remarks], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      const invoice_number = results.insertId;
+      const buyItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+
+      // Insert the shipped items data into MySQL
+      pool.query('INSERT INTO items_buy (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [buyItems], (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error saving shipped items data');
+        } else {
+          console.log(req.body);
+          res.render('buy-payby', { successMessage: 'Form submitted successfully' });
+        }
+      });
+    }
+  });
+});
+//for buy-payment break
+app.get('/buy-paymentbreak', function(req, res){
+  res.render('buy-paymentbreak');
+});
+app.post('/buy-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
+    const { date, invoice_no, bank, amount, remarks } = req.body;
+
+    // Get the filename from the request
+    const filename = req.file ? req.file.filename : 'N/A';
+
+    // Insert the form data into MySQL
+    pool.query('INSERT INTO purchase_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error saving form data');
+      } else {
+        console.log(req.body);
+        res.render('buy-paymentbreak', { successMessage: 'Form submitted successfully' });
       }
     });
+});
+//for buy-balance check
+app.get('/buy-balancecheck', (req, res) => {
+  const invoice_number = req.query.invoice_number || '';
+  const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
+  const invoice_number_params = invoice_number ? [invoice_number] : [];
+  
+  pool.query(`SELECT * FROM buy_record WHERE Invoice_number ${invoice_number_query}`, invoice_number_params, (error, results) => {
+    if (error) {
+      console.log(`Error retrieving data from buy_record table: ${error}`);
+    } else {
+      const buy_record_data = results;
+      
+      const getTotalAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_amount FROM items_buy WHERE InvoiceNumber = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from items_buy table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_amount || 0);
+          }
+        });
+      };
+      
+      const getTotalPaidAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_paid_amount FROM purchase_paymentbreakdown WHERE Invoice_No = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from purchase_paymentbreakdown table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_paid_amount || 0);
+          }
+        });
+      };
 
-    res.send('Image sent to Discord!');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Failed to send image to Discord');
-  }
+      const processInvoiceData = (index, callback) => {
+        if (index >= buy_record_data.length) {
+          callback();
+        } else {
+          const invoice = buy_record_data[index];
+          getTotalAmount(invoice.Invoice_number, (total_amount) => {
+            getTotalPaidAmount(invoice.Invoice_number, (total_paid_amount) => {
+              const balance_left = total_amount - total_paid_amount;
+              if (balance_left != 0) {
+                invoice.total_amount = total_amount;
+                invoice.total_paid_amount = total_paid_amount;
+                invoice.balance_left = balance_left;
+                processInvoiceData(index + 1, callback);
+              } else {
+                buy_record_data.splice(index, 1);
+                processInvoiceData(index, callback);
+              }
+            });
+          });
+        }
+      };
+
+      processInvoiceData(0, () => {
+        res.render('buy-balancecheck', { buy_record_data, invoice_number, results });
+      });
+
+    }
+  });
+});
+// Set up the searchs route
+app.get('/searchs', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the buy_record table
+  const buyrecordQuery = `SELECT * FROM buy_record WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(buyrecordQuery, (error, buyrecordResults) => {
+    if (error) throw error;
+
+    if (!buyrecordResults.length) {
+      // Render the sales-details.ejs view with no buyrecordResults
+      res.render('buy-details', {
+        buyrecordResults: buyrecordResults,
+        invoiceNumber: invoiceNumber,
+        buyrecordResults: null
+      });
+    } else {
+      // Query the items_buy table
+      const itemsBuyQuery = `SELECT * FROM items_buy WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsBuyResults.length; i++) {
+          totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const BuyPaymentQuery = `SELECT * FROM purchase_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(BuyPaymentQuery, (error, buyPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < buyPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(buyPaymentResults[i].Amount);
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('buy-details', {
+            invoiceNumber: invoiceNumber,
+            buyrecordResults: buyrecordResults,
+            name: buyrecordResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: buyPaymentResults,
+            balance: balance,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
+});
+// for purchase order generate
+app.get('/order_generate', function(req, res) {
+  res.render('order_generate');
+});
+app.get('/ordergenerate', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the sell_invoice table
+  const buyRecordQuery = `SELECT * FROM buy_record WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(buyRecordQuery, (error, buyRecordResults) => {
+    if (error) throw error;
+
+    if (!buyRecordResults.length) {
+      // Render the sales-details.ejs view with no buyRecordResults
+      res.render('order_template', {
+        buyRecordResults: buyRecordResults,
+        invoiceNumber: invoiceNumber,
+        buyRecordResults: null
+      });
+    } else {
+      // Query the items_sell table
+      const itemsBuyQuery = `SELECT * FROM items_buy WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsBuyResults.length; i++) {
+          totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const purchasePaymentQuery = `SELECT * FROM purchase_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(purchasePaymentQuery, (error, purchasePaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < purchasePaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(purchasePaymentResults[i].Amount);
+          }
+           // Set the bank variable based on the purchasePaymentResults
+          let bank = 'N/A';
+          if (purchasePaymentResults.length > 0) {
+           bank = purchasePaymentResults[0].Bank;
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+          res.render('order_template', {
+            invoiceNumber: invoiceNumber,
+            buyRecordResults: buyRecordResults,
+            itemsBuyResults: itemsBuyResults,
+            name: buyRecordResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: purchasePaymentResults,
+            balance: balance,
+            bank: bank,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
 });
 
+//-------------------Drawing------------------------------------------------------------------------
+//for company fund 2 personal 
+app.get('/company2personal', function(req, res){
+  res.render('company2personal');
+});
+app.post('/company2personal',upload.single('file'),  urlencodedParser, function(req, res){
+    const { date, invoice_no, category, bank, name, amount, detail } = req.body;
+
+    // Get the filename from the request
+    const filename = req.file ? req.file.filename : 'N/A';
+
+    // Insert the form data into MySQL
+    pool.query('INSERT INTO companyfund2personal (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error saving form data');
+      } else {
+        console.log(req.body);
+        res.render('company2personal', { successMessage: 'Form submitted successfully' });
+      }
+    });
+});
+//for personal 2 company
+app.get('/personal2company', function(req, res){
+  res.render('personal2company');
+});
+app.post('/personal2company',upload.single('file'),  urlencodedParser, function(req, res){
+    const { date, invoice_no, category, bank, name, amount, detail } = req.body;
+
+    // Get the filename from the request
+    const filename = req.file ? req.file.filename : 'N/A';
+
+    // Insert the form data into MySQL
+    pool.query('INSERT INTO personalfund2company (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error saving form data');
+      } else {
+        console.log(req.body);
+        res.render('personal2company', { successMessage: 'Form submitted successfully' });
+      }
+    });
+});
+
+
+
+//-------below is for Yong & Yi  Partnership Enterprise-----------------------------------------------------------------------------
+
+
+//-------------------Sales-----------------------------------------------------------------------------
+//for sales - sell invoice
+app.get('/yysell_invoice', function(req, res){
+  res.render('yysell_invoice');
+});
+app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
+  const { name, phone, adr1, adr2, adr3, postcode, city, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
+  // Insert the main form data into MySQL
+  pool.query('INSERT INTO yysell_invoice (Name, Phone, Address1, Address2, Address3, PostCode, City, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [name, phone, adr1, adr2, adr3, postcode, city, country, remarks], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      const invoice_number = results.insertId;
+      const sellItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+
+      // Insert the shipped items data into MySQL
+      pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [sellItems], (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error saving shipped items data');
+        } else {
+          console.log(req.body);
+          res.render('yysell_invoice', { successMessage: 'Form submitted successfully' });
+        }
+      });
+    }
+  });
+});
+//for sales-payment break
+app.get('/yysales-paymentbreak',function(req, res){
+  res.render('yysales-paymentbreak');
+});
+app.post('/yysales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
+  const { date, invoice_no, bank, amount, remarks } = req.body;
+  // Get the filename from the request
+  const filename = req.file ? req.file.filename : 'N/A';
+
+  // Insert the form data into MySQL
+  pool.query('INSERT INTO yysales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      console.log(req.body);
+      res.status(200).send('Form data saved successfully');
+    }
+  });
+});
+//for sales - balance check
+app.get('/yysales-balancecheck', (req, res) => {
+  const invoice_number = req.query.invoice_number || '';
+  const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
+  const invoice_number_params = invoice_number ? [invoice_number] : [];
+  
+  pool.query(`SELECT * FROM yysell_invoice WHERE Invoice_number ${invoice_number_query}`, invoice_number_params, (error, results) => {
+    if (error) {
+      console.log(`Error retrieving data from yysell_invoice table: ${error}`);
+    } else {
+      const sell_invoice_data = results;
+      
+      const getTotalAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_amount FROM yyitems_sell WHERE InvoiceNumber = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from yyitems_sell table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_amount || 0);
+          }
+        });
+      };
+      
+      const getTotalPaidAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_paid_amount FROM yysales_paymentbreakdown WHERE Invoice_No = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from yysales_paymentbreakdown table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_paid_amount || 0);
+          }
+        });
+      };
+
+      const processInvoiceData = (index, callback) => {
+        if (index >= sell_invoice_data.length) {
+          callback();
+        } else {
+          const invoice = sell_invoice_data[index];
+          getTotalAmount(invoice.Invoice_number, (total_amount) => {
+            getTotalPaidAmount(invoice.Invoice_number, (total_paid_amount) => {
+              const balance_left = total_amount - total_paid_amount;
+              if (balance_left != 0) {
+                invoice.total_amount = total_amount;
+                invoice.total_paid_amount = total_paid_amount;
+                invoice.balance_left = balance_left;
+                processInvoiceData(index + 1, callback);
+              } else {
+                sell_invoice_data.splice(index, 1);
+                processInvoiceData(index, callback);
+              }
+            });
+          });
+        }
+      };
+
+      processInvoiceData(0, () => {
+        res.render('yysales-balancecheck', { sell_invoice_data, invoice_number, results });
+      });
+
+    }
+  });
+});
+app.get('/yysearch', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the sell_invoice table
+  const sellInvoiceQuery = `SELECT * FROM yysell_invoice WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(sellInvoiceQuery, (error, sellInvoiceResults) => {
+    if (error) throw error;
+
+    if (!sellInvoiceResults.length) {
+      // Render the sales-details.ejs view with no sellInvoiceResults
+      res.render('yysales-details', {
+        sellInvoiceResults: sellInvoiceResults,
+        invoiceNumber: invoiceNumber,
+        sellInvoiceResults: null
+      });
+    } else {
+      // Query the items_sell table
+      const itemsSellQuery = `SELECT * FROM yyitems_sell WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsSellQuery, (error, itemsSellResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsSellResults.length; i++) {
+          totalAmount += (itemsSellResults[i].UnitPrice * itemsSellResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const salesPaymentQuery = `SELECT * FROM yysales_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(salesPaymentQuery, (error, salesPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < salesPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(salesPaymentResults[i].Amount);
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('yysales-details', {
+            invoiceNumber: invoiceNumber,
+            sellInvoiceResults: sellInvoiceResults,
+            name: sellInvoiceResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: salesPaymentResults,
+            balance: balance,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
+});
+// for sales invoice generate
+app.get('/yyinvoice_generate', function(req, res) {
+  res.render('yyinvoice_generate');
+});
+app.get('/yygenerate', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the sell_invoice table
+  const sellInvoiceQuery = `SELECT * FROM yysell_invoice WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(sellInvoiceQuery, (error, sellInvoiceResults) => {
+    if (error) throw error;
+
+    if (!sellInvoiceResults.length) {
+      // Render the sales-details.ejs view with no sellInvoiceResults
+      res.render('yyinvoice_template', {
+        sellInvoiceResults: sellInvoiceResults,
+        invoiceNumber: invoiceNumber,
+        sellInvoiceResults: null
+      });
+    } else {
+      // Query the items_sell table
+      const itemsSellQuery = `SELECT * FROM yyitems_sell WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsSellQuery, (error, itemsSellResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsSellResults.length; i++) {
+          totalAmount += (itemsSellResults[i].UnitPrice * itemsSellResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const salesPaymentQuery = `SELECT * FROM yysales_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(salesPaymentQuery, (error, salesPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < salesPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(salesPaymentResults[i].Amount);
+          }
+           // Set the bank variable based on the salesPaymentResults
+          let bank = 'N/A';
+          if (salesPaymentResults.length > 0) {
+           bank = salesPaymentResults[0].Bank;
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('yyinvoice_template', {
+            invoiceNumber: invoiceNumber,
+            sellInvoiceResults: sellInvoiceResults,
+            itemsSellResults: itemsSellResults,
+            name: sellInvoiceResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: salesPaymentResults,
+            balance: balance,
+            bank: bank,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
+});
+
+//---------------------Purchase-------------------------------------------------------------------------
+//for buy -- invoice
+app.get('/yybuy-payby', function(req, res){
+  res.render('yybuy-payby');
+});
+app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req, res) {
+  const { name, bank, bankacc, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
+  // Insert the main form data into MySQL
+  pool.query('INSERT INTO yybuy_record (Name, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?)', [name, bank, bankacc, remarks], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      const invoice_number = results.insertId;
+      const buyItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+
+      // Insert the shipped items data into MySQL
+      pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [buyItems], (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error saving shipped items data');
+        } else {
+          console.log(req.body);
+          res.render('yybuy-payby', { successMessage: 'Form submitted successfully' });
+        }
+      });
+    }
+  });
+});
+  //for buy-payment break
+app.get('/yybuy-paymentbreak', function(req, res){
+  res.render('yybuy-paymentbreak');
+});
+app.post('/yybuy-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
+    const { date, invoice_no, bank, amount, remarks } = req.body;
+  
+    // Get the filename from the request
+    const filename = req.file ? req.file.filename : 'N/A';
+  
+    // Insert the form data into MySQL
+    pool.query('INSERT INTO yypurchase_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error saving form data');
+      } else {
+        console.log(req.body);
+        res.render('yybuy-paymentbreak', { successMessage: 'Form submitted successfully' });
+      }
+    });
+});
+//for buy-balance check
+app.get('/yybuy-balancecheck', (req, res) => {
+  const invoice_number = req.query.invoice_number || '';
+  const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
+  const invoice_number_params = invoice_number ? [invoice_number] : [];
+  
+  pool.query(`SELECT * FROM yybuy_record WHERE Invoice_number ${invoice_number_query}`, invoice_number_params, (error, results) => {
+    if (error) {
+      console.log(`Error retrieving data from yybuy_record table: ${error}`);
+    } else {
+      const buy_record_data = results;
+      
+      const getTotalAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_amount FROM yyitems_buy WHERE InvoiceNumber = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from yyitems_buy table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_amount || 0);
+          }
+        });
+      };
+      
+      const getTotalPaidAmount = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_paid_amount FROM yypurchase_paymentbreakdown WHERE Invoice_No = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from yypurchase_paymentbreakdown table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_paid_amount || 0);
+          }
+        });
+      };
+
+      const processInvoiceData = (index, callback) => {
+        if (index >= buy_record_data.length) {
+          callback();
+        } else {
+          const invoice = buy_record_data[index];
+          getTotalAmount(invoice.Invoice_number, (total_amount) => {
+            getTotalPaidAmount(invoice.Invoice_number, (total_paid_amount) => {
+              const balance_left = total_amount - total_paid_amount;
+              if (balance_left != 0) {
+                invoice.total_amount = total_amount;
+                invoice.total_paid_amount = total_paid_amount;
+                invoice.balance_left = balance_left;
+                processInvoiceData(index + 1, callback);
+              } else {
+                buy_record_data.splice(index, 1);
+                processInvoiceData(index, callback);
+              }
+            });
+          });
+        }
+      };
+
+      processInvoiceData(0, () => {
+        res.render('yybuy-balancecheck', { buy_record_data, invoice_number, results });
+      });
+
+    }
+  });
+});
+// Set up the searchs route
+app.get('/yysearchs', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the buy_record table
+  const buyrecordQuery = `SELECT * FROM yybuy_record WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(buyrecordQuery, (error, buyrecordResults) => {
+    if (error) throw error;
+
+    if (!buyrecordResults.length) {
+      // Render the sales-details.ejs view with no buyrecordResults
+      res.render('yybuy-details', {
+        buyrecordResults: buyrecordResults,
+        invoiceNumber: invoiceNumber,
+        buyrecordResults: null
+      });
+    } else {
+      // Query the items_buy table
+      const itemsBuyQuery = `SELECT * FROM yyitems_buy WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsBuyResults.length; i++) {
+          totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const BuyPaymentQuery = `SELECT * FROM yypurchase_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(BuyPaymentQuery, (error, buyPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < buyPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(buyPaymentResults[i].Amount);
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('yybuy-details', {
+            invoiceNumber: invoiceNumber,
+            buyrecordResults: buyrecordResults,
+            name: buyrecordResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: buyPaymentResults,
+            balance: balance,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
+});
+// for purchase order generate
+app.get('/yyorder_generate', function(req, res) {
+  res.render('yyorder_generate');
+});
+app.get('/yyordergenerate', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the sell_invoice table
+  const buyRecordQuery = `SELECT * FROM yybuy_record WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(buyRecordQuery, (error, buyRecordResults) => {
+    if (error) throw error;
+
+    if (!buyRecordResults.length) {
+      // Render the sales-details.ejs view with no buyRecordResults
+      res.render('yyorder_template', {
+        buyRecordResults: buyRecordResults,
+        invoiceNumber: invoiceNumber,
+        buyRecordResults: null
+      });
+    } else {
+      // Query the items_sell table
+      const itemsBuyQuery = `SELECT * FROM yyitems_buy WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsBuyResults.length; i++) {
+          totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const purchasePaymentQuery = `SELECT * FROM yypurchase_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(purchasePaymentQuery, (error, purchasePaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < purchasePaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(purchasePaymentResults[i].Amount);
+          }
+           // Set the bank variable based on the purchasePaymentResults
+          let bank = 'N/A';
+          if (purchasePaymentResults.length > 0) {
+           bank = purchasePaymentResults[0].Bank;
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+          res.render('yyorder_template', {
+            invoiceNumber: invoiceNumber,
+            buyRecordResults: buyRecordResults,
+            itemsBuyResults: itemsBuyResults,
+            name: buyRecordResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: purchasePaymentResults,
+            balance: balance,
+            bank: bank,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
+});
+
+
+//=-----------------------Drawing-------------------------------------------------------------------------
+//for company fund 2 personal 
+app.get('/yycompany2personal', function(req, res){
+      res.render('yycompany2personal');
+});
+app.post('/yycompany2personal',upload.single('file'),  urlencodedParser, function(req, res){
+        const { date, invoice_no, category, bank, name, amount, detail } = req.body;
+    
+        // Get the filename from the request
+        const filename = req.file ? req.file.filename : 'N/A';
+    
+        // Insert the form data into MySQL
+        pool.query('INSERT INTO yycompanyfund2personal (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+          if (error) {
+            console.error(error);
+            res.status(500).send('Error saving form data');
+          } else {
+            console.log(req.body);
+            res.render('yycompany2personal', { successMessage: 'Form submitted successfully' });
+          }
+        });
+});
+//for personal 2 company
+app.get('/yypersonal2company', function(req, res){
+      res.render('yypersonal2company');
+});
+app.post('/yypersonal2company',upload.single('file'),  urlencodedParser, function(req, res){
+        const { date, invoice_no, category, bank, name, amount, detail } = req.body;
+    
+        // Get the filename from the request
+        const filename = req.file ? req.file.filename : 'N/A';
+    
+        // Insert the form data into MySQL
+        pool.query('INSERT INTO yypersonalfund2company (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+          if (error) {
+            console.error(error);
+            res.status(500).send('Error saving form data');
+          } else {
+            console.log(req.body);
+            res.render('yypersonal2company', { successMessage: 'Form submitted successfully' });
+          }
+        });
+});
+
+
+//----------------------Ending--------------------------------------------------------------------------------
 app.get('/profile/:name', function(req, res){
     res.render('profile', {person: req.params.name});
 });
