@@ -1,0 +1,26 @@
+InvoiceNo,Date,Name,Company Name,Address 1,Address 2,Address 3,PostCode,City,State,Country,Description,Quantity,Unit Price,Amount
+19001,29/10/2022,Tharith Earasi,Tharith Earasi,,,,,,,,"Nike Dunk Low ""Black Pink""",85.00,RM671.80,"RM57,103.38"
+19002,12/11/2022,Tharith Earasi,Tharith Earasi,,,,,,,,"AJ1 High ""Lost And Found"" (Men)",52.00,"RM1,500.00","RM78,000.00"
+19002,12/11/2022,Tharith Earasi,Tharith Earasi,,,,,,,,Packing Fees,1.00,RM43.18,RM43.18
+19003,12/11/2022,GOAT,GOAT,,,,,,,,GOAT Payout (Why so Sad Dunk 18 pairs),1.00,"RM11,536.31","RM11,536.31"
+19004,29/11/2022,Kick Game,KICKGAME LTD,UNIT 13 KENDAL WAY,VISION INDUSTRIAL PARK,,W30AF,ACTON,LONDON,UNITED KINGDOM,"AJ4 Retro ""Midnight Navy"" - DH6927 - 140",108.00,"RM1,350.93","RM145,900.14"
+19005,6/12/2022,Kheng Czhen Chuah,Kheng Czhen Chuah,,,,,,,,"AJ1 High ""Lost And Found"" (Men)",1.00,"RM1,600.00","RM1,600.00"
+19006,17/12/2022,KM,+44 7555 431422,,,,,,,,AJ 1 Mid Ice Blue (GS) - 555112-401,60.00,RM474.68,"RM28,480.93"
+19007,17/12/2022,Tharith Earasi,Tharith Earasi,,,,,,,,AJ 11 Retro Cherry (2022) - CT8012-116,23.00,"RM1,143.69","RM26,304.94"
+19008,17/12/2022,GOAT,GOAT,,,,,,,,"AJ1 High ""Lost And Found"" (Men)",2.00,"RM1,294.01","RM2,588.02"
+19009,3/1/2023,Mikel Manoharan,Facebook,,,,,,,,AJ4 Midnight Navy GS,38.00,"RM1,100.00","RM41,800.00"
+19010,25/1/2023,Toi Masterpiece,Conceptone_storehdy,,,,,,,,"AJ1 High ""Lost And Found"" (Men)",10.00,"RM1,500.00","RM15,000.00"
+19010,25/1/2023,,,,,,,,,,"AJ1 High ""Lost And Found"" (Men)",100.00,"RM1,600.00","RM160,000.00"
+19011,26/1/2023,Julian Ahamed,Julian Ahamed,,,,,,,,"Nike Air Force 1 ""Triple White""",1.00,RM395.00,RM395.00
+19012,2023-01-26,Dan Yeel,Daniel Chard,190 Botany Street,,,2032,Kingsford,New South Wales,Australia,AJ1 Low Aluminum (W),111.00,RM651.80,"RM72,350.08"
+19013,2023-01-31,Socal Hype,Socal Hype,,,,,,,,"Nike Dunk Low ""Panda"" GS",40.00,RM660.00,"RM26,400.00"
+19013,2023-01-31,,,,,,,,,,"Nike Dunk Low ""Panda"" GS",22.00,RM620.00,"RM13,640.00"
+19013,2023-01-31,,,,,,,,,,Nike Dunk Low Phantom Metallic Gold (W),32.00,RM560.00,"RM17,920.00"
+19014,2023-02-10,Tharith Earasi,Tharith Earasi,,,,,,,,Nike Dunk Low Pink Paisley (W),36.00,RM600.00,"RM21,600.00"
+19015,2023-02-11,Supakit Sae-ieo,Supakit Sae-ieo,,,,,,,,Nike Dunk Low Phantom Metallic Gold (W),3.00,RM520.00,"RM1,560.00"
+19016,2023-02-13,Tharith Earasi,Tharith Earasi,,,,,,,,Nike Dunk Low Pink Paisley (W),50.00,RM600.00,"RM30,000.00"
+19017,2023-02-20,GOAT,GOAT,,,,,,,,AJ1 Retro High OG Bleached Coral,2.00,RM977.86,"RM1,955.71"
+19018,2023-02-28,GOAT,GOAT,,,,,,,,AJ1 Retro High OG Bleached Coral,1.00,RM910.59,RM910.59
+19019,2023-03-05,GOAT,GOAT,,,,,,,,AJ1 Retro High OG Bleached Coral,1.00,RM913.71,RM913.71
+19020,09/03/2023,Tharith Earasi,Tharith Earasi,,,,,,,,"Nike Dunk Low ""Panda"" GS",73.00,RM588.33,"RM42,948.00"
+1902111,09/03/2023,Tharith Earasi,Tharith Earasi,,,,,,,,"Women's Nike Dunk Low ""Sanddrift""",5.00,RM584.86,"RM2,924.31"

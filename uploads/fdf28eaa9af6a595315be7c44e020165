@@ -1,0 +1,6 @@
+InvoiceNo,Date,Name,Company Name,Address1,Address2,Address3,PostCode,City,State,Country,Description,Quantity,UnitPrice,Amount
+123123,29/10/2022,Tharith Earasi,Tharith Earasi,,,,,,,,"Nike Dunk Low ""Black Pink""",85.00,RM671.80,"RM57,103.38"
+66666,12/11/2022,Tharith Earasi,Tharith Earasi,,,,,,,,"AJ1 High ""Lost And Found"" (Men)",52.00,"RM1,500.00","RM78,000.00"
+7777,12/11/2022,Tharith Earasi,Tharith Earasi,,,,,,,,Packing Fees,1.00,RM43.18,RM43.18
+5555,12/11/2022,GOAT,GOAT,,,,,,,,GOAT Payout (Why so Sad Dunk 18 pairs),1.00,"RM11,536.31","RM11,536.31"
+6666,29/11/2022,Kick Game,KICKGAME LTD,UNIT 13 KENDAL WAY,VISION INDUSTRIAL PARK,,W30AF,ACTON,LONDON,UNITED KINGDOM,"AJ4 Retro ""Midnight Navy"" - DH6927 - 140",108.00,"RM1,350.93","RM145,900.14"
