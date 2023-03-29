@@ -24,6 +24,8 @@
                     <label style="margin-bottom: 3px;font-weight: bold;">Seller Info</label><br>
                     <label class="form_name" style="margin-bottom: 3px;" for="bank">Name</label>
                     <input class="form_id" style="margin-bottom: 3px;" type="text" name="name" required placeholder=" Seller Name"><br>
+                    <label class="form_name" style="margin-bottom: 3px;" for="bank">Bank Name</label>
+                    <input class="form_id" style="margin-bottom: 3px;" type="text" name="bankname" required placeholder=" Bank Name"><br>
                     <label class="form_name" style="margin-bottom: 3px;" for="bank">Bank</label>
                     <select class="form_id" style="margin-bottom: 3px;" name="bank" required>
                         <option value="">Select a bank</option>
@@ -45,6 +47,7 @@
                         <thead>
                             <tr>
                                 <th>Content / SKU</th>
+                                <th>Product Name</th>
                                 <th>Size US</th>
                                 <th>Unit Price</th>
                                 <th>Quantity</th>
@@ -54,11 +57,12 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><input type="text" class="form-control" style="width: 280px;" name="field1[]"></td>
-                                <td><input type="text" class="form-control" style="width: 60px;" name="field2[]"></td>
+                                <td><input type="text" class="form-control" style="width: 150px;" name="field1[]"></td>
+                                <td><input type="text" class="form-control" style="width: 220px;" name="field2[]"></td>
                                 <td><input type="text" class="form-control" style="width: 60px;" name="field3[]"></td>
-                                <td><input type="text" class="form-control" style="width: 60px;" name="field4[]"></td>
+                                <td><input type="text" class="form-control" style="width: 100px;" name="field4[]"></td>
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field5[]"></td>
+                                <td><input type="text" class="form-control" style="width: 100px;" name="field6[]"></td>
                                 <td>
                                     <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
                                 </td>
@@ -79,13 +83,16 @@
     // Add a new row to the table
     $("#addRow").click(function() {
         let newRow = `<tr>
-            <td><input type="text" class="form-control" style="width: 280px;" name="field1[]"></td>
-                                <td><input type="text" class="form-control" style="width: 60px;" name="field2[]"></td>
+                                <td><input type="text" class="form-control" style="width: 150px;" name="field1[]"></td>
+                                <td><input type="text" class="form-control" style="width: 220px;" name="field2[]"></td>
                                 <td><input type="text" class="form-control" style="width: 60px;" name="field3[]"></td>
-                                <td><input type="text" class="form-control" style="width: 60px;" name="field4[]"></td>
+                                <td><input type="text" class="form-control" style="width: 100px;" name="field4[]"></td>
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field5[]"></td>
-                        <td><button type="button" class="btn btn-danger btn-sm removeRow">Remove</button></td>
-                      </tr>`;
+                                <td><input type="text" class="form-control" style="width: 100px;" name="field6[]"></td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
+                                </td>
+                            </tr>`;
         $("#inputTable tbody").append(newRow);
     });
 
@@ -94,12 +101,12 @@
         $(this).closest("tr").remove();
     });
     // Calculate the amount when the unit price or quantity changes
-    $("#inputTable").on("input", "input[name='field3[]'], input[name='field4[]']", function() {
+    $("#inputTable").on("input", "input[name='field4[]'], input[name='field5[]']", function() {
                 const $row = $(this).closest("tr");
-                const unitPrice = parseFloat($row.find("input[name='field3[]']").val()) || 0;
-                const quantity = parseFloat($row.find("input[name='field4[]']").val()) || 0;
+                const unitPrice = parseFloat($row.find("input[name='field4[]']").val()) || 0;
+                const quantity = parseFloat($row.find("input[name='field5[]']").val()) || 0;
                 const amount = unitPrice * quantity;
-                $row.find("input[name='field5[]']").val(amount.toFixed(2));
+                $row.find("input[name='field6[]']").val(amount.toFixed(2));
             });
 });
 

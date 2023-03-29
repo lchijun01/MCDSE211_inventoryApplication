@@ -1,0 +1,6 @@
+InvoiceNo,Name,Bank,BankNumber,Remarks,Description,SizeUS,Quantity,UnitPrice,Amount
+6,Cj Anran,UOB Bank,23,23,23,323,3232,232,749824.00
+7,123,HongLeongBank,324,234,342,234,342,243,83106.00
+8,Cj Anran,HongLeongBank,23423423,,DH6927-140,11,100,1100,110000.00
+9,123,HongLeongBank,222,,123,123,23123,1,23123.00
+9,123,HongLeongBank,222,,3123,3123,132,123,16236.00

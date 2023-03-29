@@ -16,13 +16,13 @@
   <body class="main-contents">
     <%- include('partials/nav'); %>
     <main class="main-content">
+      <h1 style="font-size: 60px;">Import & Export</h1><br>
       <% if (successMessage) { %>
         <div class="alert alert-success" style="width: fit-content;" role="alert">
           CSV file uploaded and data imported successfully
         </div>
       <% } %>
-      <h1 style="font-weight: bold;">Y KICK ZONE SHOP</h1>
-      <h3>IMPORT OR EXPORT FILE</h3><br>
+      <h1 style="font-weight: bold;">Y KICK ZONE SHOP</h1><br>
       <h4>Import sell_invoice data</h4>
       <div style="display: flex;">
         <form style="width: 500px;" action="/importsell_csv" method="post" enctype="multipart/form-data">
@@ -39,8 +39,7 @@
         </form>
         <a href="/exportbuy_csv" class="btn btn-primary">Export CSV</a>
       </div><br><br><br><br>
-  <h1 style="font-weight: bold;">YONG & YI PARTNERSHIP ENTERPRISE</h1>
-  <h3>IMPORT OR EXPORT FILE</h3><br>
+  <h1 style="font-weight: bold;">YONG & YI PARTNERSHIP ENTERPRISE</h1><br>
   <h4>yysell_invoice data</h4>
   <div style="display: flex;">
     <form style="width: 500px;" action="/yyimportsell_csv" method="post" enctype="multipart/form-data">
