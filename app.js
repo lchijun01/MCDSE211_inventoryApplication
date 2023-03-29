@@ -4,8 +4,10 @@ const bodyParser = require('body-parser');
 const app = express();
 const multer  = require('multer');
 const upload = multer({ dest: 'uploads/' });
+const fs = require('fs');
+const csv = require('csv-parser');
+const fastCsv = require('fast-csv');
 const ejs = require('ejs');
-
 app.use(express.static(__dirname + '/public'));
 app.use(express.static('public'))
 
@@ -23,6 +25,444 @@ app.set('view engine', 'ejs');
 
 app.get('/', function(req, res) {
     res.render('index');
+});
+
+//-------------------------------------Import & Export---------------------------------------------------------------------------------------------------------------------
+app.get('/inout', function(req, res) {
+  const successMessage = req.query.success; // Get the success parameter from the query string
+  res.render('inout', { successMessage: successMessage });
+});
+//----------------------------Y Kick Zone Shop----------------------------------------------
+app.post('/importsell_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+
+  const invoiceNos = new Set(); // Set to keep track of InvoiceNos already inserted into the sell_invoice table
+
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { InvoiceNo, Date, Name, Address1, Address2, Address3, PostCode, City, State, Country, Description, Quantity, UnitPrice, Amount } = data;
+      const parsedUnitPrice = parseFloat(UnitPrice.replace(/[^0-9.-]+/g,""));
+      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
+
+      if (!invoiceNos.has(InvoiceNo)) {
+        // If the InvoiceNo hasn't been inserted into the sell_invoice table yet, insert it along with the relevant data
+        invoiceNos.add(InvoiceNo); // Add the InvoiceNo to the Set of already-inserted InvoiceNos
+        pool.query('INSERT INTO sell_invoice (Invoice_number, Name, Address1, Address2, Address3, PostCode, City, State, Country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, Name, Address1, Address2, Address3, PostCode, City, State, Country], (error, results, fields) => {
+          if (error) {
+            console.error(error);
+          } else {
+            // If the insert into sell_invoice is successful, insert the corresponding data into the items_sell table
+            pool.query('INSERT INTO items_sell (InvoiceNumber, Content_SKU, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?)', [InvoiceNo, Description, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+              if (error) {
+                console.error(error);
+              } else {
+                console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+              }
+            });
+          }
+        });
+      } else {
+        // If the InvoiceNo has already been inserted into the sell_invoice table, insert the corresponding data into the items_sell table only
+        pool.query('INSERT INTO items_sell (InvoiceNumber, Content_SKU, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?)', [InvoiceNo, Description, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+          if (error) {
+            console.error(error);
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+          }
+        });
+      }
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportsell_csv', function(req, res) {
+  const sql = `SELECT sell_invoice.Invoice_number, sell_invoice.Name, sell_invoice.Phone, sell_invoice.Address1, sell_invoice.Address2, sell_invoice.Address3, sell_invoice.PostCode, sell_invoice.City, sell_invoice.State, sell_invoice.Country, items_sell.Content_SKU AS Description, items_sell.SizeUS, items_sell.Quantity, items_sell.UnitPrice, items_sell.Amount
+               FROM sell_invoice
+               JOIN items_sell ON sell_invoice.Invoice_number = items_sell.InvoiceNumber
+               ORDER BY sell_invoice.Invoice_number, items_sell.Content_SKU`;
+
+  pool.query(sql, function(error, results, fields) {
+    if (error) throw error;
+
+    const csvData = [];
+    let currentInvoiceNo = null;
+
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      // If this row has a different invoice number than the previous one, start a new row in the CSV
+      if (row.Invoice_number !== currentInvoiceNo) {
+        csvData.push({
+          InvoiceNo: row.Invoice_number,
+          Name: row.Name,
+          Phone: row.Phone,
+          Address1: row.Address1,
+          Address2: row.Address2,
+          Address3: row.Address3,
+          PostCode: row.PostCode,
+          City: row.City,
+          State: row.State,
+          Country: row.Country,
+          Description: row.Description,
+          SizeUS: row.SizeUS,
+          Quantity: row.Quantity,
+          UnitPrice: row.UnitPrice,
+          Amount: row.Amount
+        });
+        currentInvoiceNo = row.Invoice_number;
+      } else {
+        // If this row has the same invoice number as the previous one, add a new row to the CSV with only the item data
+        csvData.push({
+          InvoiceNo: row.Invoice_number,
+          Name: row.Name,
+          Phone: row.Phone,
+          Address1: row.Address1,
+          Address2: row.Address2,
+          Address3: row.Address3,
+          PostCode: row.PostCode,
+          City: row.City,
+          State: row.State,
+          Country: row.Country,
+          Description: row.Description,
+          SizeUS: row.SizeUS,
+          Quantity: row.Quantity,
+          UnitPrice: row.UnitPrice,
+          Amount: row.Amount
+        });
+      }
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=sell_data.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importbuy_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+
+  const invoiceNos = new Set(); // Set to keep track of InvoiceNos already inserted into the sell_invoice table
+
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { InvoiceNo, Name, Bank, BankName, BankNumber, Remarks, Description, SizeUS, Quantity, UnitPrice, Amount, SKU } = data;
+      const parsedUnitPrice = parseFloat(UnitPrice.replace(/[^0-9.-]+/g,""));
+      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
+
+      if (!isNaN(parsedUnitPrice) && !isNaN(parsedAmount)) {
+        // Only insert the row if parsedUnitPrice and parsedAmount are not NaN
+        if (!invoiceNos.has(InvoiceNo)) {
+          // If the InvoiceNo hasn't been inserted into the sell_invoice table yet, insert it along with the relevant data
+          invoiceNos.add(InvoiceNo); // Add the InvoiceNo to the Set of already-inserted InvoiceNos
+          pool.query('INSERT INTO buy_record (Invoice_number, Name, BankName, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?, ?, ?)', [InvoiceNo, Name, BankName, Bank, BankNumber, Remarks], (error, results, fields) => {
+            if (error) {
+              console.error(error);
+            } else {
+              // If the insert into sell_invoice is successful, insert the corresponding data into the items_sell table
+              pool.query('INSERT INTO items_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, SKU, Description, SizeUS, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+                if (error) {
+                  console.error(error);
+                } else {
+                  console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+                }
+              });
+            }
+          });
+        } else {
+          // If the InvoiceNo has already been inserted into the sell_invoice table, insert the corresponding data into the items_sell table only
+          pool.query('INSERT INTO items_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, SKU, Description, SizeUS, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+            if (error) {
+              console.error(error);
+            } else {
+              console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+            }
+          });
+        }
+      } else {
+        console.log(`Skipping row with InvoiceNo ${InvoiceNo} due to NaN values`);
+      }
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportbuy_csv', function(req, res) {
+  const sql = `SELECT buy_record.Invoice_number, buy_record.Name, buy_record.BankName, buy_record.Bank, buy_record.Bankaccount, buy_record.Remarks, items_buy.Content_SKU AS Description, items_buy.SizeUS, items_buy.Quantity, items_buy.UnitPrice, items_buy.Amount
+               FROM buy_record
+               JOIN items_buy ON buy_record.Invoice_number = items_buy.InvoiceNumber
+               ORDER BY buy_record.Invoice_number, items_buy.Content_SKU`;
+
+  pool.query(sql, function(error, results, fields) {
+    if (error) throw error;
+
+    const csvData = [];
+    let currentInvoiceNo = null;
+
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      // If this row has a different invoice number than the previous one, start a new row in the CSV
+      if (row.Invoice_number !== currentInvoiceNo) {
+        csvData.push({
+          InvoiceNo: row.Invoice_number,
+          Name: row.Name,
+          BankName: row.BankName,
+          Bank: row.Bank,
+          BankNumber: row.Bankaccount,
+          Remarks: row.Remarks,
+          Description: row.Description,
+          SizeUS: row.SizeUS,
+          Quantity: row.Quantity,
+          UnitPrice: row.UnitPrice,
+          Amount: row.Amount
+        });
+        currentInvoiceNo = row.Invoice_number;
+      } else {
+        // If this row has the same invoice number as the previous one, add a new row to the CSV
+        csvData.push({
+          InvoiceNo: row.Invoice_number,
+          Name: row.Name,
+          BankName: row.BankName,
+          Bank: row.Bank,
+          BankNumber: row.Bankaccount,
+          Remarks: row.Remarks,
+          Description: row.Description,
+          SizeUS: row.SizeUS,
+          Quantity: row.Quantity,
+          UnitPrice: row.UnitPrice,
+          Amount: row.Amount
+        });
+      }
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=buy_data.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+//----------------------------Yong & Yi Partnership Enterprise----------------------------------------------
+app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+
+  const invoiceNos = new Set(); // Set to keep track of InvoiceNos already inserted into the sell_invoice table
+
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { InvoiceNo, Date, Name, Address1, Address2, Address3, PostCode, City, State, Country, Description, Quantity, UnitPrice, Amount } = data;
+      const parsedUnitPrice = parseFloat(UnitPrice.replace(/[^0-9.-]+/g,""));
+      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
+
+      if (!invoiceNos.has(InvoiceNo)) {
+        // If the InvoiceNo hasn't been inserted into the sell_invoice table yet, insert it along with the relevant data
+        invoiceNos.add(InvoiceNo); // Add the InvoiceNo to the Set of already-inserted InvoiceNos
+        pool.query('INSERT INTO yysell_invoice (Invoice_number, Name, Address1, Address2, Address3, PostCode, City, State, Country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, Name, Address1, Address2, Address3, PostCode, City, State, Country], (error, results, fields) => {
+          if (error) {
+            console.error(error);
+          } else {
+            // If the insert into sell_invoice is successful, insert the corresponding data into the items_sell table
+            pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?)', [InvoiceNo, Description, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+              if (error) {
+                console.error(error);
+              } else {
+                console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+              }
+            });
+          }
+        });
+      } else {
+        // If the InvoiceNo has already been inserted into the sell_invoice table, insert the corresponding data into the items_sell table only
+        pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?)', [InvoiceNo, Description, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+          if (error) {
+            console.error(error);
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+          }
+        });
+      }
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/yyexportsell_csv', function(req, res) {
+  const sql = `SELECT yysell_invoice.Invoice_number, yysell_invoice.Name, yysell_invoice.Phone, yysell_invoice.Address1, yysell_invoice.Address2, yysell_invoice.Address3, yysell_invoice.PostCode, yysell_invoice.City, yysell_invoice.State, yysell_invoice.Country, yyitems_sell.Content_SKU AS Description, yyitems_sell.SizeUS, yyitems_sell.Quantity, yyitems_sell.UnitPrice, yyitems_sell.Amount
+               FROM yysell_invoice
+               JOIN yyitems_sell ON yysell_invoice.Invoice_number = yyitems_sell.InvoiceNumber
+               ORDER BY yysell_invoice.Invoice_number, yyitems_sell.Content_SKU`;
+
+  pool.query(sql, function(error, results, fields) {
+    if (error) throw error;
+
+    const csvData = [];
+    let currentInvoiceNo = null;
+
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      // If this row has a different invoice number than the previous one, start a new row in the CSV
+      if (row.Invoice_number !== currentInvoiceNo) {
+        csvData.push({
+          InvoiceNo: row.Invoice_number,
+          Name: row.Name,
+          Phone: row.Phone,
+          Address1: row.Address1,
+          Address2: row.Address2,
+          Address3: row.Address3,
+          PostCode: row.PostCode,
+          City: row.City,
+          State: row.State,
+          Country: row.Country,
+          Description: row.Description,
+          SizeUS: row.SizeUS,
+          Quantity: row.Quantity,
+          UnitPrice: row.UnitPrice,
+          Amount: row.Amount
+        });
+        currentInvoiceNo = row.Invoice_number;
+      } else {
+        // If this row has the same invoice number as the previous one, add a new row to the CSV with only the item data
+        csvData.push({
+          InvoiceNo: row.Invoice_number,
+          Name: row.Name,
+          Phone: row.Phone,
+          Address1: row.Address1,
+          Address2: row.Address2,
+          Address3: row.Address3,
+          PostCode: row.PostCode,
+          City: row.City,
+          State: row.State,
+          Country: row.Country,
+          Description: row.Description,
+          SizeUS: row.SizeUS,
+          Quantity: row.Quantity,
+          UnitPrice: row.UnitPrice,
+          Amount: row.Amount
+        });
+      }
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yysell_data.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+
+  const invoiceNos = new Set(); // Set to keep track of InvoiceNos already inserted into the sell_invoice table
+
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { InvoiceNo, Name, BankName, Bank, BankNumber, Remarks, Description, SizeUS, Quantity, UnitPrice, Amount, SKU } = data;
+      const parsedUnitPrice = parseFloat(UnitPrice.replace(/[^0-9.-]+/g,""));
+      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
+
+      if (!isNaN(parsedUnitPrice) && !isNaN(parsedAmount)) {
+        // Only insert the row if parsedUnitPrice and parsedAmount are not NaN
+        if (!invoiceNos.has(InvoiceNo)) {
+          // If the InvoiceNo hasn't been inserted into the sell_invoice table yet, insert it along with the relevant data
+          invoiceNos.add(InvoiceNo); // Add the InvoiceNo to the Set of already-inserted InvoiceNos
+          pool.query('INSERT INTO yybuy_record (Invoice_number, Name, BankName, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?, ?, ?)', [InvoiceNo, Name, BankName, Bank, BankNumber, Remarks], (error, results, fields) => {
+            if (error) {
+              console.error(error);
+            } else {
+              // If the insert into sell_invoice is successful, insert the corresponding data into the items_sell table
+              pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, SKU, Description, SizeUS, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+                if (error) {
+                  console.error(error);
+                } else {
+                  console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+                }
+              });
+            }
+          });
+        } else {
+          // If the InvoiceNo has already been inserted into the sell_invoice table, insert the corresponding data into the items_sell table only
+          pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, SKU, Description, SizeUS, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+            if (error) {
+              console.error(error);
+            } else {
+              console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+            }
+          });
+        }
+      } else {
+        console.log(`Skipping row with InvoiceNo ${InvoiceNo} due to NaN values`);
+      }
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/yyexportbuy_csv', function(req, res) {
+  const sql = `SELECT yybuy_record.Invoice_number, yybuy_record.Name, yybuy_record.BankName, yybuy_record.Bank, yybuy_record.Bankaccount, yybuy_record.Remarks, yyitems_buy.Content_SKU AS Description, yyitems_buy.SizeUS, yyitems_buy.Quantity, yyitems_buy.UnitPrice, yyitems_buy.Amount
+               FROM yybuy_record
+               JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber
+               ORDER BY yybuy_record.Invoice_number, yyitems_buy.Content_SKU`;
+
+  pool.query(sql, function(error, results, fields) {
+    if (error) throw error;
+
+    const csvData = [];
+    let currentInvoiceNo = null;
+
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      // If this row has a different invoice number than the previous one, start a new row in the CSV
+      if (row.Invoice_number !== currentInvoiceNo) {
+        csvData.push({
+          InvoiceNo: row.Invoice_number,
+          Name: row.Name,
+          BankName: row.BankName,
+          Bank: row.Bank,
+          BankNumber: row.Bankaccount,
+          Remarks: row.Remarks,
+          Description: row.Description,
+          SizeUS: row.SizeUS,
+          Quantity: row.Quantity,
+          UnitPrice: row.UnitPrice,
+          Amount: row.Amount
+        });
+        currentInvoiceNo = row.Invoice_number;
+      } else {
+        // If this row has the same invoice number as the previous one, add a new row to the CSV
+        csvData.push({
+          InvoiceNo: row.Invoice_number,
+          Name: row.Name,
+          BankName: row.BankName,
+          Bank: row.Bank,
+          BankNumber: row.Bankaccount,
+          Remarks: row.Remarks,
+          Description: row.Description,
+          SizeUS: row.SizeUS,
+          Quantity: row.Quantity,
+          UnitPrice: row.UnitPrice,
+          Amount: row.Amount
+        });
+      }
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yybuy_data.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
 });
 
 
@@ -93,16 +533,100 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
 
 //-------------------------------------------------------------------------------------------------
 
+// Define route for stock check page
+app.get('/stock-check', function(req, res) {
+  pool.query('SELECT buy_record.Invoice_number, buy_record.Name, items_buy.Content_SKU, items_buy.SizeUS, SUM(items_buy.Quantity) as totalquantity, SUM(items_buy.Amount) as Total_Cost FROM buy_record JOIN items_buy ON buy_record.Invoice_number = items_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as Paid_Amount FROM purchase_paymentbreakdown GROUP BY Invoice_No) AS payment ON items_buy.InvoiceNumber = payment.Invoice_No GROUP BY items_buy.InvoiceNumber HAVING COALESCE(SUM(items_buy.Amount),0) - COALESCE(SUM(payment.Paid_Amount),0) = 0', function(error, zeroResults) {
+    if (error) {
+      console.log(error);
+    } else {
+      pool.query('SELECT buy_record.Invoice_number, buy_record.Name, items_buy.Content_SKU, items_buy.SizeUS, SUM(items_buy.Quantity) as totalquantity, SUM(items_buy.Amount) as Total_Cost FROM buy_record JOIN items_buy ON buy_record.Invoice_number = items_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as Paid_Amount FROM purchase_paymentbreakdown GROUP BY Invoice_No) AS payment ON items_buy.InvoiceNumber = payment.Invoice_No GROUP BY items_buy.InvoiceNumber HAVING COALESCE(SUM(items_buy.Amount),0) - COALESCE(SUM(payment.Paid_Amount),0) <> 0', function(error, nonZeroResults) {
+        if (error) {
+          console.log(error);
+        } else {
+          pool.query('SELECT yybuy_record.Invoice_number, yybuy_record.Name, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as yytotalquantity, SUM(yyitems_buy.Amount) as yyTotal_Cost FROM yybuy_record JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as yyPaid_Amount FROM yypurchase_paymentbreakdown GROUP BY Invoice_No) AS yypayment ON yyitems_buy.InvoiceNumber = yypayment.Invoice_No GROUP BY yyitems_buy.InvoiceNumber HAVING COALESCE(SUM(yyitems_buy.Amount),0) - COALESCE(SUM(yypayment.yyPaid_Amount),0) = 0', function(error, yyzeroResults) {
+            if (error) {
+              console.log(error);
+            } else {
+              pool.query('SELECT yybuy_record.Invoice_number, yybuy_record.Name, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as yytotalquantity, SUM(yyitems_buy.Amount) as yyTotal_Cost FROM yybuy_record JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as yyPaid_Amount FROM yypurchase_paymentbreakdown GROUP BY Invoice_No) AS yypayment ON yyitems_buy.InvoiceNumber = yypayment.Invoice_No GROUP BY yyitems_buy.InvoiceNumber HAVING COALESCE(SUM(yyitems_buy.Amount),0) - COALESCE(SUM(yypayment.yyPaid_Amount),0) <> 0', function(error, yynonZeroResults) {
+                if (error) {
+                  console.log(error);
+                } else {
+                  res.render('stock-check', { zeroData: zeroResults, nonZeroData: nonZeroResults, yyzeroData: yyzeroResults, yynonZeroData: yynonZeroResults});
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+});
+app.get('/check', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the buy_record table
+  const buyrecordQuery = `SELECT * FROM buy_record WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(buyrecordQuery, (error, buyrecordResults) => {
+    if (error) throw error;
+
+    if (!buyrecordResults.length) {
+      // Render the sales-details.ejs view with no buyrecordResults
+      res.render('stock-details', {
+        buyrecordResults: buyrecordResults,
+        invoiceNumber: invoiceNumber,
+        buyrecordResults: null
+      });
+    } else {
+      // Query the items_buy table
+      const itemsBuyQuery = `SELECT * FROM items_buy WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsBuyResults.length; i++) {
+          totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const BuyPaymentQuery = `SELECT * FROM purchase_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(BuyPaymentQuery, (error, buyPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < buyPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(buyPaymentResults[i].Amount);
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('stock-details', {
+            invoiceNumber: invoiceNumber,
+            buyrecordResults: buyrecordResults,
+            itemsBuyResults: itemsBuyResults,
+            name: buyrecordResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: buyPaymentResults,
+            balance: balance,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
+});
 
 //for stock-checkin
 app.get('/stock-checkin', function(req, res){
-  res.render('stock-checkin');
+  res.render('stock-checkin')
 });
 app.post('/stock-checkin',upload.single('file'),  urlencodedParser, function(req, res){
     const { purchase_order_no, date, name, productsku, size } = req.body;
 
     // Insert the form data into MySQL
-    pool.query('INSERT INTO stock_checkin (Purchase_order_no, Check_in_Date, Seller_name, Product_SKU, Size_US) VALUES (?, ?, ?, ?, ?)', [purchase_order_no, date, name, productsku, size], (error, results, fields) => {
+    pool.query('INSERT INTO stock_checkin (Purchase_order_no, Seller_name, Product_SKU, Size_US) VALUES (?, ?, ?, ?)', [purchase_order_no, name, productsku, size], (error, results, fields) => {
       if (error) {
         console.error(error);
         res.status(500).send('Error saving form data');
@@ -114,8 +638,8 @@ app.post('/stock-checkin',upload.single('file'),  urlencodedParser, function(req
 });
 
 //for stock-check
-app.get('/stock-check', function(req, res){
-  res.render('stock-check');
+app.get('/stock-checkins', function(req, res){
+  res.render('stock-checkins')
 });
 
 //for shipped record page
@@ -172,39 +696,48 @@ app.post('/bulkshipped', upload.single('file'), urlencodedParser, function (req,
 });
 
 //for database
-app.get('/database', function(req, res){
-  res.render('database');
+app.get('/inout', function(req, res){
+  res.render('inout');
 });
 
 
-
 //-------below is for Y Kick Zone Shop----------------------------------------------------------------------------------
-
-
 //------------------Sales--------------------------------------------------------------------------
 //for sales - sell invoice
 app.get('/sell_invoice', function(req, res){
   res.render('sell_invoice');
 });
 app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
-  const { name, phone, adr1, adr2, adr3, postcode, city, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
-  // Insert the main form data into MySQL
-  pool.query('INSERT INTO sell_invoice (Name, Phone, Address1, Address2, Address3, PostCode, City, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [name, phone, adr1, adr2, adr3, postcode, city, country, remarks], (error, results, fields) => {
+  const { name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
+
+  // Fetch the last inserted Invoice_number value from sell_invoice table
+  pool.query('SELECT MAX(Invoice_number) as maxInvoiceNumber FROM sell_invoice', (error, results, fields) => {
     if (error) {
       console.error(error);
-      res.status(500).send('Error saving form data');
+      res.status(500).send('Error fetching max Invoice_number');
     } else {
-      const invoice_number = results.insertId;
-      const sellItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+      const maxInvoiceNumber = results[0].maxInvoiceNumber;
+      const invoice_number = (maxInvoiceNumber ? parseInt(maxInvoiceNumber) : 0) + 1;
 
-      // Insert the shipped items data into MySQL
-      pool.query('INSERT INTO items_sell (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [sellItems], (error, results, fields) => {
+      // Insert the main form data into MySQL
+      pool.query('INSERT INTO sell_invoice (Invoice_number, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [invoice_number, name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks], (error, results, fields) => {
         if (error) {
           console.error(error);
-          res.status(500).send('Error saving shipped items data');
+          res.status(500).send('Error saving form data');
         } else {
-          console.log(req.body);
-          res.render('sell_invoice', { successMessage: 'Form submitted successfully' });
+          // Map over the sell items and add the invoice number to each item
+          const sellItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+              
+          // Insert the shipped items data into MySQL
+          pool.query('INSERT INTO items_sell (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [sellItems], (error, results, fields) => {
+            if (error) {
+              console.error(error);
+              res.status(500).send('Error saving shipped items data');
+            } else {
+              console.log(req.body);
+              res.render('sell_invoice', { successMessage: 'Form submitted successfully' });
+            }
+          });
         }
       });
     }
@@ -413,31 +946,41 @@ app.get('/generate', (req, res) => {
     }
   });
 });
-
 //--------------------Purchase----------------------------------------------------------------------
 //for sales - sell invoice
 app.get('/buy-payby', function(req, res){
   res.render('buy-payby');
 });
 app.post('/buy-payby', upload.single('file'), urlencodedParser, function (req, res) {
-  const { name, bank, bankacc, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
-  // Insert the main form data into MySQL
-  pool.query('INSERT INTO buy_record (Name, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?)', [name, bank, bankacc, remarks], (error, results, fields) => {
+  const { name, bankname, bank, bankacc, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [] } = req.body;
+
+  // Fetch the last inserted Invoice_number value from buy_record table
+  pool.query('SELECT MAX(ID) as maxInvoiceNumber FROM buy_record', (error, results, fields) => {
     if (error) {
       console.error(error);
-      res.status(500).send('Error saving form data');
+      res.status(500).send('Error fetching max Invoice_number');
     } else {
-      const invoice_number = results.insertId;
-      const buyItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+      const maxInvoiceNumber = results[0].maxInvoiceNumber;
+      const invoice_number = (maxInvoiceNumber ? parseInt(maxInvoiceNumber) : 0) + 1;
 
-      // Insert the shipped items data into MySQL
-      pool.query('INSERT INTO items_buy (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [buyItems], (error, results, fields) => {
+      // Insert the main form data into MySQL
+      pool.query('INSERT INTO buy_record (Invoice_number, Name, BankName, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?, ?, ?)', [invoice_number, name, bankname, bank, bankacc, remarks], (error, results, fields) => {
         if (error) {
           console.error(error);
-          res.status(500).send('Error saving shipped items data');
+          res.status(500).send('Error saving form data');
         } else {
-          console.log(req.body);
-          res.render('buy-payby', { successMessage: 'Form submitted successfully' });
+          const buyItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index], field6[index]]);
+
+          // Insert the shipped items data into MySQL
+          pool.query('INSERT INTO items_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [buyItems], (error, results, fields) => {
+            if (error) {
+              console.error(error);
+              res.status(500).send('Error saving shipped items data');
+            } else {
+              console.log(req.body);
+              res.render('buy-payby', { successMessage: 'Form submitted successfully' });
+            }
+          });
         }
       });
     }
@@ -647,7 +1190,6 @@ app.get('/ordergenerate', (req, res) => {
     }
   });
 });
-
 //-------------------Drawing------------------------------------------------------------------------
 //for company fund 2 personal 
 app.get('/company2personal', function(req, res){
@@ -693,34 +1235,43 @@ app.post('/personal2company',upload.single('file'),  urlencodedParser, function(
 });
 
 
-
 //-------below is for Yong & Yi  Partnership Enterprise-----------------------------------------------------------------------------
-
-
 //-------------------Sales-----------------------------------------------------------------------------
 //for sales - sell invoice
 app.get('/yysell_invoice', function(req, res){
   res.render('yysell_invoice');
 });
 app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
-  const { name, phone, adr1, adr2, adr3, postcode, city, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
-  // Insert the main form data into MySQL
-  pool.query('INSERT INTO yysell_invoice (Name, Phone, Address1, Address2, Address3, PostCode, City, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [name, phone, adr1, adr2, adr3, postcode, city, country, remarks], (error, results, fields) => {
+  const { name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
+
+  // Fetch the last inserted Invoice_number value from sell_invoice table
+  pool.query('SELECT MAX(Invoice_number) as maxInvoiceNumber FROM yysell_invoice', (error, results, fields) => {
     if (error) {
       console.error(error);
-      res.status(500).send('Error saving form data');
+      res.status(500).send('Error fetching max Invoice_number');
     } else {
-      const invoice_number = results.insertId;
-      const sellItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+      const maxInvoiceNumber = results[0].maxInvoiceNumber;
+      const invoice_number = (maxInvoiceNumber ? parseInt(maxInvoiceNumber) : 0) + 1;
 
-      // Insert the shipped items data into MySQL
-      pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [sellItems], (error, results, fields) => {
+      // Insert the main form data into MySQL
+      pool.query('INSERT INTO yysell_invoice (Invoice_number, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [invoice_number, name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks], (error, results, fields) => {
         if (error) {
           console.error(error);
-          res.status(500).send('Error saving shipped items data');
+          res.status(500).send('Error saving form data');
         } else {
-          console.log(req.body);
-          res.render('yysell_invoice', { successMessage: 'Form submitted successfully' });
+          // Map over the sell items and add the invoice number to each item
+          const sellItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+              
+          // Insert the shipped items data into MySQL
+          pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [sellItems], (error, results, fields) => {
+            if (error) {
+              console.error(error);
+              res.status(500).send('Error saving shipped items data');
+            } else {
+              console.log(req.body);
+              res.render('yysell_invoice', { successMessage: 'Form submitted successfully' });
+            }
+          });
         }
       });
     }
@@ -731,12 +1282,12 @@ app.get('/yysales-paymentbreak',function(req, res){
   res.render('yysales-paymentbreak');
 });
 app.post('/yysales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
-  const { date, invoice_no, bank, amount, remarks } = req.body;
+  const { date, invoice_no, amount, remarks } = req.body;
   // Get the filename from the request
   const filename = req.file ? req.file.filename : 'N/A';
 
   // Insert the form data into MySQL
-  pool.query('INSERT INTO yysales_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
+  pool.query('INSERT INTO yysales_paymentbreakdown (Date, Invoice_No, Amount, Remarks, File) VALUES (?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, amount, remarks, filename], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
@@ -936,24 +1487,35 @@ app.get('/yybuy-payby', function(req, res){
   res.render('yybuy-payby');
 });
 app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req, res) {
-  const { name, bank, bankacc, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
-  // Insert the main form data into MySQL
-  pool.query('INSERT INTO yybuy_record (Name, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?)', [name, bank, bankacc, remarks], (error, results, fields) => {
+  const { name, bankname, bank, bankacc, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [] } = req.body;
+
+  // Fetch the last inserted Invoice_number value from buy_record table
+  pool.query('SELECT MAX(ID) as maxInvoiceNumber FROM yybuy_record', (error, results, fields) => {
     if (error) {
       console.error(error);
-      res.status(500).send('Error saving form data');
+      res.status(500).send('Error fetching max Invoice_number');
     } else {
-      const invoice_number = results.insertId;
-      const buyItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index]]);
+      const maxInvoiceNumber = results[0].maxInvoiceNumber;
+      const invoice_number = (maxInvoiceNumber ? parseInt(maxInvoiceNumber) : 0) + 1;
 
-      // Insert the shipped items data into MySQL
-      pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [buyItems], (error, results, fields) => {
+      // Insert the main form data into MySQL
+      pool.query('INSERT INTO yybuy_record (Invoice_number, Name, BankName, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?, ?, ?)', [invoice_number, name, bankname, bank, bankacc, remarks], (error, results, fields) => {
         if (error) {
           console.error(error);
-          res.status(500).send('Error saving shipped items data');
+          res.status(500).send('Error saving form data');
         } else {
-          console.log(req.body);
-          res.render('yybuy-payby', { successMessage: 'Form submitted successfully' });
+          const buyItems = field1.map((item, index) => [invoice_number, item, field2[index], field3[index], field4[index], field5[index], field6[index]]);
+
+          // Insert the shipped items data into MySQL
+          pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, UnitPrice, Quantity, Amount) VALUES ?', [buyItems], (error, results, fields) => {
+            if (error) {
+              console.error(error);
+              res.status(500).send('Error saving shipped items data');
+            } else {
+              console.log(req.body);
+              res.render('yybuy-payby', { successMessage: 'Form submitted successfully' });
+            }
+          });
         }
       });
     }
@@ -964,13 +1526,13 @@ app.get('/yybuy-paymentbreak', function(req, res){
   res.render('yybuy-paymentbreak');
 });
 app.post('/yybuy-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
-    const { date, invoice_no, bank, amount, remarks } = req.body;
+    const { date, invoice_no, amount, remarks } = req.body;
   
     // Get the filename from the request
     const filename = req.file ? req.file.filename : 'N/A';
   
     // Insert the form data into MySQL
-    pool.query('INSERT INTO yypurchase_paymentbreakdown (Date, Invoice_No, Bank, Amount, Remarks, File) VALUES (?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, amount, remarks, filename], (error, results, fields) => {
+    pool.query('INSERT INTO yypurchase_paymentbreakdown (Date, Invoice_No, Amount, Remarks, File) VALUES (?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, amount, remarks, filename], (error, results, fields) => {
       if (error) {
         console.error(error);
         res.status(500).send('Error saving form data');
@@ -1163,8 +1725,6 @@ app.get('/yyordergenerate', (req, res) => {
     }
   });
 });
-
-
 //=-----------------------Drawing-------------------------------------------------------------------------
 //for company fund 2 personal 
 app.get('/yycompany2personal', function(req, res){

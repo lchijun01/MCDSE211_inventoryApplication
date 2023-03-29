@@ -25,6 +25,7 @@
         <div style="display: flex;">
             <h3><span style="font-weight: bold;">Name:</span> <%= buyrecordResults[0].Name %></h3>
             <h3 style="padding-left: 50px;"><span style="font-weight: bold;">Total Amount:</span> RM <%= totalAmount %></h3>
+            <h3 style="padding-left: 50px;"><span style="font-weight: bold;">Remarks:</span> <%= buyrecordResults[0].Remarks %></h3>
         </div>
         <div class="mt-5">
         <h2>Transactions</h2>
@@ -32,12 +33,14 @@
         <tr>
             <th>Date</th>
             <th>From Which Bank</th>
+            <th>Remarks</th>
             <th>Amount</th>
         </tr>
         <% for (let i = 0; i < transactions.length; i++) { %>
         <tr>
             <td><%= transactions[i].Date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) %></td>
             <td><%= transactions[i].Bank %></td>
+            <td><%= transactions[i].Remarks %></td>
             <td><%= transactions[i].Amount %></td>
         </tr>
         <% } %>

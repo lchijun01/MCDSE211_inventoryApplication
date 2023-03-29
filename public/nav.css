@@ -267,3 +267,12 @@
   .sidebar.close .line{
     display: none;
   }
+
+
+  .border{
+    display: none;
+  }
+
+.sidebar.close .border{
+  display: flex;
+}

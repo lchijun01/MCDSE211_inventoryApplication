@@ -93,7 +93,8 @@ const formattedNewTimestamp = `${day}/${month}/${year}`;
                 <% for (let i = 0; i < itemsBuyResults.length; i++) { %>
                 <tr>
                 <td style="font-weight: bold;padding-left: 10px;"><%= counter %>.</td>
-                <td><%= itemsBuyResults[i].Content_SKU %></td>
+                
+                <td><%= itemsBuyResults[i].Content_SKU %><a style="margin-left:15px ;"></a><%= itemsBuyResults[i].ProductName %></td>
                 <td style="text-align: center;"><%= itemsBuyResults[i].Quantity %></td>
                 <td style="text-align: center;">RM <%= itemsBuyResults[i].UnitPrice %></td>
                 <td style="text-align: center;">RM <%= itemsBuyResults[i].Amount %></td>
