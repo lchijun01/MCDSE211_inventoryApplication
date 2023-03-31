@@ -42,7 +42,7 @@
           <i class='bx bxs-chevron-down arrow'></i>
         </div>
         <ul class="sub-menu">
-          <li><a class="link_name" href="#">YKickZoneShop-Sales</a></li>
+          <li><a class="link_name" href="#">YKickZone-Sales</a></li>
           <li><a href="/sell_invoice">Invoice</a></li>
           <li><a href="/sales-paymentbreak">Payment Breakdown</a></li>
           <li><a href="/sales-balancecheck">Balance Check</a></li>
@@ -58,7 +58,7 @@
           <i class='bx bxs-chevron-down arrow'></i>
         </div>
         <ul class="sub-menu">
-          <li><a class="link_name" href="">YKickZoneShop-Purchase</a></li>
+          <li><a class="link_name" href="">YKickZone-Purchase</a></li>
           <li><a href="/buy-payby">Buy-Pay by</a></li>
           <li><a href="/buy-paymentbreak">Payment Breakdown</a></li>
           <li><a href="/buy-balancecheck">Balance Check</a></li>
@@ -74,9 +74,18 @@
           <i class='bx bxs-chevron-down arrow'></i>
         </div>
         <ul class="sub-menu">
-          <li><a class="link_name" href="">YKickZoneShop-Drawing</a></li>
+          <li><a class="link_name" href="">YKickZone-Drawing</a></li>
           <li><a style="font-size: 14px;" href="/company2personal">CompanyFund-Personal</a></li>
           <li><a style="font-size: 14px;" href="/personal2company">PersonalFund-Company</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="/ykzexpenses-record">
+          <i class="bi bi-blockquote-right"></i>
+          <span class="link_name">ExpensesRecord</span>
+        </a>
+        <ul class="sub-menu blank">
+          <li><a class="link_name" href="/ykzexpenses-record">YKickZone-Expenses Record</a></li>
         </ul>
       </li>
       <div style="align-items: center;">
@@ -93,7 +102,7 @@
           <i class='bx bxs-chevron-down arrow' style="color: #d9c8ff;"></i>
         </div>
         <ul class="sub-menu">
-          <li><a class="link_name" href="#">Y&Y-Sales</a></li>
+          <li><a class="link_name" href="#">Yong&Yi-Sales</a></li>
           <li><a href="/yysell_invoice">Invoice</a></li>
           <li><a href="/yysales-paymentbreak">Payment Breakdown</a></li>
           <li><a href="/yysales-balancecheck">Balance Check</a></li>
@@ -109,7 +118,7 @@
           <i class='bx bxs-chevron-down arrow' style="color: #d9c8ff;"></i>
         </div>
         <ul class="sub-menu">
-          <li><a class="link_name" href="">Y&Y-Purchase</a></li>
+          <li><a class="link_name" href="">Yong&Yi-Purchase</a></li>
           <li><a href="/yybuy-payby">Buy-Pay by</a></li>
           <li><a href="/yybuy-paymentbreak">Payment Breakdown</a></li>
           <li><a href="/yybuy-balancecheck">Balance Check</a></li>
@@ -125,9 +134,18 @@
           <i class='bx bxs-chevron-down arrow'  style="color: #d9c8ff;"></i>
         </div>
         <ul class="sub-menu">
-          <li><a class="link_name" href="">Y&Y-Drawing</a></li>
+          <li><a class="link_name" href="">Yong&Yi-Drawing</a></li>
           <li><a style="font-size: 14px;" href="/yycompany2personal">CompanyFund-Personal</a></li>
           <li><a style="font-size: 14px;" href="/yypersonal2company">PersonalFund-Company</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="/yyexpenses-record">
+          <i class="bi bi-blockquote-right"></i>
+          <span class="link_name">ExpensesRecord</span>
+        </a>
+        <ul class="sub-menu blank">
+          <li><a class="link_name" href="/yyexpenses-record">Yong&Yi-Expenses Record</a></li>
         </ul>
       </li>
       <div style="align-items: center;">
@@ -153,12 +171,12 @@
         <div class="iocn-link">
           <a href="#">
             <i class="bi bi-box-seam"></i>
-            <span class="link_name">StockCheck</span>
+            <span class="link_name">Stock</span>
           </a>
           <i class='bx bxs-chevron-down arrow' ></i>
         </div>
         <ul class="sub-menu">
-          <li><a class="link_name" href="">Stock Check</a></li>
+          <li><a class="link_name" href="">Stock</a></li>
           <li><a href="/stock-check">Stock Check</a></li>
           <li><a href="/stock-checkin">Stock Check-in</a></li>
           <li><a href="/shippedrecord">Shipped Record</a></li>
@@ -170,9 +188,16 @@
           <span class="link_name">Import&Export</span>
         </a>
         <ul class="sub-menu blank">
-          <li><a class="link_name" href="#">Import&Export</a></li>
+          <li><a class="link_name" href="/inout">Import&Export</a></li>
         </ul>
       </li>
+      <div style="text-align: center;min-width: 78px;margin-top: 30px;">
+        <form method="POST" action="/logout">
+          <button type="submit" style="background-color: transparent;color:white;font-family: Arial, Helvetica, sans-serif;border: 0;font-weight: bold;">
+            <span class="logout">Logout</span>
+          </button>
+        </form>
+      </div>
       <a id="bottom">
         <span class="bottom">Develop by lchijun</span>
       </a>

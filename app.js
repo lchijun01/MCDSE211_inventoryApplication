@@ -10,6 +10,8 @@ const fastCsv = require('fast-csv');
 const ejs = require('ejs');
 app.use(express.static(__dirname + '/public'));
 app.use(express.static('public'))
+const bcrypt = require('bcrypt');
+const session = require('express-session');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // Use a reverse proxy to forward requests to the Node.js server running on port 5000
@@ -25,14 +27,63 @@ const pool = mysql.createPool({
 
 const urlencodedParser = bodyParser.urlencoded({extended: false});
 app.set('view engine', 'ejs');
+app.use(session({
+  secret: 'my-secret-key',
+  resave: false,
+  saveUninitialized: true
+}));
 
-
-app.get('/', function(req, res) {
-    res.render('index');
+function requireLogin(req, res, next) {
+  if (req.session && req.session.user) {
+    // User is authenticated, allow access to the next middleware or route handler
+    next();
+  } else {
+    // User is not authenticated, redirect to the login page
+    res.redirect('/login');
+  }
+}
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  next();
 });
 
+app.get('/', (req, res) => {
+  if (!req.session.user) {
+    res.redirect('/login');
+  } else {
+    res.render('index');
+  }
+});
+app.post('/logout', (req, res) => {
+  // Destroy the user's session
+  req.session.destroy();
+  // Redirect to the login page
+  res.redirect('/login');
+});
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+app.get('/signup', (req, res) => {
+  res.render('signup');
+});
+app.post('/login', urlencodedParser, async (req, res) => {
+  const { username, password } = req.body;
+
+  // You can replace this with a database query to fetch the user's details
+  const user = {
+    username: 'ykzone',
+    password: await bcrypt.hash('123456', 10)
+  };
+
+  if (username === user.username && await bcrypt.compare(password, user.password)) {
+    req.session.user = username;
+    res.redirect('/');
+  } else {
+    res.render('login', { error: 'Invalid username or password' });
+  }
+});
 //-------------------------------------Import & Export---------------------------------------------------------------------------------------------------------------------
-app.get('/inout', function(req, res) {
+app.get('/inout', requireLogin, function(req, res) {
   const successMessage = req.query.success; // Get the success parameter from the query string
   res.render('inout', { successMessage: successMessage });
 });
@@ -84,7 +135,7 @@ app.post('/importsell_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportsell_csv', function(req, res) {
+app.get('/exportsell_csv', requireLogin, function(req, res) {
   const sql = `SELECT sell_invoice.Invoice_number, sell_invoice.Name, sell_invoice.Phone, sell_invoice.Address1, sell_invoice.Address2, sell_invoice.Address3, sell_invoice.PostCode, sell_invoice.City, sell_invoice.State, sell_invoice.Country, items_sell.Content_SKU AS Description, items_sell.SizeUS, items_sell.Quantity, items_sell.UnitPrice, items_sell.Amount
                FROM sell_invoice
                JOIN items_sell ON sell_invoice.Invoice_number = items_sell.InvoiceNumber
@@ -198,7 +249,7 @@ app.post('/importbuy_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportbuy_csv', function(req, res) {
+app.get('/exportbuy_csv', requireLogin, function(req, res) {
   const sql = `SELECT buy_record.Invoice_number, buy_record.Name, buy_record.BankName, buy_record.Bank, buy_record.Bankaccount, buy_record.Remarks, items_buy.Content_SKU AS Description, items_buy.SizeUS, items_buy.Quantity, items_buy.UnitPrice, items_buy.Amount
                FROM buy_record
                JOIN items_buy ON buy_record.Invoice_number = items_buy.InvoiceNumber
@@ -300,7 +351,7 @@ app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/yyexportsell_csv', function(req, res) {
+app.get('/yyexportsell_csv', requireLogin, function(req, res) {
   const sql = `SELECT yysell_invoice.Invoice_number, yysell_invoice.Name, yysell_invoice.Phone, yysell_invoice.Address1, yysell_invoice.Address2, yysell_invoice.Address3, yysell_invoice.PostCode, yysell_invoice.City, yysell_invoice.State, yysell_invoice.Country, yyitems_sell.Content_SKU AS Description, yyitems_sell.SizeUS, yyitems_sell.Quantity, yyitems_sell.UnitPrice, yyitems_sell.Amount
                FROM yysell_invoice
                JOIN yyitems_sell ON yysell_invoice.Invoice_number = yyitems_sell.InvoiceNumber
@@ -373,7 +424,7 @@ app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
     .on('data', (data) => {
       // Extract the relevant data from the CSV row
       const { InvoiceNo, Name, BankName, Bank, BankNumber, Remarks, Description, SizeUS, Quantity, UnitPrice, Amount, SKU } = data;
-      const parsedUnitPrice = parseFloat(UnitPrice.replace(/[^0-9.-]+/g,""));
+      const parsedUnitPrice = parseFloat(UnitPrice && UnitPrice.replace(/[^0-9.-]+/g,""));
       const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
 
       if (!isNaN(parsedUnitPrice) && !isNaN(parsedAmount)) {
@@ -414,7 +465,7 @@ app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/yyexportbuy_csv', function(req, res) {
+app.get('/yyexportbuy_csv', requireLogin, function(req, res) {
   const sql = `SELECT yybuy_record.Invoice_number, yybuy_record.Name, yybuy_record.BankName, yybuy_record.Bank, yybuy_record.Bankaccount, yybuy_record.Remarks, yyitems_buy.Content_SKU AS Description, yyitems_buy.SizeUS, yyitems_buy.Quantity, yyitems_buy.UnitPrice, yyitems_buy.Amount
                FROM yybuy_record
                JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber
@@ -469,10 +520,9 @@ app.get('/yyexportbuy_csv', function(req, res) {
   });
 });
 
-
 //-------------------------------------Bank statement---------------------------------------------------
 
-  app.get('/accruals', function(req, res){
+  app.get('/accruals', requireLogin, function(req, res){
     res.render('accruals');
 });
 app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res){
@@ -493,7 +543,7 @@ app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res
     });
 });
 
-app.get('/other-creditor', function(req, res){
+app.get('/other-creditor', requireLogin, function(req, res){
     res.render('other-creditor');
 });
 app.post('/other-creditor',upload.single('file'),  urlencodedParser, function(req, res){
@@ -514,7 +564,7 @@ app.post('/other-creditor',upload.single('file'),  urlencodedParser, function(re
     });
 });
 
-app.get('/expenses-record', function(req, res){
+app.get('/expenses-record', requireLogin, function(req, res){
     res.render('expenses-record');
 });
 app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(req, res){
@@ -538,7 +588,7 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
 //-------------------------------------------------------------------------------------------------
 
 // Define route for stock check page
-app.get('/stock-check', function(req, res) {
+app.get('/stock-check', requireLogin, function(req, res) {
   pool.query('SELECT buy_record.Invoice_number, buy_record.Name, items_buy.Content_SKU, items_buy.SizeUS, SUM(items_buy.Quantity) as totalquantity, SUM(items_buy.Amount) as Total_Cost FROM buy_record JOIN items_buy ON buy_record.Invoice_number = items_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as Paid_Amount FROM purchase_paymentbreakdown GROUP BY Invoice_No) AS payment ON items_buy.InvoiceNumber = payment.Invoice_No GROUP BY items_buy.InvoiceNumber HAVING COALESCE(SUM(items_buy.Amount),0) - COALESCE(SUM(payment.Paid_Amount),0) = 0', function(error, zeroResults) {
     if (error) {
       console.log(error);
@@ -565,7 +615,7 @@ app.get('/stock-check', function(req, res) {
     }
   });
 });
-app.get('/check', (req, res) => {
+app.get('/check', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the buy_record table
@@ -621,9 +671,64 @@ app.get('/check', (req, res) => {
     }
   });
 });
+app.get('/checks', requireLogin, (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
 
+  // Query the buy_record table
+  const buyrecordQuery = `SELECT * FROM yybuy_record WHERE Invoice_number = '${invoiceNumber}'`;
+  pool.query(buyrecordQuery, (error, buyrecordResults) => {
+    if (error) throw error;
+
+    if (!buyrecordResults.length) {
+      // Render the sales-details.ejs view with no buyrecordResults
+      res.render('yystock-details', {
+        buyrecordResults: buyrecordResults,
+        invoiceNumber: invoiceNumber,
+        buyrecordResults: null
+      });
+    } else {
+      // Query the items_buy table
+      const itemsBuyQuery = `SELECT * FROM yyitems_buy WHERE InvoiceNumber = '${invoiceNumber}'`;
+      pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsBuyResults.length; i++) {
+          totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].Quantity);
+        }
+
+        // Query the sales_paymentbreakdown table
+        const BuyPaymentQuery = `SELECT * FROM yypurchase_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
+        pool.query(BuyPaymentQuery, (error, buyPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < buyPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(buyPaymentResults[i].Amount);
+          }
+          // Calculate the balance
+          const balance = totalAmount - totalAmountPaid;
+
+          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+          res.render('yystock-details', {
+            invoiceNumber: invoiceNumber,
+            buyrecordResults: buyrecordResults,
+            itemsBuyResults: itemsBuyResults,
+            name: buyrecordResults[0].Name,
+            totalAmount: totalAmount,
+            transactions: buyPaymentResults,
+            balance: balance,
+            totalpaid: totalAmountPaid,
+          });
+        });
+      });
+    }
+  });
+});
 //for stock-checkin
-app.get('/stock-checkin', function(req, res){
+app.get('/stock-checkin', requireLogin, function(req, res){
   res.render('stock-checkin')
 });
 app.post('/stock-checkin',upload.single('file'),  urlencodedParser, function(req, res){
@@ -642,16 +747,16 @@ app.post('/stock-checkin',upload.single('file'),  urlencodedParser, function(req
 });
 
 //for stock-check
-app.get('/stock-checkins', function(req, res){
+app.get('/stock-checkins', requireLogin, function(req, res){
   res.render('stock-checkins')
 });
 
 //for shipped record page
-app.get('/shippedrecord', function(req, res){
+app.get('/shippedrecord', requireLogin, function(req, res){
   res.render('shippedrecord');
 });
 //for shipped record page - single ship
-app.get('/singleshipped', function(req, res){
+app.get('/singleshipped', requireLogin, function(req, res){
   res.render('singleshipped');
 });
 app.post('/singleshipped',upload.single('file'),  urlencodedParser, function(req, res){
@@ -670,7 +775,7 @@ app.post('/singleshipped',upload.single('file'),  urlencodedParser, function(req
 });
 
 //for shipped record page - bulk ship
-app.get('/bulkshipped', function(req, res){
+app.get('/bulkshipped', requireLogin, function(req, res){
   res.render('bulkshipped');
 });
 app.post('/bulkshipped', upload.single('file'), urlencodedParser, function (req, res) {
@@ -700,7 +805,7 @@ app.post('/bulkshipped', upload.single('file'), urlencodedParser, function (req,
 });
 
 //for database
-app.get('/inout', function(req, res){
+app.get('/inout', requireLogin, function(req, res){
   res.render('inout');
 });
 
@@ -708,7 +813,7 @@ app.get('/inout', function(req, res){
 //-------below is for Y Kick Zone Shop----------------------------------------------------------------------------------
 //------------------Sales--------------------------------------------------------------------------
 //for sales - sell invoice
-app.get('/sell_invoice', function(req, res){
+app.get('/sell_invoice', requireLogin, function(req, res){
   res.render('sell_invoice');
 });
 app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
@@ -748,7 +853,7 @@ app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req
   });
 });
 //for sales-payment break
-app.get('/sales-paymentbreak',function(req, res){
+app.get('/sales-paymentbreak', requireLogin,function(req, res){
   res.render('sales-paymentbreak');
 });
 app.post('/sales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
@@ -768,7 +873,7 @@ app.post('/sales-paymentbreak',upload.single('file'), urlencodedParser, function
   });
 });
 //for sales - balance check
-app.get('/sales-balancecheck', (req, res) => {
+app.get('/sales-balancecheck', requireLogin, (req, res) => {
   const invoice_number = req.query.invoice_number || '';
   const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
   const invoice_number_params = invoice_number ? [invoice_number] : [];
@@ -830,7 +935,7 @@ app.get('/sales-balancecheck', (req, res) => {
     }
   });
 });
-app.get('/search', (req, res) => {
+app.get('/search', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -886,10 +991,10 @@ app.get('/search', (req, res) => {
   });
 });
 // for sales invoice generate
-app.get('/invoice_generate', function(req, res) {
+app.get('/invoice_generate', requireLogin, function(req, res) {
   res.render('invoice_generate');
 });
-app.get('/generate', (req, res) => {
+app.get('/generate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -952,7 +1057,7 @@ app.get('/generate', (req, res) => {
 });
 //--------------------Purchase----------------------------------------------------------------------
 //for sales - sell invoice
-app.get('/buy-payby', function(req, res){
+app.get('/buy-payby', requireLogin, function(req, res){
   res.render('buy-payby');
 });
 app.post('/buy-payby', upload.single('file'), urlencodedParser, function (req, res) {
@@ -991,7 +1096,7 @@ app.post('/buy-payby', upload.single('file'), urlencodedParser, function (req, r
   });
 });
 //for buy-payment break
-app.get('/buy-paymentbreak', function(req, res){
+app.get('/buy-paymentbreak', requireLogin, function(req, res){
   res.render('buy-paymentbreak');
 });
 app.post('/buy-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
@@ -1012,7 +1117,7 @@ app.post('/buy-paymentbreak',upload.single('file'),  urlencodedParser, function(
     });
 });
 //for buy-balance check
-app.get('/buy-balancecheck', (req, res) => {
+app.get('/buy-balancecheck', requireLogin, (req, res) => {
   const invoice_number = req.query.invoice_number || '';
   const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
   const invoice_number_params = invoice_number ? [invoice_number] : [];
@@ -1075,7 +1180,7 @@ app.get('/buy-balancecheck', (req, res) => {
   });
 });
 // Set up the searchs route
-app.get('/searchs', (req, res) => {
+app.get('/searchs', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the buy_record table
@@ -1131,10 +1236,10 @@ app.get('/searchs', (req, res) => {
   });
 });
 // for purchase order generate
-app.get('/order_generate', function(req, res) {
+app.get('/order_generate', requireLogin, function(req, res) {
   res.render('order_generate');
 });
-app.get('/ordergenerate', (req, res) => {
+app.get('/ordergenerate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -1196,7 +1301,7 @@ app.get('/ordergenerate', (req, res) => {
 });
 //-------------------Drawing------------------------------------------------------------------------
 //for company fund 2 personal 
-app.get('/company2personal', function(req, res){
+app.get('/company2personal', requireLogin, function(req, res){
   res.render('company2personal');
 });
 app.post('/company2personal',upload.single('file'),  urlencodedParser, function(req, res){
@@ -1217,7 +1322,7 @@ app.post('/company2personal',upload.single('file'),  urlencodedParser, function(
     });
 });
 //for personal 2 company
-app.get('/personal2company', function(req, res){
+app.get('/personal2company', requireLogin, function(req, res){
   res.render('personal2company');
 });
 app.post('/personal2company',upload.single('file'),  urlencodedParser, function(req, res){
@@ -1237,12 +1342,32 @@ app.post('/personal2company',upload.single('file'),  urlencodedParser, function(
       }
     });
 });
+//expenses yong yi
+app.get('/ykzexpenses-record', requireLogin, function(req, res){
+  res.render('ykzexpenses-record');
+});
+app.post('/ykzexpenses-record',upload.single('file'),  urlencodedParser, function(req, res){
+  const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
+  // Get the filename from the request
+  const filename = req.file ? req.file.filename : 'N/A';
+
+  // Insert the form data into MySQL
+  pool.query('INSERT INTO ykzexpensesrecord (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      console.log(req.body);
+      res.render('ykzexpenses-record');
+    }
+  });
+});
 
 //-------below is for Yong & Yi  Partnership Enterprise-----------------------------------------------------------------------------
 //-------------------Sales-----------------------------------------------------------------------------
 //for sales - sell invoice
-app.get('/yysell_invoice', function(req, res){
+app.get('/yysell_invoice', requireLogin, function(req, res){
   res.render('yysell_invoice');
 });
 app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
@@ -1282,7 +1407,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
   });
 });
 //for sales-payment break
-app.get('/yysales-paymentbreak',function(req, res){
+app.get('/yysales-paymentbreak', requireLogin,function(req, res){
   res.render('yysales-paymentbreak');
 });
 app.post('/yysales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
@@ -1302,7 +1427,7 @@ app.post('/yysales-paymentbreak',upload.single('file'), urlencodedParser, functi
   });
 });
 //for sales - balance check
-app.get('/yysales-balancecheck', (req, res) => {
+app.get('/yysales-balancecheck', requireLogin, (req, res) => {
   const invoice_number = req.query.invoice_number || '';
   const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
   const invoice_number_params = invoice_number ? [invoice_number] : [];
@@ -1364,7 +1489,7 @@ app.get('/yysales-balancecheck', (req, res) => {
     }
   });
 });
-app.get('/yysearch', (req, res) => {
+app.get('/yysearch', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -1420,10 +1545,10 @@ app.get('/yysearch', (req, res) => {
   });
 });
 // for sales invoice generate
-app.get('/yyinvoice_generate', function(req, res) {
+app.get('/yyinvoice_generate', requireLogin, function(req, res) {
   res.render('yyinvoice_generate');
 });
-app.get('/yygenerate', (req, res) => {
+app.get('/yygenerate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -1487,7 +1612,7 @@ app.get('/yygenerate', (req, res) => {
 
 //---------------------Purchase-------------------------------------------------------------------------
 //for buy -- invoice
-app.get('/yybuy-payby', function(req, res){
+app.get('/yybuy-payby', requireLogin, function(req, res){
   res.render('yybuy-payby');
 });
 app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req, res) {
@@ -1526,7 +1651,7 @@ app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req,
   });
 });
   //for buy-payment break
-app.get('/yybuy-paymentbreak', function(req, res){
+app.get('/yybuy-paymentbreak', requireLogin, function(req, res){
   res.render('yybuy-paymentbreak');
 });
 app.post('/yybuy-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
@@ -1547,7 +1672,7 @@ app.post('/yybuy-paymentbreak',upload.single('file'),  urlencodedParser, functio
     });
 });
 //for buy-balance check
-app.get('/yybuy-balancecheck', (req, res) => {
+app.get('/yybuy-balancecheck', requireLogin, (req, res) => {
   const invoice_number = req.query.invoice_number || '';
   const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
   const invoice_number_params = invoice_number ? [invoice_number] : [];
@@ -1610,7 +1735,7 @@ app.get('/yybuy-balancecheck', (req, res) => {
   });
 });
 // Set up the searchs route
-app.get('/yysearchs', (req, res) => {
+app.get('/yysearchs', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the buy_record table
@@ -1666,10 +1791,10 @@ app.get('/yysearchs', (req, res) => {
   });
 });
 // for purchase order generate
-app.get('/yyorder_generate', function(req, res) {
+app.get('/yyorder_generate', requireLogin, function(req, res) {
   res.render('yyorder_generate');
 });
-app.get('/yyordergenerate', (req, res) => {
+app.get('/yyordergenerate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -1731,7 +1856,7 @@ app.get('/yyordergenerate', (req, res) => {
 });
 //=-----------------------Drawing-------------------------------------------------------------------------
 //for company fund 2 personal 
-app.get('/yycompany2personal', function(req, res){
+app.get('/yycompany2personal', requireLogin, function(req, res){
       res.render('yycompany2personal');
 });
 app.post('/yycompany2personal',upload.single('file'),  urlencodedParser, function(req, res){
@@ -1752,7 +1877,7 @@ app.post('/yycompany2personal',upload.single('file'),  urlencodedParser, functio
         });
 });
 //for personal 2 company
-app.get('/yypersonal2company', function(req, res){
+app.get('/yypersonal2company', requireLogin, function(req, res){
       res.render('yypersonal2company');
 });
 app.post('/yypersonal2company',upload.single('file'),  urlencodedParser, function(req, res){
@@ -1772,10 +1897,30 @@ app.post('/yypersonal2company',upload.single('file'),  urlencodedParser, functio
           }
         });
 });
+//expenses yong yi
+app.get('/yyexpenses-record', requireLogin, function(req, res){
+  res.render('yyexpenses-record');
+});
+app.post('/yyexpenses-record',upload.single('file'),  urlencodedParser, function(req, res){
+  const { date, invoice_no, category, bank, name, amount, detail } = req.body;
 
+  // Get the filename from the request
+  const filename = req.file ? req.file.filename : 'N/A';
+
+  // Insert the form data into MySQL
+  pool.query('INSERT INTO yyexpensesrecord (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      console.log(req.body);
+      res.render('yyexpenses-record');
+    }
+  });
+});
 
 //----------------------Ending--------------------------------------------------------------------------------
-app.get('/profile/:name', function(req, res){
+app.get('/profile/:name', requireLogin, function(req, res){
     res.render('profile', {person: req.params.name});
 });
 app.listen(5000, '0.0.0.0', () => {

@@ -202,7 +202,9 @@
     left: 0;
   }
 }
-
+.logout:hover{
+  color: #dc69ff;
+}
 #bottom {
   position: absolute;
   bottom: 0;
