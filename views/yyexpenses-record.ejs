@@ -6,6 +6,7 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
         <link href="style.css" type="text/css" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-3.6.4.js" integrity="sha256-a9jBBRygX1Bh5lt8GZjXDzyOB+bWve9EiO7tROUtj/E=" crossorigin="anonymous"></script>
         <title>Yong&Yi-Expenses Record</title>
         <script>
             if ( window.history.replaceState ) {
@@ -26,20 +27,38 @@
             <label class="form_name" for="category">Category</label>
             <select class="form_id" name="category" required>
                 <option value="">Select a category</option>
-                <option value="shippingfee">Shipping Fees</option>
-                <option value="handlingfee">Handling Fees</option>
-                <option value="misc">Other Misc</option>
-                <option value="salary">Salary Timeeee</option>
+                <option value="Allowance">Allowance</option>
+                <option value="Bank Charges">Bank Charges</option>
+                <option value="Custom Duties">Custom Duties</option>
+                <option value="Electricity & Water">Electricity & Water</option>
+                <option value="EPF">EPF</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Hardware & Tools">Hardware & Tools</option>
+                <option value="Handling Expenses">Handling Expenses</option>
+                <option value="Printing & Stationery">Printing & Stationery</option>
+                <option value="Petrol">Petrol</option>
+                <option value="Postage & Courier">Postage & Courier</option>
+                <option value="Rental of Shop">Rental of Shop</option>
+                <option value="Registration of Shop">Registration of Shop</option>
+                <option value="Salary">Salary</option>
+                <option value="SOCSO & SIP">SOCSO & SIP</option>
+                <option value="Staff Welfare">Staff Welfare</option>
+                <option value="Small Value Assets">Small Value Assets</option>
+                <option value="Sewage Charges">Sewage Charges</option>
+                <option value="Sundry Expenses">Sundry Expenses</option>
+                <option value="Wages">Wages</option>
+                <option value="Miscellaneous">Miscellaneous</option>
             </select><br>
             <label class="form_name" for="bank">Bank</label>
             <select class="form_id" name="bank" required>
-                <option value="">Select a bank</option>
-                <option value="UOB Bank">UOB Bank</option>
                 <option value="HongLeongBank">Hong Leong Bank</option>
-                <option value="Maybank">Maybank</option>
             </select><br>
             <label class="form_name" for="name">Name</label>
-            <input class="form_id" type="text" name="name" required><br>
+            <select class="form_id" id="name" name="name">
+              <option value="">Choose a Name</option>
+              <option value="Gdex">Gdex</option>
+              <option value="other">Other</option>
+            </select><br>
             <label class="form_name" for="amount">Amount</label>
             <input class="form_id" type="number" step="0.01" name="amount" required><br>
             <label class="form_name" for="detail">Details</label><br>
@@ -52,6 +71,26 @@
             </div>
         </form>
         </main>
+        <script>
+          $(document).ready(function() {
+            // Hide the input field initially
+            $('#othername').hide();
+        
+            // Show the input field if user selects "Other"
+            $('#name').on('change', function() {
+              if ($(this).val() === 'other') {
+                $('#othername').show();
+              } else {
+                $('#othername').hide();
+              }
+            });
+        
+            // Update the select dropdown when user enters value in the input field
+            $('#othername').on('input', function() {
+              $('#name').val('other');
+            });
+          });
+        </script>
         <script>
             document.getElementById('yyexpenses-form').addEventListener('submit', async (event) => {
           event.preventDefault();
