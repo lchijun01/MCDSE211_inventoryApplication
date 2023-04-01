@@ -72,7 +72,7 @@ app.post('/login', urlencodedParser, async (req, res) => {
   // You can replace this with a database query to fetch the user's details
   const user = {
     username: 'ykzone',
-    password: await bcrypt.hash('123456', 10)
+    password: await bcrypt.hash('amitofo123', 10)
   };
 
   if (username === user.username && await bcrypt.compare(password, user.password)) {
@@ -522,7 +522,7 @@ app.get('/yyexportbuy_csv', requireLogin, function(req, res) {
 
 //-------------------------------------Bank statement---------------------------------------------------
 
-  app.get('/accruals', requireLogin, function(req, res){
+app.get('/accruals', requireLogin, function(req, res){
     res.render('accruals');
 });
 app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res){
@@ -1347,13 +1347,14 @@ app.get('/ykzexpenses-record', requireLogin, function(req, res){
   res.render('ykzexpenses-record');
 });
 app.post('/ykzexpenses-record',upload.single('file'),  urlencodedParser, function(req, res){
-  const { date, invoice_no, category, bank, name, amount, detail } = req.body;
+  const { date, category, bank, name, amount, detail } = req.body;
+  const invoice_no = req.file ? req.file.invoice_no : 'N/A';
 
   // Get the filename from the request
   const filename = req.file ? req.file.filename : 'N/A';
 
   // Insert the form data into MySQL
-  pool.query('INSERT INTO ykzexpensesrecord (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+  pool.query('INSERT INTO ykzexpensesrecord (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ifnull(?, "N/A"), ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
@@ -1363,6 +1364,108 @@ app.post('/ykzexpenses-record',upload.single('file'),  urlencodedParser, functio
     }
   });
 });
+//for ykickzone top up and check balance left
+app.get('/topupbalance', (req, res) => {
+  pool.query(
+    `SELECT * FROM topupbalance WHERE wallet = 'Gdex' ORDER BY id DESC LIMIT 1`,
+    (err, topupResult) => {
+      if (err) {
+        console.error('Error fetching topup data from database: ', err);
+        res.status(500).send('Internal server error');
+      } else {
+        pool.query(
+          `SELECT * FROM ykzexpensesrecord WHERE Name = 'Gdex'`,
+          (err, expensesResult) => {
+            if (err) {
+              console.error('Error fetching expenses data from database: ', err);
+              res.status(500).send('Internal server error');
+            } else {
+              const totalAmount = expensesResult.reduce((acc, row) => row.Name === 'Gdex' ? acc + parseFloat(row.Amount) : acc, 0);
+              const rows = topupResult.map(row => {
+                if (row.wallet === 'Gdex') {
+                  row.lastbalance -= totalAmount;
+                }
+                return row;
+              });
+              res.render('topupbalance', { rows , successMessage: false });
+            }
+          }
+        );
+      }
+    }
+  );
+});
+app.post('/topupbalance', upload.single('file'), urlencodedParser, function(req, res) {
+  const wallet = req.body.wallets;
+  const amount = req.body.amounts;
+  const date = req.body.date;
+
+  // get the last balance for the given wallet
+  pool.query(
+    `SELECT lastbalance FROM topupbalance WHERE wallet = ? ORDER BY id DESC LIMIT 1`,
+    [wallet],
+    (err, result) => {
+      if (err) {
+        console.error('Error fetching data from database: ', err);
+        res.status(500).send('Internal server error');
+      } else {
+        let lastbalance = 0;
+        if (result && result.length > 0 && result[0].lastbalance) {
+          lastbalance = result[0].lastbalance;
+        }
+
+        // calculate the new balance
+        const newbalance = parseFloat(lastbalance) + parseFloat(amount);
+
+        // insert a new row into the table
+        pool.query(
+          `INSERT INTO topupbalance (wallet, amount, lastbalance, date) VALUES (?, ?, ?, ?)`,
+          [wallet, amount, newbalance, date],
+          (err, result) => {
+            if (err) {
+              console.error('Error inserting data into database: ', err);
+              res.status(500).send('Internal server error');
+            } else {
+              console.log('Data inserted successfully');
+              // fetch the rows again and render the view with all the necessary variables
+              pool.query(
+                `SELECT * FROM topupbalance WHERE wallet = ? ORDER BY id DESC LIMIT 1`,
+                [wallet],
+                (err, topupResult) => {
+                  if (err) {
+                    console.error('Error fetching data from database: ', err);
+                    res.status(500).send('Internal server error');
+                  } else {
+                    pool.query(
+                      `SELECT * FROM ykzexpensesrecord WHERE Name = ?`,
+                      [wallet],
+                      (err, expensesResult) => {
+                        if (err) {
+                          console.error('Error fetching data from database: ', err);
+                          res.status(500).send('Internal server error');
+                        } else {
+                          const totalAmount = expensesResult.reduce((acc, row) => row.Name === wallet ? acc + parseFloat(row.Amount) : acc, 0);
+                          const rows = topupResult.map(row => {
+                            if (row.wallet === wallet) {
+                              row.lastbalance -= totalAmount;
+                            }
+                            return row;
+                          });
+                          res.render('topupbalance', { successMessage: true, wallet, amount, newbalance, rows });
+                        }
+                      }
+                    );
+                  }
+                }
+              );
+            }
+          }
+        );
+      }
+    }
+  );  
+});
+
 
 //-------below is for Yong & Yi  Partnership Enterprise-----------------------------------------------------------------------------
 //-------------------Sales-----------------------------------------------------------------------------
@@ -1902,13 +2005,14 @@ app.get('/yyexpenses-record', requireLogin, function(req, res){
   res.render('yyexpenses-record');
 });
 app.post('/yyexpenses-record',upload.single('file'),  urlencodedParser, function(req, res){
-  const { date, invoice_no, category, bank, name, amount, detail } = req.body;
+  const { date, category, bank, name, amount, detail } = req.body;
 
   // Get the filename from the request
   const filename = req.file ? req.file.filename : 'N/A';
+  const invoice_no = req.file ? req.file.invoice_no : 'N/A';
 
   // Insert the form data into MySQL
-  pool.query('INSERT INTO yyexpensesrecord (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
+  pool.query('INSERT INTO yyexpensesrecord (Date, Invoice_No, Category, Bank, Name, Amount, Detail, File) VALUES (?, ifnull(?, "N/A"), ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, category, bank, name, amount, detail, filename], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
@@ -1917,6 +2021,107 @@ app.post('/yyexpenses-record',upload.single('file'),  urlencodedParser, function
       res.render('yyexpenses-record');
     }
   });
+});
+//for ykickzone top up and check balance left
+app.get('/yytopupbalance', (req, res) => {
+  pool.query(
+    `SELECT * FROM yytopupbalance WHERE wallet = 'Gdex' ORDER BY id DESC LIMIT 1`,
+    (err, topupResult) => {
+      if (err) {
+        console.error('Error fetching topup data from database: ', err);
+        res.status(500).send('Internal server error');
+      } else {
+        pool.query(
+          `SELECT * FROM yyexpensesrecord WHERE Name = 'Gdex'`,
+          (err, expensesResult) => {
+            if (err) {
+              console.error('Error fetching expenses data from database: ', err);
+              res.status(500).send('Internal server error');
+            } else {
+              const totalAmount = expensesResult.reduce((acc, row) => row.Name === 'Gdex' ? acc + parseFloat(row.Amount) : acc, 0);
+              const rows = topupResult.map(row => {
+                if (row.wallet === 'Gdex') {
+                  row.lastbalance -= totalAmount;
+                }
+                return row;
+              });
+              res.render('yytopupbalance', { rows , successMessage: false });
+            }
+          }
+        );
+      }
+    }
+  );
+});
+app.post('/yytopupbalance', upload.single('file'), urlencodedParser, function(req, res) {
+  const wallet = req.body.wallets;
+  const amount = req.body.amounts;
+  const date = req.body.date;
+
+  // get the last balance for the given wallet
+  pool.query(
+    `SELECT lastbalance FROM yytopupbalance WHERE wallet = ? ORDER BY id DESC LIMIT 1`,
+    [wallet],
+    (err, result) => {
+      if (err) {
+        console.error('Error fetching data from database: ', err);
+        res.status(500).send('Internal server error');
+      } else {
+        let lastbalance = 0;
+        if (result && result.length > 0 && result[0].lastbalance) {
+          lastbalance = result[0].lastbalance;
+        }
+
+        // calculate the new balance
+        const newbalance = parseFloat(lastbalance) + parseFloat(amount);
+
+        // insert a new row into the table
+        pool.query(
+          `INSERT INTO yytopupbalance (wallet, amount, lastbalance, date) VALUES (?, ?, ?, ?)`,
+          [wallet, amount, newbalance, date],
+          (err, result) => {
+            if (err) {
+              console.error('Error inserting data into database: ', err);
+              res.status(500).send('Internal server error');
+            } else {
+              console.log('Data inserted successfully');
+              // fetch the rows again and render the view with all the necessary variables
+              pool.query(
+                `SELECT * FROM yytopupbalance WHERE wallet = ? ORDER BY id DESC LIMIT 1`,
+                [wallet],
+                (err, topupResult) => {
+                  if (err) {
+                    console.error('Error fetching data from database: ', err);
+                    res.status(500).send('Internal server error');
+                  } else {
+                    pool.query(
+                      `SELECT * FROM yyexpensesrecord WHERE Name = ?`,
+                      [wallet],
+                      (err, expensesResult) => {
+                        if (err) {
+                          console.error('Error fetching data from database: ', err);
+                          res.status(500).send('Internal server error');
+                        } else {
+                          const totalAmount = expensesResult.reduce((acc, row) => row.Name === wallet ? acc + parseFloat(row.Amount) : acc, 0);
+                          const rows = topupResult.map(row => {
+                            if (row.wallet === wallet) {
+                              row.lastbalance -= totalAmount;
+                            }
+                            return row;
+                          });
+                          res.render('yytopupbalance', { successMessage: true, wallet, amount, newbalance, rows });
+                        }
+                      }
+                    );
+                  }
+                }
+              );
+            }
+          }
+        );
+      }
+    }
+  );  
 });
 
 //----------------------Ending--------------------------------------------------------------------------------
