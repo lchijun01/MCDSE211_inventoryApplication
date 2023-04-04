@@ -28,7 +28,7 @@
                 <% rows.forEach(row => { %>
                     <tr>
                       <td><%= row.wallet %></td>
-                      <td><%= row.lastbalance %></td>
+                      <td><%= row.lastbalance.toFixed(2) %></td>
                     </tr>
                   <% }) %>
             </tbody>

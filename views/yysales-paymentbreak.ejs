@@ -59,12 +59,13 @@
 
     // Get the invoice number from the form
     const invoiceNumber = document.getElementById('invoice_no').value;
+    const remarks = document.getElementById('remarks').value;
 
     // Send the image file to Discord
     const discordFormData = new FormData();
     discordFormData.append('file', file, file.name);
     discordFormData.append('payload_json', JSON.stringify({
-      content: `Invoice Number: ${invoiceNumber}`,
+      content: `Invoice Number: ${invoiceNumber}, Remarks: ${remarks}`,
     }));
 
     await fetch('https://discord.com/api/webhooks/1087316915531305030/6ou8V0yEElK6KvcaQrFJe9xsJ6PkNy6tqE7ebYmsDCT4inUNTKLbA0TUJsJg6VTZdGid', {

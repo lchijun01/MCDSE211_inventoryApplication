@@ -10,12 +10,12 @@ const fastCsv = require('fast-csv');
 const ejs = require('ejs');
 app.use(express.static(__dirname + '/public'));
 app.use(express.static('public'))
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // Use a reverse proxy to forward requests to the Node.js server running on port 5000
-app.use('/api', createProxyMiddleware({ target: 'http://192.168.0.126:5000', changeOrigin: true }));
+app.use('/api', createProxyMiddleware({ target: 'http://192.168.0.103:5000', changeOrigin: true }));
 
 const pool = mysql.createPool({
     poolLimit: 10,
@@ -2129,5 +2129,5 @@ app.get('/profile/:name', requireLogin, function(req, res){
     res.render('profile', {person: req.params.name});
 });
 app.listen(5000, '0.0.0.0', () => {
-  console.log('Server running at http://192.168.0.126:5000/');
+  console.log('Server running at http://192.168.0.103:5000/');
 });

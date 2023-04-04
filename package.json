@@ -1,12 +1,20 @@
 {
+  "name": "myapp",
+  "version": "1.0.0",
+  "description": "My awesome app",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
   "dependencies": {
     "async": "^3.2.4",
-    "bcrypt": "^5.1.0",
+    "bcryptjs": "^2.4.3",
     "blob": "^0.1.0",
     "body-parser": "^1.20.2",
     "busboy": "^1.6.0",
     "csv": "^6.2.8",
     "csv-parser": "^3.0.0",
+    "decimal.js": "^10.4.3",
     "discord-webhook-node": "^1.1.8",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
@@ -19,6 +27,12 @@
     "mysql": "^2.18.1",
     "node-fetch": "^2.6.6",
     "nodemon": "^2.0.21",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "python": "^0.0.4"
+  },
+  "binary": {
+    "module_name": "bcrypt_lib",
+    "module_path": "./node_modules/bcrypt/lib/binding/napi-v3",
+    "host": "https://github.com/kelektiv/node.bcrypt.js/releases/download/v5.0.1"
   }
 }
