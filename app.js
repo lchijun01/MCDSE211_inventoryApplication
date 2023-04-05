@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const multer  = require('multer');
 const upload = multer({ dest: 'uploads/' });
+const moment = require('moment');
 const fs = require('fs');
 const csv = require('csv-parser');
 const fastCsv = require('fast-csv');
@@ -303,7 +304,7 @@ app.get('/exportbuy_csv', requireLogin, function(req, res) {
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
-//----------------------------Yong & Yi Partnership Enterprise----------------------------------------------
+//----------------------------Yong & Yi Partnership Enterprise----------------------------------------------done change
 app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
   const { path: csvFilePath } = req.file;
 
@@ -321,7 +322,7 @@ app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
       if (!invoiceNos.has(InvoiceNo)) {
         // If the InvoiceNo hasn't been inserted into the sell_invoice table yet, insert it along with the relevant data
         invoiceNos.add(InvoiceNo); // Add the InvoiceNo to the Set of already-inserted InvoiceNos
-        pool.query('INSERT INTO yysell_invoice (Invoice_number, Name, Address1, Address2, Address3, PostCode, City, State, Country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, Name, Address1, Address2, Address3, PostCode, City, State, Country], (error, results, fields) => {
+        pool.query('INSERT INTO yysell_invoice (Invoice_number, Name, Address1, Address2, Address3, PostCode, City, State, Country, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, Name, Address1, Address2, Address3, PostCode, City, State, Country, Date], (error, results, fields) => {
           if (error) {
             console.error(error);
           } else {
@@ -352,7 +353,7 @@ app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
     });
 });
 app.get('/yyexportsell_csv', requireLogin, function(req, res) {
-  const sql = `SELECT yysell_invoice.Invoice_number, yysell_invoice.Name, yysell_invoice.Phone, yysell_invoice.Address1, yysell_invoice.Address2, yysell_invoice.Address3, yysell_invoice.PostCode, yysell_invoice.City, yysell_invoice.State, yysell_invoice.Country, yyitems_sell.Content_SKU AS Description, yyitems_sell.SizeUS, yyitems_sell.Quantity, yyitems_sell.UnitPrice, yyitems_sell.Amount
+  const sql = `SELECT yysell_invoice.Invoice_number, yysell_invoice.Name, yysell_invoice.Phone, yysell_invoice.timestamp As date, yysell_invoice.Address1, yysell_invoice.Address2, yysell_invoice.Address3, yysell_invoice.PostCode, yysell_invoice.City, yysell_invoice.State, yysell_invoice.Country, yyitems_sell.Content_SKU AS Description, yyitems_sell.SizeUS, yyitems_sell.Quantity, yyitems_sell.UnitPrice, yyitems_sell.Amount
                FROM yysell_invoice
                JOIN yyitems_sell ON yysell_invoice.Invoice_number = yyitems_sell.InvoiceNumber
                ORDER BY yysell_invoice.Invoice_number, yyitems_sell.Content_SKU`;
@@ -365,10 +366,13 @@ app.get('/yyexportsell_csv', requireLogin, function(req, res) {
 
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+
       // If this row has a different invoice number than the previous one, start a new row in the CSV
       if (row.Invoice_number !== currentInvoiceNo) {
         csvData.push({
           InvoiceNo: row.Invoice_number,
+          Date: formattedDate, // Use the formatted date property
           Name: row.Name,
           Phone: row.Phone,
           Address1: row.Address1,
@@ -389,6 +393,7 @@ app.get('/yyexportsell_csv', requireLogin, function(req, res) {
         // If this row has the same invoice number as the previous one, add a new row to the CSV with only the item data
         csvData.push({
           InvoiceNo: row.Invoice_number,
+          Date: formattedDate, // Use the formatted date property
           Name: row.Name,
           Phone: row.Phone,
           Address1: row.Address1,
@@ -413,6 +418,65 @@ app.get('/yyexportsell_csv', requireLogin, function(req, res) {
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
+app.post('/yyimportspay_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { InvoiceNumber, Date, Amount, IntoWhichBank, OtherCurrencyRemark } = data;
+      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
+
+      const formattedDate = moment(Date, 'DD-MMM-YYYY').format('YYYY-MM-DD');
+
+      pool.query('INSERT INTO yysales_paymentbreakdown ( Date, Invoice_No, Bank, Amount, Remarks ) VALUES (?, ?, ?, ?, ?)', [formattedDate, InvoiceNumber, IntoWhichBank, parsedAmount, OtherCurrencyRemark], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${InvoiceNumber}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/yyexportspay_csv', function(req, res) {
+  const sql = `SELECT yysales_paymentbreakdown.Invoice_No, yysales_paymentbreakdown.Date as date, yysales_paymentbreakdown.Bank, yysales_paymentbreakdown.Amount, yysales_paymentbreakdown.Remarks
+               FROM yysales_paymentbreakdown
+               ORDER BY yysales_paymentbreakdown.Invoice_No`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    let currentInvoiceNo = null;
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          InvoiceNumber: row.Invoice_No,
+          Date: formattedDate,
+          To: row.Bank,
+          Amount: row.Amount,
+          OtherCurrencyRemark: row.Remarks
+        });
+        currentInvoiceNo = row.Invoice_number;
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yysalespaymentbreakdown_data.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+
+
+
 app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
   const { path: csvFilePath } = req.file;
 
@@ -423,41 +487,41 @@ app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
     .pipe(csv())
     .on('data', (data) => {
       // Extract the relevant data from the CSV row
-      const { InvoiceNo, Name, BankName, Bank, BankNumber, Remarks, Description, SizeUS, Quantity, UnitPrice, Amount, SKU } = data;
+      const { PONo, Date, Name, BankName, Bank, BankNumber, Remarks, Description, SizeUS, Quantity, UnitPrice, Amount, SKU, CompanyName } = data;
       const parsedUnitPrice = parseFloat(UnitPrice && UnitPrice.replace(/[^0-9.-]+/g,""));
       const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
 
       if (!isNaN(parsedUnitPrice) && !isNaN(parsedAmount)) {
         // Only insert the row if parsedUnitPrice and parsedAmount are not NaN
-        if (!invoiceNos.has(InvoiceNo)) {
+        if (!invoiceNos.has(PONo)) {
           // If the InvoiceNo hasn't been inserted into the sell_invoice table yet, insert it along with the relevant data
-          invoiceNos.add(InvoiceNo); // Add the InvoiceNo to the Set of already-inserted InvoiceNos
-          pool.query('INSERT INTO yybuy_record (Invoice_number, Name, BankName, Bank, Bankaccount, Remarks) VALUES (?, ?, ?, ?, ?, ?)', [InvoiceNo, Name, BankName, Bank, BankNumber, Remarks], (error, results, fields) => {
+          invoiceNos.add(PONo); // Add the InvoiceNo to the Set of already-inserted InvoiceNos
+          pool.query('INSERT INTO yybuy_record (Invoice_number, Name, BankName, Bank, Bankaccount, Remarks, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)', [PONo, Name, BankName, Bank, BankNumber, CompanyName, Date], (error, results, fields) => {
             if (error) {
               console.error(error);
             } else {
               // If the insert into sell_invoice is successful, insert the corresponding data into the items_sell table
-              pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, SKU, Description, SizeUS, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+              pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [PONo, SKU, Description, SizeUS, Quantity, parsedUnitPrice, parsedAmount], (error, results) => {
                 if (error) {
                   console.error(error);
                 } else {
-                  console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+                  console.log(`Data successfully inserted for InvoiceNo ${PONo}`);
                 }
               });
             }
           });
         } else {
           // If the InvoiceNo has already been inserted into the sell_invoice table, insert the corresponding data into the items_sell table only
-          pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, SKU, Description, SizeUS, Quantity, parsedUnitPrice, parsedAmount], (error, results, fields) => {
+          pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [PONo, SKU, Description, SizeUS, Quantity, parsedUnitPrice, parsedAmount], (error, results) => {
             if (error) {
               console.error(error);
             } else {
-              console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
+              console.log(`Data successfully inserted for InvoiceNo ${PONo}`);
             }
           });
         }
       } else {
-        console.log(`Skipping row with InvoiceNo ${InvoiceNo} due to NaN values`);
+        console.log(`Skipping row with InvoiceNo ${PONo} due to NaN values`);
       }
     })
     .on('end', () => {
@@ -465,8 +529,8 @@ app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/yyexportbuy_csv', requireLogin, function(req, res) {
-  const sql = `SELECT yybuy_record.Invoice_number, yybuy_record.Name, yybuy_record.BankName, yybuy_record.Bank, yybuy_record.Bankaccount, yybuy_record.Remarks, yyitems_buy.Content_SKU AS Description, yyitems_buy.SizeUS, yyitems_buy.Quantity, yyitems_buy.UnitPrice, yyitems_buy.Amount
+app.get('/yyexportbuy_csv', function(req, res) {
+  const sql = `SELECT yybuy_record.Invoice_number, yybuy_record.Name, yybuy_record.BankName, yybuy_record.Bank, yybuy_record.timestamp as date, yybuy_record.Bankaccount, yybuy_record.Remarks, yyitems_buy.Content_SKU, yyitems_buy.ProductName, yyitems_buy.SizeUS, yyitems_buy.Quantity, yyitems_buy.UnitPrice, yyitems_buy.Amount
                FROM yybuy_record
                JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber
                ORDER BY yybuy_record.Invoice_number, yyitems_buy.Content_SKU`;
@@ -476,19 +540,22 @@ app.get('/yyexportbuy_csv', requireLogin, function(req, res) {
 
     const csvData = [];
     let currentInvoiceNo = null;
-
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+
       // If this row has a different invoice number than the previous one, start a new row in the CSV
       if (row.Invoice_number !== currentInvoiceNo) {
         csvData.push({
-          InvoiceNo: row.Invoice_number,
+          PONo: row.Invoice_number,
+          Date: formattedDate,
           Name: row.Name,
           BankName: row.BankName,
           Bank: row.Bank,
           BankNumber: row.Bankaccount,
           Remarks: row.Remarks,
-          Description: row.Description,
+          ProductName: row.ProductName,
+          SKU: row.Content_SKU,
           SizeUS: row.SizeUS,
           Quantity: row.Quantity,
           UnitPrice: row.UnitPrice,
@@ -498,13 +565,15 @@ app.get('/yyexportbuy_csv', requireLogin, function(req, res) {
       } else {
         // If this row has the same invoice number as the previous one, add a new row to the CSV
         csvData.push({
-          InvoiceNo: row.Invoice_number,
+          PONo: row.Invoice_number,
+          Date: formattedDate,
           Name: row.Name,
           BankName: row.BankName,
           Bank: row.Bank,
           BankNumber: row.Bankaccount,
           Remarks: row.Remarks,
-          Description: row.Description,
+          ProductName: row.ProductName,
+          SKU: row.Content_SKU,
           SizeUS: row.SizeUS,
           Quantity: row.Quantity,
           UnitPrice: row.UnitPrice,
@@ -520,9 +589,68 @@ app.get('/yyexportbuy_csv', requireLogin, function(req, res) {
   });
 });
 
+app.post('/yyimportbpay_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { PONo, Date, Amount, To, OtherCurrencyRemark, BankRefs } = data;
+      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
+
+      const formattedDate = moment(Date, 'DD-MMM-YYYY').format('YYYY-MM-DD');
+
+      pool.query('INSERT INTO yypurchase_paymentbreakdown ( Date, Invoice_No, Bank, Amount, Remarks, BankRefs ) VALUES (?, ?, ?, ?, ?, ?)', [formattedDate, PONo, To, parsedAmount, OtherCurrencyRemark, BankRefs], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${PONo}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/yyexportbpay_csv', function(req, res) {
+  const sql = `SELECT yypurchase_paymentbreakdown.Invoice_No, yypurchase_paymentbreakdown.Date as date, yypurchase_paymentbreakdown.Bank, yypurchase_paymentbreakdown.Amount, yypurchase_paymentbreakdown.Remarks, yypurchase_paymentbreakdown.BankRefs
+               FROM yypurchase_paymentbreakdown
+               ORDER BY yypurchase_paymentbreakdown.Invoice_No`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    let currentInvoiceNo = null;
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          PONo: row.Invoice_No,
+          Date: formattedDate,
+          To: row.Bank,
+          Amount: row.Amount,
+          OtherCurrencyRemark: row.Remarks,
+          BankRefs: row.BankRefs
+        });
+        currentInvoiceNo = row.Invoice_number;
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yypurchasepaymentbreakdown_data.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+
+
 //-------------------------------------Bank statement---------------------------------------------------
 
-app.get('/accruals', requireLogin, function(req, res){
+app.get('/accruals', requireLogin, function(req,res){
     res.render('accruals');
 });
 app.post('/accruals',upload.single('file'),  urlencodedParser, function(req, res){
@@ -589,19 +717,19 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
 
 // Define route for stock check page
 app.get('/stock-check', requireLogin, function(req, res) {
-  pool.query('SELECT buy_record.Invoice_number, buy_record.Name, items_buy.Content_SKU, items_buy.SizeUS, SUM(items_buy.Quantity) as totalquantity, SUM(items_buy.Amount) as Total_Cost FROM buy_record JOIN items_buy ON buy_record.Invoice_number = items_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as Paid_Amount FROM purchase_paymentbreakdown GROUP BY Invoice_No) AS payment ON items_buy.InvoiceNumber = payment.Invoice_No GROUP BY items_buy.InvoiceNumber HAVING COALESCE(SUM(items_buy.Amount),0) - COALESCE(SUM(payment.Paid_Amount),0) = 0', function(error, zeroResults) {
+  pool.query('SELECT buy_record.Invoice_number, buy_record.Name, items_buy.Content_SKU, items_buy.SizeUS, SUM(items_buy.Quantity) as totalquantity, SUM(items_buy.Amount) as Total_Cost FROM buy_record JOIN items_buy ON buy_record.Invoice_number = items_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as Paid_Amount FROM purchase_paymentbreakdown GROUP BY Invoice_No) AS payment ON items_buy.InvoiceNumber = payment.Invoice_No GROUP BY buy_record.Invoice_number, buy_record.Name, items_buy.Content_SKU, items_buy.SizeUS HAVING COALESCE(SUM(items_buy.Amount),0) - COALESCE(SUM(payment.Paid_Amount),0) = 0', function(error, zeroResults) {
     if (error) {
       console.log(error);
     } else {
-      pool.query('SELECT buy_record.Invoice_number, buy_record.Name, items_buy.Content_SKU, items_buy.SizeUS, SUM(items_buy.Quantity) as totalquantity, SUM(items_buy.Amount) as Total_Cost FROM buy_record JOIN items_buy ON buy_record.Invoice_number = items_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as Paid_Amount FROM purchase_paymentbreakdown GROUP BY Invoice_No) AS payment ON items_buy.InvoiceNumber = payment.Invoice_No GROUP BY items_buy.InvoiceNumber HAVING COALESCE(SUM(items_buy.Amount),0) - COALESCE(SUM(payment.Paid_Amount),0) <> 0', function(error, nonZeroResults) {
+      pool.query('SELECT buy_record.Invoice_number, buy_record.Name, items_buy.Content_SKU, items_buy.SizeUS, SUM(items_buy.Quantity) as totalquantity, SUM(items_buy.Amount) as Total_Cost FROM buy_record JOIN items_buy ON buy_record.Invoice_number = items_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as Paid_Amount FROM purchase_paymentbreakdown GROUP BY Invoice_No) AS payment ON items_buy.InvoiceNumber = payment.Invoice_No GROUP BY buy_record.Invoice_number, buy_record.Name, items_buy.Content_SKU, items_buy.SizeUS HAVING COALESCE(SUM(items_buy.Amount),0) - COALESCE(SUM(payment.Paid_Amount),0) <> 0', function(error, nonZeroResults) {
         if (error) {
           console.log(error);
         } else {
-          pool.query('SELECT yybuy_record.Invoice_number, yybuy_record.Name, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as yytotalquantity, SUM(yyitems_buy.Amount) as yyTotal_Cost FROM yybuy_record JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as yyPaid_Amount FROM yypurchase_paymentbreakdown GROUP BY Invoice_No) AS yypayment ON yyitems_buy.InvoiceNumber = yypayment.Invoice_No GROUP BY yyitems_buy.InvoiceNumber HAVING COALESCE(SUM(yyitems_buy.Amount),0) - COALESCE(SUM(yypayment.yyPaid_Amount),0) = 0', function(error, yyzeroResults) {
+          pool.query('SELECT yybuy_record.Invoice_number, yybuy_record.Name, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as yytotalquantity, SUM(yyitems_buy.Amount) as yyTotal_Cost FROM yybuy_record JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as yyPaid_Amount FROM yypurchase_paymentbreakdown GROUP BY Invoice_No) AS yypayment ON yyitems_buy.InvoiceNumber = yypayment.Invoice_No GROUP BY yybuy_record.Invoice_number, yybuy_record.Name, yyitems_buy.Content_SKU, yyitems_buy.SizeUS HAVING COALESCE(SUM(yyitems_buy.Amount),0) - COALESCE(SUM(yypayment.yyPaid_Amount),0) = 0', function(error, yyzeroResults) {
             if (error) {
               console.log(error);
             } else {
-              pool.query('SELECT yybuy_record.Invoice_number, yybuy_record.Name, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as yytotalquantity, SUM(yyitems_buy.Amount) as yyTotal_Cost FROM yybuy_record JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as yyPaid_Amount FROM yypurchase_paymentbreakdown GROUP BY Invoice_No) AS yypayment ON yyitems_buy.InvoiceNumber = yypayment.Invoice_No GROUP BY yyitems_buy.InvoiceNumber HAVING COALESCE(SUM(yyitems_buy.Amount),0) - COALESCE(SUM(yypayment.yyPaid_Amount),0) <> 0', function(error, yynonZeroResults) {
+              pool.query('SELECT yybuy_record.Invoice_number, yybuy_record.Name, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as yytotalquantity, SUM(yyitems_buy.Amount) as yyTotal_Cost FROM yybuy_record JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber LEFT JOIN (SELECT Invoice_No, SUM(Amount) as yyPaid_Amount FROM yypurchase_paymentbreakdown GROUP BY Invoice_No) AS yypayment ON yyitems_buy.InvoiceNumber = yypayment.Invoice_No GROUP BY yybuy_record.Invoice_number, yybuy_record.Name, yyitems_buy.Content_SKU, yyitems_buy.SizeUS HAVING COALESCE(SUM(yyitems_buy.Amount),0) - COALESCE(SUM(yypayment.yyPaid_Amount),0) <> 0', function(error, yynonZeroResults) {
                 if (error) {
                   console.log(error);
                 } else {
