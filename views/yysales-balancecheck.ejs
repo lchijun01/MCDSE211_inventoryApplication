@@ -40,8 +40,8 @@
                     <td><%= invoice.Name %></td>
                     <td><%= invoice.total_amount %></td>
                     <td><%= invoice.total_paid_amount %></td>
-                    <td><%= invoice.balance_left < 0 ? -invoice.balance_left : 0 %></td>
-                    <td><%= invoice.balance_left >= 0 ? invoice.balance_left : 0 %></td>
+                    <td><%= (invoice.balance_left < 0 ? -invoice.balance_left : 0).toFixed(2) %></td>
+                    <td><%= (invoice.balance_left >= 0 ? invoice.balance_left : 0).toFixed(2) %></td>
                   </tr>
                 <% });} %>
               </tbody>

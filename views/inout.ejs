@@ -23,7 +23,7 @@
         </div>
       <% } %>
       <h1 style="font-weight: bold;">Y KICK ZONE SHOP</h1><br>
-      <h4>Import sell_invoice data</h4>
+      <h4>Import sell_invoice csv</h4>
       <div style="display: flex;">
         <form style="width: 500px;" action="/importsell_csv" method="post" enctype="multipart/form-data">
           <input type="file" name="file">
@@ -31,7 +31,7 @@
         </form>
         <a href="/exportsell_csv" class="btn btn-primary">Export CSV</a>
         </div><br><br>
-      <h4>buy_record data</h4>
+      <h4>buy_record csv</h4>
       <div style="display: flex;">
         <form style="width: 500px;" action="/importbuy_csv" method="post" enctype="multipart/form-data">
           <input type="file" name="file">
@@ -40,7 +40,7 @@
         <a href="/exportbuy_csv" class="btn btn-primary">Export CSV</a>
       </div><br><br><br><br>
   <h1 style="font-weight: bold;">YONG & YI PARTNERSHIP ENTERPRISE</h1><br>
-  <h4>yysell_invoice data</h4>
+  <h4>yysell_invoice csv</h4>
   <div style="display: flex;">
     <form style="width: 500px;" action="/yyimportsell_csv" method="post" enctype="multipart/form-data">
       <input type="file" name="file">
@@ -49,13 +49,31 @@
     <a href="/yyexportsell_csv" class="btn btn-primary">Export CSV</a>
   </div>
   <br><br>
-  <h4>yybuy_record data</h4>
+  <h4>yysales_paymentbreakdown csv</h4>
+  <div style="display: flex;">
+    <form style="width: 500px;" action="/yyimportspay_csv" method="post" enctype="multipart/form-data">
+      <input type="file" name="file">
+      <button class="btn btn-success" type="submit">Import CSV</button>
+    </form>
+    <a href="/yyexportspay_csv" class="btn btn-primary">Export CSV</a>
+  </div>
+  <br><br>
+  <h4>yybuy_record csv</h4>
   <div style="display: flex;">
     <form style="width: 500px;" action="/yyimportbuy_csv" method="post" enctype="multipart/form-data">
       <input type="file" name="file">
       <button class="btn btn-success" type="submit">Import CSV</button>
     </form>
     <a href="/yyexportbuy_csv" class="btn btn-primary">Export CSV</a>
+  </div>
+  <br><br>
+  <h4>yybuy_paymentbreakdown csv</h4>
+  <div style="display: flex;">
+    <form style="width: 500px;" action="/yyimportbpay_csv" method="post" enctype="multipart/form-data">
+      <input type="file" name="file">
+      <button class="btn btn-success" type="submit">Import CSV</button>
+    </form>
+    <a href="/yyexportbpay_csv" class="btn btn-primary">Export CSV</a>
   </div>
     </main>
   </body>

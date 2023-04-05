@@ -165,7 +165,7 @@ const formattedNewTimestamp = `${day}/${month}/${year}`;
                 <td><%= itemsSellResults[i].Content_SKU %></td>
                 <td style="text-align: center;"><%= itemsSellResults[i].Quantity %></td>
                 <td style="text-align: center;"><%= itemsSellResults[i].UnitPrice %></td>
-                <td style="text-align: center;"><%= itemsSellResults[i].Amount %></td>
+                <td style="text-align: center;"><%= itemsSellResults[i].Amount.toFixed(2) %></td>
                 </tr>
                 <% counter++ %>
                 <% } %>
@@ -183,7 +183,7 @@ const formattedNewTimestamp = `${day}/${month}/${year}`;
                 <thead>
                   <tr>
                     <th style="width: 130px;text-align: right;">Subtotal</th>
-                    <td style="width: 200px;text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount %></td>
+                    <td style="width: 200px;text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount.toFixed(2) %></td>
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;">Adjustment</th>
@@ -191,11 +191,11 @@ const formattedNewTimestamp = `${day}/${month}/${year}`;
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;">Total</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount.toFixed(2) %></td>
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;">Paid Amount</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalpaid %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalpaid.toFixed(2) %></td>
                   </tr>
                   <% if (balance < 0) { %>
                   <tr>
@@ -205,7 +205,7 @@ const formattedNewTimestamp = `${day}/${month}/${year}`;
                   <% } else { %>
                     <tr>
                       <th style="width: 130px;text-align: right;">Balance Left</th>
-                      <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= balance %></td>
+                      <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= balance.toFixed(2) %></td>
                     </tr>
                 </thead>
                 <% }} %>
