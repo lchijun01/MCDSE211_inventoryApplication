@@ -6,15 +6,25 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <link href="style.css" type="text/css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>Home-Dashboard</title>
+    <style>
+      .chart-container {
+        width: 50%; /* Adjust the width as needed */
+        margin: 0 auto;
+      }
+      .chart-container2 {
+        width: 25%; /* Adjust the width as needed */
+        margin: 0 auto;
+      }
+
+    </style>
   </head>
     <body class="main-contents">
       <%- include('partials/nav');%>
       <main class="main-content">
-        <h1 style="font-family: Arial, Helvetica, sans-serif">This is Homepage you cb kia</h1>
-        <div>
-          <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>
-        </div>
-      </main>
+        <h2>Sell vs Buy Chart</h2>
+        
+      </main>      
     </body>
 </html>

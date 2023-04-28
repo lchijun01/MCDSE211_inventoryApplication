@@ -22,82 +22,49 @@
     <%- include('partials/nav'); %>
     <main class="main-content">
       <div>
-        <h1 style="font-weight: bold;font-size: 100px;">Stock Check</h1>
+        <br><br>
         <div style="display: flex;justify-content: space-between;">
-          <h1 style="font-weight: bold;">Y Kick Zone Shop</h1>
-        <form action="/check" method="get" style="display: flex;margin-right: 400px;">
-          <input type="search" name="invoice_number" style="width: 250px;" class="form-control me-2" placeholder="ykickzone PO Number" aria-label="Search">
-          <button type="submit" class="btn btn-primary">Search</button>
-        </form>
+          <h1 style="font-weight: bold;">Stock Left <br>Yong & Yi Partnership Enterprise</h1>
+          <div>
+            <form action="/stock-check" method="get" style="display: flex;">
+              <input type="search" name="sku" style="width: 250px;margin-right: 30px;" class="form-control me-2" placeholder="Search SKU" aria-label="Search">
+              <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+            <form action="/stock-checka" method="get" style="display: flex;">
+              <input type="search" name="size" style="width: 250px;margin-right: 30px;" class="form-control me-2" placeholder="Search Size" aria-label="Search">
+              <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+          </div>
         </div>
-        <table style="margin-top: 20px;" class="table table-striped">
+        <table style="margin-top: 20px;width: 90%;" class="table table-striped">
           <thead>
             <tr>
-              <th>PO number</th>
-              <th>Seller Name</th>
-              <th>Quantity</th>
-              <th>Total Cost</th>
-              <th>Check</th>
+              <th>SKU</th>
+              <th>Product Name</th>
+              <th>Size US</th>
+              <th>Total Quantity</th>
+              <th>Cost Price</th>
             </tr>
           </thead>
           <tbody>
-            <% zeroData.forEach(function(row) { %>
-              <tr>
-                <td><%= row.Invoice_number %></td>
-                <td><%= row.Name %></td>
-                <td><%= row.totalquantity %></td>
-                <td>RM <%= row.Total_Cost %></td>
-                <td>Paid</td>
-              </tr>
-            <% }); %>
-            <% nonZeroData.forEach(function(row) { %>
-              <tr>
-                <td><%= row.Invoice_number %></td>
-                <td><%= row.Name %></td>
-                <td><%= row.totalquantity %></td>
-                <td>RM <%= row.Total_Cost %></td>
-                <td>Not Paid</td>
-              </tr>
-            <% }); %>
+            <% let totalValue = 0 %>
+            <% data.forEach(function(item) { %>
+                <tr>
+                  <td><%= item.Content_SKU %></td>
+                  <td><%= item.ProductName %></td>
+                  <td><%= item.SizeUS %></td>
+                  <td><%= item.total_quantity %></td>
+                  <td><%= Number(item.Amount).toFixed(2) %></td>
+                </tr>
+                <% totalValue += (item.total_quantity * item.Amount) %>
+              <% }) %>
           </tbody>
-        </table><br><br>
-        <div style="display: flex;justify-content: space-between;">
-          <h1 style="font-weight: bold;">Yong & Yi Partnership Enterprise</h1>
-          <form action="/checks" method="get" style="display: flex;margin-right: 400px;">
-            <input type="search" name="invoice_number" style="width: 250px;" class="form-control me-2" placeholder="yong&yi PO Number" aria-label="Search">
-            <button type="submit" class="btn btn-primary">Search</button>
-          </form>
-        </div>
-        <table style="margin-top: 20px;" class="table table-striped">
-          <thead>
+          <tfoot>
             <tr>
-              <th>PO number</th>
-              <th>Seller Name</th>
-              <th>Quantity</th>
-              <th>Total Cost</th>
-              <th>Check</th>
+              <th>Total Value of Stock</th>
+              <th>RM <%= totalValue.toFixed(2) %></th>
             </tr>
-          </thead>
-          <tbody>
-            <% yyzeroData.forEach(function(row) { %>
-              <tr>
-                <td><%= row.Invoice_number %></td>
-                <td><%= row.Name %></td>
-                <td><%= row.yytotalquantity %></td>
-                <td>RM <%= row.yyTotal_Cost %></td>
-                <td>Paid</td>
-              </tr>
-            <% }); %>
-            <% yynonZeroData.forEach(function(row) { %>
-              <tr>
-                <td><%= row.Invoice_number %></td>
-                <td><%= row.Name %></td>
-                <td><%= row.yytotalquantity %></td>
-                <td>RM <%= row.yyTotal_Cost %></td>
-                <td>Not Paid</td>
-              </tr>
-            <% }); %>
-          </tbody>
+          </tfoot>
         </table>
       </div>
     </main>
