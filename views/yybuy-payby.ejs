@@ -59,7 +59,37 @@
                             <tr>
                                 <td><input type="text" class="form-control" style="width: 150px;" name="field1[]"></td>
                                 <td><input type="text" class="form-control" style="width: 220px;" name="field2[]"></td>
-                                <td><input type="text" class="form-control" style="width: 60px;" name="field3[]"></td>
+                                <td>
+                                    <select type="text" class="form-control" style="width: auto;" name="field3[]">
+                                        <option value="">Choose</option>
+                                        <option value="2.5">2.5</option>
+                                        <option value="3">3</option>
+                                        <option value="3.5">3.5</option>
+                                        <option value="4">4</option>
+                                        <option value="4.5">4.5</option>
+                                        <option value="5">5</option>
+                                        <option value="5.5">5.5</option>
+                                        <option value="6">6</option>
+                                        <option value="6.5">6.5</option>
+                                        <option value="7">7</option>
+                                        <option value="7.5">7.5</option>
+                                        <option value="8">8</option>
+                                        <option value="8.5">8.5</option>
+                                        <option value="9">9</option>
+                                        <option value="9.5">9.5</option>
+                                        <option value="10">10</option>
+                                        <option value="10.5">10.5</option>
+                                        <option value="11">11</option>
+                                        <option value="11.5">11.5</option>
+                                        <option value="12">12</option>
+                                        <option value="12.5">12.5</option>
+                                        <option value="13">13</option>
+                                        <option value="13.5">13.5</option>
+                                        <option value="14">14</option>
+                                        <option value="14.5">14.5</option>
+                                        <option value="15">15</option>
+                                    </select>
+                                </td>
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field4[]"></td>
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field5[]"></td>
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field6[]"></td>
@@ -76,8 +106,40 @@
                         <button class="form_button" type="reset">Clear</button>
                     </div>
                 </div>
-                </form>
-        </main>
+                </form><br>
+                <% let total = data.reduce((acc, row) => acc + row.Amount, 0); %>
+                <table class="table table-striped" style="width: 90%;">
+                    <thead>
+                        <tr>
+                            <th>Total Sales : RM <%= total.toFixed(2) %></th>
+                        </tr>
+                        <tr>
+                            <th>Invoice Number</th>
+                            <th>Content SKU</th>
+                            <th>Product Name</th>
+                            <th>Size US</th>
+                            <th>Unit Price</th>
+                            <th>Quantity</th>
+                            <th>Amount</th>
+                            <th>Gender</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% data.forEach(row => { %>
+                        <tr>
+                            <td><%= row.InvoiceNumber %></td>
+                            <td><%= row.Content_SKU %></td>
+                            <td><%= row.ProductName %></td>
+                            <td><%= row.SizeUS %></td>
+                            <td>RM <%= row.UnitPrice.toFixed(2) %></td>
+                            <td><%= row.Quantity %></td>
+                            <td>RM <%= row.Amount.toFixed(2) %></td>
+                            <td><%= row.gender %></td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </main>
     <script>
         $(document).ready(function() {
     // Add a new row to the table

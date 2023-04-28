@@ -17,64 +17,79 @@
     <%- include('partials/nav'); %>
     <main class="main-content">
       <h1 style="font-size: 60px;">Import & Export</h1><br>
-      <% if (successMessage) { %>
-        <div class="alert alert-success" style="width: fit-content;" role="alert">
-          CSV file uploaded and data imported successfully
+        <% if (successMessage) { %>
+          <div class="alert alert-success" style="width: fit-content;" role="alert">
+            CSV file uploaded and data imported successfully
+          </div>
+        <% } %>
+      <div style="display: flex;">
+        <div>
+          <h1 style="font-weight: bold;">Y KICK ZONE SHOP</h1><br>
+          <h4>Import sell_invoice csv</h4>
+          <div style="display: flex;">
+            <form style="width: 500px;" action="/importsell_csv" method="post" enctype="multipart/form-data">
+              <input type="file" name="file">
+              <button class="btn btn-success" type="submit">Import CSV</button>
+            </form>
+            <a href="/exportsell_csv" class="btn btn-primary">Export CSV</a>
+          </div>
+          <h4>buy_record csv</h4>
+          <div style="display: flex;">
+            <form style="width: 500px;" action="/importbuy_csv" method="post" enctype="multipart/form-data">
+              <input type="file" name="file">
+              <button class="btn btn-success" type="submit">Import CSV</button>
+            </form>
+            <a href="/exportbuy_csv" class="btn btn-primary">Export CSV</a>
+          </div>
         </div>
-      <% } %>
-      <h1 style="font-weight: bold;">Y KICK ZONE SHOP</h1><br>
-      <h4>Import sell_invoice csv</h4>
-      <div style="display: flex;">
-        <form style="width: 500px;" action="/importsell_csv" method="post" enctype="multipart/form-data">
-          <input type="file" name="file">
-          <button class="btn btn-success" type="submit">Import CSV</button>
-        </form>
-        <a href="/exportsell_csv" class="btn btn-primary">Export CSV</a>
-        </div><br><br>
-      <h4>buy_record csv</h4>
-      <div style="display: flex;">
-        <form style="width: 500px;" action="/importbuy_csv" method="post" enctype="multipart/form-data">
-          <input type="file" name="file">
-          <button class="btn btn-success" type="submit">Import CSV</button>
-        </form>
-        <a href="/exportbuy_csv" class="btn btn-primary">Export CSV</a>
-      </div><br><br><br><br>
-  <h1 style="font-weight: bold;">YONG & YI PARTNERSHIP ENTERPRISE</h1><br>
-  <h4>yysell_invoice csv</h4>
-  <div style="display: flex;">
-    <form style="width: 500px;" action="/yyimportsell_csv" method="post" enctype="multipart/form-data">
-      <input type="file" name="file">
-      <button class="btn btn-success" type="submit">Import CSV</button>
-    </form>
-    <a href="/yyexportsell_csv" class="btn btn-primary">Export CSV</a>
-  </div>
-  <br><br>
-  <h4>yysales_paymentbreakdown csv</h4>
-  <div style="display: flex;">
-    <form style="width: 500px;" action="/yyimportspay_csv" method="post" enctype="multipart/form-data">
-      <input type="file" name="file">
-      <button class="btn btn-success" type="submit">Import CSV</button>
-    </form>
-    <a href="/yyexportspay_csv" class="btn btn-primary">Export CSV</a>
-  </div>
-  <br><br>
-  <h4>yybuy_record csv</h4>
-  <div style="display: flex;">
-    <form style="width: 500px;" action="/yyimportbuy_csv" method="post" enctype="multipart/form-data">
-      <input type="file" name="file">
-      <button class="btn btn-success" type="submit">Import CSV</button>
-    </form>
-    <a href="/yyexportbuy_csv" class="btn btn-primary">Export CSV</a>
-  </div>
-  <br><br>
-  <h4>yybuy_paymentbreakdown csv</h4>
-  <div style="display: flex;">
-    <form style="width: 500px;" action="/yyimportbpay_csv" method="post" enctype="multipart/form-data">
-      <input type="file" name="file">
-      <button class="btn btn-success" type="submit">Import CSV</button>
-    </form>
-    <a href="/yyexportbpay_csv" class="btn btn-primary">Export CSV</a>
-  </div>
+        <div style="margin-left: 40px;">
+          <h1 style="font-weight: bold;">YONG & YI PARTNERSHIP ENTERPRISE</h1><br>
+          <h4>YY sell_invoice csv</h4>
+          <div style="display: flex;">
+            <form style="width: 500px;" action="/yyimportsell_csv" method="post" enctype="multipart/form-data">
+              <input type="file" name="file">
+              <button class="btn btn-success" type="submit">Import CSV</button>
+            </form>
+            <a href="/yyexportsell_csv" class="btn btn-primary">Export CSV</a>
+          </div>
+          <br>
+          <h4>YY sales_paymentbreakdown csv</h4>
+          <div style="display: flex;">
+            <form style="width: 500px;" action="/yyimportspay_csv" method="post" enctype="multipart/form-data">
+              <input type="file" name="file">
+              <button class="btn btn-success" type="submit">Import CSV</button>
+            </form>
+            <a href="/yyexportspay_csv" class="btn btn-primary">Export CSV</a>
+          </div>
+          <br>
+          <h4>YY buy_record csv</h4>
+          <div style="display: flex;">
+            <form style="width: 500px;" action="/yyimportbuy_csv" method="post" enctype="multipart/form-data">
+              <input type="file" name="file">
+              <button class="btn btn-success" type="submit">Import CSV</button>
+            </form>
+            <a href="/yyexportbuy_csv" class="btn btn-primary">Export CSV</a>
+          </div>
+          <br>
+          <h4>YY buy_paymentbreakdown csv</h4>
+          <div style="display: flex;">
+            <form style="width: 500px;" action="/yyimportbpay_csv" method="post" enctype="multipart/form-data">
+              <input type="file" name="file">
+              <button class="btn btn-success" type="submit">Import CSV</button>
+            </form>
+            <a href="/yyexportbpay_csv" class="btn btn-primary">Export CSV</a>
+          </div>
+          <br>
+          <h4>YY Expenses Record csv</h4>
+          <div style="display: flex;">
+            <form style="width: 500px;" action="/yyimportexpenses_csv" method="post" enctype="multipart/form-data">
+              <input type="file" name="file">
+              <button class="btn btn-success" type="submit">Import CSV</button>
+            </form>
+            <a href="/yyexportexpenses_csv" class="btn btn-primary">Export CSV</a>
+          </div>
+        </div>
+      </div>
     </main>
   </body>
 </html>

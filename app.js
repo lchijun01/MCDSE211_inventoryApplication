@@ -657,7 +657,6 @@ app.get('/yyexportsell_csv', function(req, res) {
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
-
 app.post('/yyimportspay_csv', upload.single('file'), function (req, res) {
   const { path: csvFilePath } = req.file;
   
@@ -826,7 +825,6 @@ app.get('/yyexportbuy_csv', function(req, res) {
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
-
 app.post('/yyimportbpay_csv', upload.single('file'), function (req, res) {
   const { path: csvFilePath } = req.file;
   
@@ -1981,16 +1979,51 @@ app.get('/yysell_invoice', function(req, res){
     }
   });
 });
-app.get('/yyproduct-names', (req, res) => {
+app.get('/yyproduct-details', (req, res) => {
   const sku = req.query.sku;
-  const query = 'SELECT DISTINCT ProductName FROM yyitems_buy WHERE Content_SKU LIKE ?  LIMIT 1';
-  pool.query(query, ['%' + sku + '%'], (err, results) => {
+  const size = req.query.size;
+  const query = `
+    SELECT DISTINCT UnitPrice
+    FROM yyitems_buy
+    WHERE Content_SKU LIKE ? AND SizeUS = ? AND Sold = 'no'
+  `;
+  pool.query(query, ['%' + sku + '%', size], (err, results) => {
     if (err) throw err;
-    const names = results.map(result => result.ProductName);
-    const nameString = names.join(',');
-    res.send(nameString);
+    
+    const unitPrices = new Set();
+
+    results.forEach(result => {
+      unitPrices.add(result.UnitPrice);
+    });
+
+    res.json({
+      unitPrices: Array.from(unitPrices)
+    });
   });
 });
+
+app.get('/yyproduct-name', (req, res) => {
+  const sku = req.query.sku;
+  const query = `
+    SELECT DISTINCT ProductName
+    FROM yyitems_buy
+    WHERE Content_SKU LIKE ? AND Sold = 'no'
+  `;
+  pool.query(query, ['%' + sku + '%'], (err, results) => {
+    if (err) throw err;
+
+    const productNames = new Set();
+
+    results.forEach(result => {
+      productNames.add(result.ProductName);
+    });
+
+    res.json({
+      productNames: Array.from(productNames)
+    });
+  });
+});
+
 app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
   const { name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [], field8 = []} = req.body;
 
@@ -2012,7 +2045,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
           const sellItems = [];
           field1.forEach((item, index) => {
             for (let i = 0; i < field3[index]; i++) {
-              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index],1 , field6[index], field7[index], field8[index]]);
+              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index], 1 , field6[index], field7[index], field8[index]]);
             }
           });
           // Insert the shipped items data into MySQL
