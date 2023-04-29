@@ -20,8 +20,9 @@
         <form action="/yysearch" method="get" class="d-flex mt-4">
             <input type="search" name="invoice_number" style="width: 250px;" class="form-control me-2" placeholder="Enter Invoice Number" aria-label="Search">
             <button type="submit" class="btn btn-primary">Search</button>
-          </form>                           
+          </form><br>
           <% if (sell_invoice_data.length > 0) { %>
+            <h1>Not settle yet</h1>
             <table class="table table-striped">
               <thead>
                 <tr>

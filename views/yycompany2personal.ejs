@@ -48,7 +48,35 @@
                         <button class="form_button" type="submit">Submit</button>
                         <button class="form_button" type="reset">Clear</button>
                     </div>
-                </form>
+                </form><br>
+                <table class="table table-striped" style="width: 90%;">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Invoice No.</th>
+                      <th>Category</th>
+                      <th>Bank</th>
+                      <th>Name</th>
+                      <th>Amount</th>
+                      <th>Detail</th>
+                      <th>File</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% data.forEach(function(row) { %>
+                      <tr>
+                        <td><%= row.formattedDate %></td>
+                        <td><%= row.Invoice_No %></td>
+                        <td><%= row.Category %></td>
+                        <td><%= row.Bank %></td>
+                        <td><%= row.Name %></td>
+                        <td><%= row.Amount %></td>
+                        <td><%= row.Detail %></td>
+                        <td><%= row.File %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
         </main>
         <script>
             document.getElementById('yyc2p-form').addEventListener('submit', async (event) => {

@@ -719,7 +719,7 @@ app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
     .pipe(csv())
     .on('data', (data) => {
       // Extract the relevant data from the CSV row
-      const { PONo, Date, Name, BankName, Bank, BankNumber, Remarks, ProductName, SizeUS, Quantity, UnitPrice, Amount, SKU, gender, sold } = data;
+      const { PONo, Date, Name, BankName, Bank, BankNumber, Remarks, ProductName, SizeUS, Quantity, UnitPrice, Amount, SKU, gender, sold, status } = data;
       const parsedUnitPrice = parseFloat(UnitPrice && UnitPrice.replace(/[^0-9.-]+/g,""));
       const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
 
@@ -733,7 +733,7 @@ app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
               console.error(error);
             } else {
               // If the insert into sell_invoice is successful, insert the corresponding data into the items_sell table
-              pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount, gender, sold) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [PONo, SKU, ProductName, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender, sold], (error, results) => {
+              pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount, gender, sold, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [PONo, SKU, ProductName, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender, sold, status], (error, results) => {
                 if (error) {
                   console.error(error);
                 } else {
@@ -744,7 +744,7 @@ app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
           });
         } else {
           // If the InvoiceNo has already been inserted into the sell_invoice table, insert the corresponding data into the items_sell table only
-          pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount, gender, sold) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [PONo, SKU, ProductName, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender, sold], (error, results) => {
+          pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount, gender, sold, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [PONo, SKU, ProductName, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender, sold, status], (error, results) => {
             if (error) {
               console.error(error);
             } else {
@@ -762,10 +762,10 @@ app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
     });
 });
 app.get('/yyexportbuy_csv', function(req, res) {
-  const sql = `SELECT yybuy_record.Invoice_number, yybuy_record.Name, yybuy_record.Remarks, yybuy_record.BankName, yybuy_record.Bank, yybuy_record.Bankaccount, yybuy_record.timestamp As date, yyitems_buy.Content_SKU, yyitems_buy.ProductName, yyitems_buy.SizeUS, yyitems_buy.Quantity, yyitems_buy.UnitPrice, yyitems_buy.Amount, yyitems_buy.gender, yyitems_buy.sold
+  const sql = `SELECT yybuy_record.Invoice_number, yybuy_record.Name, yybuy_record.Remarks, yybuy_record.BankName, yybuy_record.Bank, yybuy_record.Bankaccount, yybuy_record.timestamp As date, yyitems_buy.Content_SKU, yyitems_buy.ProductName, yyitems_buy.SizeUS, yyitems_buy.Quantity, yyitems_buy.UnitPrice, yyitems_buy.Amount, yyitems_buy.gender, yyitems_buy.sold, yyitems_buy.status
                 FROM yybuy_record
                 LEFT JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber
-                ORDER BY yybuy_record.Invoice_number, yyitems_buy.Content_SKU, yyitems_buy.sold`;
+                ORDER BY yybuy_record.Invoice_number, yyitems_buy.Content_SKU, yyitems_buy.sold, yyitems_buy.status`;
 
   pool.query(sql, function(error, results, fields) {
     if (error) throw error;
@@ -794,7 +794,8 @@ app.get('/yyexportbuy_csv', function(req, res) {
           UnitPrice: row.UnitPrice,
           Amount: row.Amount,
           gender: row.gender,
-          sold: row.sold
+          sold: row.sold,
+          status: row.status
         });
         currentInvoiceNo = row.Invoice_number;
       } else {
@@ -814,7 +815,8 @@ app.get('/yyexportbuy_csv', function(req, res) {
           UnitPrice: row.UnitPrice,
           Amount: row.Amount,
           gender: row.gender,
-          sold: row.sold
+          sold: row.sold,
+          status: row.status
         });
       }
     });
@@ -1042,7 +1044,7 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
 app.get('/stock-check', function(req, res) {
   pool.query(`
   SELECT Content_SKU, SizeUS, ProductName, Amount, SUM(Quantity) as total_quantity 
-  FROM yyitems_buy WHERE sold = 'no' 
+  FROM yyitems_buy WHERE sold = 'no'
   GROUP BY Content_SKU, ProductName, SizeUS, Amount 
   ORDER BY Content_SKU ASC, CAST(SizeUS AS SIGNED) ASC;
   `, function(error, results, fields) {
@@ -1111,42 +1113,60 @@ app.get('/stock-checka', function(req, res) {
 });
 //for stock-checkin
 app.get('/stock-checkin', function(req, res){
-  res.render('stock-checkin')
+  const sql = "SELECT InvoiceNumber, Content_SKU, SizeUS , ProductName, SUM(Quantity) as total_quantity FROM yyitems_buy WHERE status = 'intransit' GROUP BY InvoiceNumber, Content_SKU, ProductName, SizeUS";
+  pool.query(sql, (err, result) => {
+    if (err) throw err;
+    res.render('stock-checkin', { items: result });
+  });
 });
 app.get('/stockcheckinasd', (req, res) => {
   const ponum = req.query.ponum;
-  const query = 'SELECT yyitems_buy.ProductName, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, yyitems_buy.Quantity, yybuy_record.Name, yybuy_record.Bank, yybuy_record.BankName, yybuy_record.Bankaccount, yybuy_record.Remarks FROM yyitems_buy yyitems_buy JOIN yybuy_record yybuy_record ON yyitems_buy.InvoiceNumber = yybuy_record.Invoice_number WHERE yyitems_buy.InvoiceNumber = ?';
+  const query = `SELECT yyitems_buy.ProductName, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as TotalQuantity, yybuy_record.Name, yybuy_record.Bank, yybuy_record.BankName, yybuy_record.Bankaccount, yybuy_record.Remarks 
+  FROM yyitems_buy yyitems_buy 
+  JOIN yybuy_record yybuy_record ON yyitems_buy.InvoiceNumber = yybuy_record.Invoice_number 
+  WHERE yyitems_buy.InvoiceNumber = ?
+  GROUP BY yyitems_buy.ProductName, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, yybuy_record.Name, yybuy_record.Bank, yybuy_record.BankName, yybuy_record.Bankaccount, yybuy_record.Remarks
+  `;
   pool.query(query, [ponum], (err, results) => {
     if (err) throw err;
     const data = {
       name: results.map(result => result.ProductName),
       sku: results.map(result => result.Content_SKU),
       size: results.map(result => result.SizeUS),
-      quantity: results.map(result => result.Quantity),
+      quantity: results.map(result => result.TotalQuantity),
       bank: results.map(result => result.Bank),
       seller: results.map(result => result.Name),
       bankName: results.map(result => result.BankName),
       bankAccount: results.map(result => result.Bankaccount),
       remarks: results.map(result => result.Remarks)
-    };
+    };    
     res.send(data);
   });
 });
 app.post('/stockCheckin', upload.single('file'), urlencodedParser, function(req, res){
-  const { name, bankname, bank, bankacc, remarks, invoice, field1 = [], field2 = [], field3 = [], field5 = [] } = req.body;
-  
-  // Loop through the buyItems array and insert each item into the stock_checkin table
-  field1.forEach((item, index) => {
-    pool.query('INSERT INTO stock_checkin (pono, seller, bankname, bank, bankacc, remarks, sku, productname, size, quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [invoice, name, bankname, bank, bankacc, remarks, field1[index], field2[index], field3[index], field5[index]], (error, results, fields) => {
-      if (error) {
-        console.error(error);
-        res.status(500).send('Error saving form data');
+  const invoice = req.body.invoice;
+  const skus = req.body['field1[]'];
+  const sizes = req.body['field3[]'];
+  const quantities = req.body['field4[]'];
+
+  // Update the status column for each item in the form data
+  for (let i = 0; i < skus.length; i++) {
+    const sku = skus[i];
+    const size = sizes[i];
+    const quantity = parseInt(quantities[i]); // Convert string value to integer
+
+    pool.query(
+      'UPDATE yyitems_buy SET status = "check" WHERE InvoiceNumber = ? AND Content_SKU = ? AND SizeUS = ? AND status = "intransit" LIMIT ?',
+      [invoice, sku, size, quantity],
+      (err, results) => {
+        if (err) throw err;
+        console.log(`Updated ${results.changedRows} rows for SKU ${sku}, Size ${size}`);
       }
-    });
-  });
-  
-  res.render('stock-checkin', { successMessage: 'Form submitted successfully' });
+    );
+  }
+  res.render('/stock-checkin');
 });
+
 //for stock-check
 app.get('/stock-checkins', function(req, res){
   res.render('stock-checkins')
@@ -1989,7 +2009,7 @@ app.get('/yyproduct-details', (req, res) => {
   `;
   pool.query(query, ['%' + sku + '%', size], (err, results) => {
     if (err) throw err;
-    
+
     const unitPrices = new Set();
 
     results.forEach(result => {
@@ -2001,7 +2021,6 @@ app.get('/yyproduct-details', (req, res) => {
     });
   });
 });
-
 app.get('/yyproduct-name', (req, res) => {
   const sku = req.query.sku;
   const query = `
@@ -2023,7 +2042,6 @@ app.get('/yyproduct-name', (req, res) => {
     });
   });
 });
-
 app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
   const { name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [], field8 = []} = req.body;
 
@@ -2044,8 +2062,8 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
         } else {
           const sellItems = [];
           field1.forEach((item, index) => {
-            for (let i = 0; i < field3[index]; i++) {
-              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index], 1 , field6[index], field7[index], field8[index]]);
+            for (let i = 0; i < field5[index]; i++) {
+              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index], 1 , field4[index], field7[index], field8[index]]);
             }
           });
           // Insert the shipped items data into MySQL
@@ -2054,6 +2072,21 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
               console.error(error);
               res.status(500).send('Error saving shipped items data');
             } else {
+              // Update yyitems_buy table with sold items
+              field1.forEach((item, index) => {
+                const sku = item;
+                const size = field3[index];
+                const qty = field5[index];
+                const unitPrice = field8[index];
+                for (let i = 0; i < qty; i++) {
+                  pool.query('UPDATE yyitems_buy SET sold = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND UnitPrice = ? AND sold = ?', ['yes', unitPrice, sku, size, unitPrice, 'no'], (error, results, fields) => {
+                    if (error) {
+                      console.error(error);
+                      res.status(500).send('Error updating yyitems_buy table');
+                    }
+                  });
+                }
+              });
               pool.query('SELECT * FROM yyitems_sell ORDER BY InvoiceNumber DESC', function(error, results, fields) {
                 if (error) {
                   console.error(error);
@@ -2073,7 +2106,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
 });
 //for sales-payment break
 app.get('/yysales-paymentbreak', function(req, res) {
-  pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Amount, Remarks, File FROM yysales_paymentbreakdown', function(error, results, fields) {
+  pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Amount, Remarks, File FROM yysales_paymentbreakdown ORDER BY Invoice_No DESC', function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
@@ -2306,12 +2339,22 @@ app.get('/yybuy-payby', function(req, res){
 });
 app.get('/yybuyproduct-name', (req, res) => {
   const sku = req.query.sku;
-  const query = 'SELECT DISTINCT ProductName FROM yyitems_buy WHERE Content_SKU LIKE ? LIMIT 1';
+  const query = `
+    SELECT DISTINCT ProductName
+    FROM yyitems_buy
+    WHERE Content_SKU LIKE ? LIMIT 1
+  `;
   pool.query(query, ['%' + sku + '%'], (err, results) => {
     if (err) throw err;
-    const name = results.map(result => result.ProductName);
-    const nameString = name.join(',');
-    res.send(nameString);
+
+    const productNames = new Set();
+
+    results.forEach(result => {
+      productNames.add(result.ProductName);
+    });
+    res.json({
+      productNames: Array.from(productNames)
+    });
   });
 });
 app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req, res) {
@@ -2335,12 +2378,12 @@ app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req,
           const buyItems = [];
           for (let i = 0; i < field1.length; i++) {
             for (let j = 0; j < field5[i]; j++) {
-              buyItems.push([invoice_number, field1[i], field2[i], field3[i], field4[i], 1, field4[i], field7[i], 'no']);
+              buyItems.push([invoice_number, field1[i], field2[i], field3[i], field4[i], 1, field4[i], field7[i], 'no', 'intransit']);
             }
           }
 
           // Insert the shipped items data into MySQL
-          pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, UnitPrice, Quantity, Amount, gender, sold) VALUES ?', [buyItems], (error, results, fields) => {
+          pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, UnitPrice, Quantity, Amount, gender, sold, status) VALUES ?', [buyItems], (error, results, fields) => {
             if (error) {
               console.error(error);
               res.status(500).send('Error saving shipped items data');
@@ -2364,7 +2407,7 @@ app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req,
 });
   //for buy-payment break
 app.get('/yybuy-paymentbreak', function(req, res){
-  pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Amount, Remarks, File FROM yypurchase_paymentbreakdown', function(error, results, fields) {
+  pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Amount, Remarks, File FROM yypurchase_paymentbreakdown ORDER BY Invoice_No DESC', function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
@@ -2688,7 +2731,7 @@ app.post('/yyexpenses-record', upload.single('file'), urlencodedParser, function
 //for ykickzone top up and check balance left
 app.get('/yytopupbalance', (req, res) => {
   pool.query(
-    `SELECT * FROM yytopupbalance WHERE wallet = 'Gdex' ORDER BY id DESC LIMIT 1`,
+    `SELECT ID, wallet, amount, lastbalance, DATE_FORMAT(date, "%Y-%m-%d") as date FROM yytopupbalance WHERE wallet = 'Gdex' ORDER BY ID DESC `,
     (err, topupResult) => {
       if (err) {
         console.error('Error fetching topup data from database: ', err);

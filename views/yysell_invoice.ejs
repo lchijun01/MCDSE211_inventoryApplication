@@ -120,6 +120,12 @@
                             </td>
                         </tr>
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td style="font-weight: bold;">Total:</td>
+                            <td style="font-weight: bold;"><span id="totalAmount"></span></td>
+                        </tr>
+                    </tfoot>
                 </table>
                 <button type="button" class="btn btn-primary" id="addRow">Add Row</button>
     
@@ -221,94 +227,112 @@
                                 </select>
                             </td>
                             <td>
-                    <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
-                </td>
-            </tr>`;
-            newRow = $(newRow);
-            $("#inputTable tbody").append(newRow);
-            // Add the event listener to the new row
-            newRow.find('.sku').on('input', updateProductName);
-            newRow.find('.size').on('change', updateProductDetails);
-            // Calculate the total amount
-            calculateTotalAmount();
-        });
-        // Remove a row from the table
-        $("#inputTable").on("click", ".removeRow", function() {
-            $(this).closest("tr").remove();
-            calculateTotalAmount();
-        });
-        // Calculate the amount when the unit price or quantity changes
-        $("#inputTable").on("input", "input[name='field4[]'], input[name='field5[]']", function() {
-            const $row = $(this).closest("tr");
-            const unitPrice = parseFloat($row.find("input[name='field4[]']").val()) || 0;
-            const quantity = parseFloat($row.find("input[name='field5[]']").val()) || 0;
-            const amount = unitPrice * quantity;
-            $row.find("input[name='field6[]']").val(amount.toFixed(2));
-            calculateTotalAmount();
-        });
-        function calculateTotalAmount() {
-            let totalAmount = 0;
-            $("#inputTable tbody tr").each(function() {
-                const amount = parseFloat($(this).find("input[name='field6[]']").val()) || 0;
-                totalAmount += amount;
-            });
-            $("#inputTable tfoot tr td:nth-child(2)").text(totalAmount.toFixed(2));
-        }
-        function updateProductName(event) {
-            const currentRow = event.target.closest('tr');
-            const skuInput = currentRow.querySelector('.sku');
-            const productNameInput = currentRow.querySelector('.productName');
-            const sku = skuInput.value;
-
-            if (sku.length > 0) {
-                fetch('/yyproduct-name?sku=' + encodeURIComponent(sku))
-                    .then(response => response.json())
-                    .then(({ productNames }) => {
-                        productNameInput.value = productNames.join(',');
-                    })
-                    .catch(error => {
-                        console.error('Error fetching product name:', error);
+                            <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
+                        </td>
+                    </tr>`;
+                        newRow = $(newRow);
+                        $("#inputTable tbody").append(newRow);
+                        // Add the event listener to the new row
+                        newRow.find('.sku').on('input', updateProductName);
+                        newRow.find('.size').on('change', updateProductDetails);
+                        // Calculate the total amount
+                        calculateTotalAmount();
                     });
-            } else {
-                productNameInput.value = '';
-            }
-        }
-
-        function updateProductDetails(event) {
-            const currentRow = event.target.closest('tr');
-            const skuInput = currentRow.querySelector('.sku');
-            const sizeInput = currentRow.querySelector('.size');
-            const unitPriceInput = currentRow.querySelector('.unitPrice');
-
-            const sku = skuInput.value;
-            const size = sizeInput.value;
-
-            if (sku.length > 0 && size.length > 0) {
-                fetch('/yyproduct-details?sku=' + encodeURIComponent(sku) + '&size=' + encodeURIComponent(size))
-                    .then(response => response.json())
-                    .then(({ unitPrices }) => {
-                        unitPriceInput.innerHTML = '<option value="">Select Unit Price</option>';
-                        unitPrices.forEach(unitPrice => {
-                            const option = document.createElement('option');
-                            option.value = unitPrice;
-                            option.text = unitPrice.toFixed(2);
-                            unitPriceInput.add(option);
+                    // Remove a row from the table
+                    $("#inputTable").on("click", ".removeRow", function() {
+                        $(this).closest("tr").remove();
+                        calculateTotalAmount();
+                    });
+                    // Calculate the amount when the unit price or quantity changes
+                    $("#inputTable").on("input", "input[name='field4[]'], input[name='field5[]']", function() {
+                        const $row = $(this).closest("tr");
+                        const unitPrice = parseFloat($row.find("input[name='field4[]']").val()) || 0;
+                        const quantity = parseFloat($row.find("input[name='field5[]']").val()) || 0;
+                        const amount = unitPrice * quantity;
+                        $row.find("input[name='field6[]']").val(amount.toFixed(2));
+                        calculateTotalAmount();
+                    });
+                    function calculateTotalAmount() {
+                        let totalAmount = 0;
+                        $("#inputTable tbody tr").each(function() {
+                            const amount = parseFloat($(this).find("input[name='field6[]']").val()) || 0;
+                            totalAmount += amount;
                         });
-                    })
-                    .catch(error => {
-                        console.error('Error fetching product details:', error);
-                    });
-            } else {
-                unitPriceInput.innerHTML = '<option value="">Select Unit Price</option>';
-            }
-        }
+                        $("#inputTable tfoot tr td:nth-child(2)").text(totalAmount.toFixed(2));
+                    }
+                    function updateProductName(event) {
+                        const currentRow = event.target.closest('tr');
+                        const skuInput = currentRow.querySelector('.sku');
+                        const productNameInput = currentRow.querySelector('.productName');
+                        const sku = skuInput.value;
 
-        document.querySelectorAll('#inputTable tbody tr').forEach(row => {
-            row.querySelector('.sku').addEventListener('input', updateProductName);
-            row.querySelector('.size').addEventListener('change', updateProductDetails);
-        });
-    });
-</script>
+                        if (sku.length > 0) {
+                            fetch('/yyproduct-name?sku=' + encodeURIComponent(sku))
+                                .then(response => response.json())
+                                .then(({ productNames }) => {
+                                    productNameInput.value = productNames.join(',');
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching product name:', error);
+                                });
+                        } else {
+                            productNameInput.value = '';
+                        }
+                    }
+
+                    function updateProductDetails(event) {
+                        const currentRow = event.target.closest('tr');
+                        const skuInput = currentRow.querySelector('.sku');
+                        const sizeInput = currentRow.querySelector('.size');
+                        const unitPriceInput = currentRow.querySelector('.unitPrice');
+
+                        const sku = skuInput.value;
+                        const size = sizeInput.value;
+
+                        if (sku.length > 0 && size.length > 0) {
+                            fetch('/yyproduct-details?sku=' + encodeURIComponent(sku) + '&size=' + encodeURIComponent(size))
+                                .then(response => response.json())
+                                .then(({ unitPrices }) => {
+                                    unitPriceInput.innerHTML = '<option value="">Select Unit Price</option>';
+                                    unitPrices.forEach(unitPrice => {
+                                        const option = document.createElement('option');
+                                        option.value = unitPrice;
+                                        option.text = unitPrice.toFixed(2);
+                                        unitPriceInput.add(option);
+                                    });
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching product details:', error);
+                                });
+                        } else {
+                            unitPriceInput.innerHTML = '<option value="">Select Unit Price</option>';
+                        }
+                    }
+
+                    document.querySelectorAll('#inputTable tbody tr').forEach(row => {
+                        row.querySelector('.sku').addEventListener('input', updateProductName);
+                        row.querySelector('.size').addEventListener('change', updateProductDetails);
+                    });
+                });
+            </script>
+            <script>
+                function calculateTotal() {
+                    var table = document.querySelector('table');
+                    var rows = table.querySelectorAll('tbody tr');
+                    var total = 0;
+
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        var quantity = parseInt(row.querySelector('input[name="field4[]"]').value);
+                        var price = parseFloat(row.querySelector('.unitPrice').value);
+                        var subtotal = quantity * price;
+                        total += subtotal;
+                        row.querySelector('input[name="field5[]"]').value = subtotal.toFixed(2);
+                    }
+
+                    document.getElementById('totalAmount').innerHTML = total.toFixed(2);
+                    }
+            </script>
         </main>
     </body>
 </html>

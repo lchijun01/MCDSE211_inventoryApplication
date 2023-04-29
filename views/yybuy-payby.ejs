@@ -23,18 +23,18 @@
                     <div><br>
                     <label style="margin-bottom: 3px;font-weight: bold;">Seller Info</label><br>
                     <label class="form_name" style="margin-bottom: 3px;" for="bank">Name</label>
-                    <input class="form_id" style="margin-bottom: 3px;" type="text" name="name" required placeholder=" Seller Name"><br>
+                    <input class="form_id" style="margin-bottom: 3px;" type="text" name="name" placeholder=" Seller Name"><br>
                     <label class="form_name" style="margin-bottom: 3px;" for="bank">Bank Name</label>
-                    <input class="form_id" style="margin-bottom: 3px;" type="text" name="bankname" required placeholder=" Bank Name"><br>
+                    <input class="form_id" style="margin-bottom: 3px;" type="text" name="bankname" placeholder=" Bank Name"><br>
                     <label class="form_name" style="margin-bottom: 3px;" for="bank">Bank</label>
-                    <select class="form_id" style="margin-bottom: 3px;" name="bank" required>
+                    <select class="form_id" style="margin-bottom: 3px;" name="bank">
                         <option value="">Select a bank</option>
                         <option value="UOB Bank">UOB Bank</option>
                         <option value="HongLeongBank">Hong Leong Bank</option>
                         <option value="Maybank">Maybank</option>
                     </select><br>
                     <label  class="form_name" for="bank">Bank Acc</label>
-                    <input class="form_id" style="margin-bottom: 3px;" type="text" name="bankacc" required placeholder=" Bank Acc"><br>
+                    <input class="form_id" style="margin-bottom: 3px;" type="text" name="bankacc" placeholder=" Bank Acc"><br>
                     <label  class="form_name" for="remarks">Remarks</label><br>
                     <textarea class="form_detail" type="text" name="remarks"></textarea><br><br>
                     <div class="button">
@@ -52,13 +52,14 @@
                                 <th>Unit Price</th>
                                 <th>Quantity</th>
                                 <th>Amount</th>
+                                <th>Gender</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><input type="text" class="form-control" style="width: 150px;" name="field1[]"></td>
-                                <td><input type="text" class="form-control" style="width: 220px;" name="field2[]"></td>
+                                <td><input type="text" class="form-control sku" style="width: 150px;" name="field1[]"></td>
+                                <td><input type="text" class="form-control productName" style="width: 220px;" name="field2[]"></td>
                                 <td>
                                     <select type="text" class="form-control" style="width: auto;" name="field3[]">
                                         <option value="">Choose</option>
@@ -94,10 +95,27 @@
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field5[]"></td>
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field6[]"></td>
                                 <td>
+                                    <select type="text" class="form-control" style="width: auto;" name="field7[]">
+                                        <option value="">Choose</option>
+                                        <option value="man">Man</option>
+                                        <option value="woman">Woman</option>
+                                        <option value="gs">Gs</option>
+                                        <option value="td">Toddler</option>
+                                        <option value="yeezy">Yeezy</option>
+                                        <option value="yezyboost">Yeezy Boost</option>
+                                    </select>
+                                </td>
+                                <td>
                                     <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
                                 </td>
                             </tr>
                         </tbody>
+                        <tfoot>
+                            <tr>
+                                <td style="font-weight: bold;">Total:</td>
+                                <td style="font-weight: bold;"><span id="totalAmount"></span></td>
+                            </tr>
+                        </tfoot>
                     </table>
                     <button type="button" class="btn btn-primary" id="addRow">Add Row</button>
         
@@ -139,40 +157,123 @@
                         <% }); %>
                     </tbody>
                 </table>
-            </main>
-    <script>
-        $(document).ready(function() {
-    // Add a new row to the table
-    $("#addRow").click(function() {
-        let newRow = `<tr>
-                                <td><input type="text" class="form-control" style="width: 150px;" name="field1[]"></td>
-                                <td><input type="text" class="form-control" style="width: 220px;" name="field2[]"></td>
-                                <td><input type="text" class="form-control" style="width: 60px;" name="field3[]"></td>
+                <script>
+                    const table = document.getElementById('inputTable');
+                    const totalAmountCell = document.getElementById('totalAmount');
+                    
+                    function calculateTotal() {
+                        let totalAmount = 0;
+                        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                        for (let i = 0; i < rows.length; i++) {
+                            const unitPriceCell = rows[i].getElementsByTagName('td')[3];
+                            const quantityCell = rows[i].getElementsByTagName('td')[4];
+                            const unitPrice = parseFloat(unitPriceCell.getElementsByTagName('input')[0].value);
+                            const quantity = parseInt(quantityCell.getElementsByTagName('input')[0].value);
+                            const amount = unitPrice * quantity;
+                            if (!isNaN(amount)) {
+                                totalAmount += amount;
+                            }
+                            rows[i].getElementsByTagName('td')[5].getElementsByTagName('input')[0].value = amount.toFixed(2);
+                        }
+                        totalAmountCell.textContent = totalAmount.toFixed(2);
+                    }
+                    
+                    table.addEventListener('input', calculateTotal);
+                    calculateTotal();
+                </script>
+            <script>
+                $(document).ready(function() {
+                // Add a new row to the table
+                    $("#addRow").click(function() {
+                        let newRow = `<tr>
+                                <td><input type="text" class="form-control sku" style="width: 150px;" name="field1[]"></td>
+                                <td><input type="text" class="form-control productName" style="width: 220px;" name="field2[]"></td>
+                                <td>
+                                    <select type="text" class="form-control" style="width: auto;" name="field3[]">
+                                        <option value="">Choose</option>
+                                        <option value="2.5">2.5</option>
+                                        <option value="3">3</option>
+                                        <option value="3.5">3.5</option>
+                                        <option value="4">4</option>
+                                        <option value="4.5">4.5</option>
+                                        <option value="5">5</option>
+                                        <option value="5.5">5.5</option>
+                                        <option value="6">6</option>
+                                        <option value="6.5">6.5</option>
+                                        <option value="7">7</option>
+                                        <option value="7.5">7.5</option>
+                                        <option value="8">8</option>
+                                        <option value="8.5">8.5</option>
+                                        <option value="9">9</option>
+                                        <option value="9.5">9.5</option>
+                                        <option value="10">10</option>
+                                        <option value="10.5">10.5</option>
+                                        <option value="11">11</option>
+                                        <option value="11.5">11.5</option>
+                                        <option value="12">12</option>
+                                        <option value="12.5">12.5</option>
+                                        <option value="13">13</option>
+                                        <option value="13.5">13.5</option>
+                                        <option value="14">14</option>
+                                        <option value="14.5">14.5</option>
+                                        <option value="15">15</option>
+                                    </select>
+                                </td>
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field4[]"></td>
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field5[]"></td>
                                 <td><input type="text" class="form-control" style="width: 100px;" name="field6[]"></td>
                                 <td>
+                                    <select type="text" class="form-control" style="width: auto;" name="field7[]">
+                                        <option value="">Choose</option>
+                                        <option value="man">Man</option>
+                                        <option value="woman">Woman</option>
+                                        <option value="gs">Gs</option>
+                                        <option value="td">Toddler</option>
+                                        <option value="yeezy">Yeezy</option>
+                                        <option value="yezyboost">Yeezy Boost</option>
+                                    </select>
+                                </td>
+                                <td>
                                     <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
                                 </td>
                             </tr>`;
-        $("#inputTable tbody").append(newRow);
-    });
+                        $("#inputTable tbody").append(newRow);
+                    });
+                    // Remove a row from the table
+                    $("#inputTable").on("click", ".removeRow", function() {
+                        $(this).closest("tr").remove();
+                    });
+                    // Calculate the amount when the unit price or quantity changes
+                    $("#inputTable").on("input", "input[name='field4[]'], input[name='field5[]']", function() {
+                        const $row = $(this).closest("tr");
+                        const unitPrice = parseFloat($row.find("input[name='field4[]']").val()) || 0;
+                        const quantity = parseFloat($row.find("input[name='field5[]']").val()) || 0;
+                        const amount = unitPrice * quantity;
+                        $row.find("input[name='field6[]']").val(amount.toFixed(2));
+                    });
+                    function updateProductName(event) {
+                        const currentRow = event.target.closest('tr');
+                        const skuInput = currentRow.querySelector('.sku');
+                        const productNameInput = currentRow.querySelector('.productName');
+                        const sku = skuInput.value;
 
-    // Remove a row from the table
-    $("#inputTable").on("click", ".removeRow", function() {
-        $(this).closest("tr").remove();
-    });
-    // Calculate the amount when the unit price or quantity changes
-    $("#inputTable").on("input", "input[name='field4[]'], input[name='field5[]']", function() {
-                const $row = $(this).closest("tr");
-                const unitPrice = parseFloat($row.find("input[name='field4[]']").val()) || 0;
-                const quantity = parseFloat($row.find("input[name='field5[]']").val()) || 0;
-                const amount = unitPrice * quantity;
-                $row.find("input[name='field6[]']").val(amount.toFixed(2));
-            });
-});
-
-    </script>
+                        if (sku.length > 0) {
+                            fetch('/yybuyproduct-name?sku=' + encodeURIComponent(sku))
+                                .then(response => response.json())
+                                .then(({ productNames }) => {
+                                    productNameInput.value = productNames;
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching product name:', error);
+                                });
+                        } else {
+                            productNameInput.value = '';
+                        }
+                    }
+                    
+                    $('#inputTable').on('input', '.sku', updateProductName);
+                });
+            </script>
         </main>
     </body>
 </html>

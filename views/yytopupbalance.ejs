@@ -25,12 +25,11 @@
                 </tr>
             </thead>
             <tbody>
-                <% rows.forEach(row => { %>
-                    <tr>
-                      <td><%= row.wallet %></td>
-                      <td><%= row.lastbalance.toFixed(2) %></td>
-                    </tr>
-                  <% }) %>
+              <% const row = rows.slice(0, 1)[0]; %>
+              <tr>
+                <td><%= row.wallet %></td>
+                <td><%= row.lastbalance.toFixed(2) %></td>
+              </tr>
             </tbody>
         </table>
         <div style="align-items: center;">
@@ -54,6 +53,27 @@
               Successfully topped up <%= amount %> to <%= wallet %>!
             </div>
         <% } %>
+        <br>
+        <table class="table table-striped" style="width: 90%;">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Wallet</th>
+              <th>Topup Amount</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rows.forEach(row => { %>
+              <tr>
+                <td><%= row.ID %></td>
+                <td><%= row.wallet %></td>
+                <td><%= row.amount %></td>
+                <td><%= row.date %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>    
       </main>
       <script>
         document.getElementById('yytopup-form').addEventListener('submit', async (event) => {

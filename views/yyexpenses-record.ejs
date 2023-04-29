@@ -17,59 +17,87 @@
     <body class="main-contents">
         <%- include('partials/nav'); %>
         <main class="main-content">
-            <h1>Yong&Yi Expenses Record Page</h1>
+          <h1>Yong&Yi Expenses Record Page</h1>
 
-        <form id="yyexpenses-form" method="POST" action="/yyexpenses-record" enctype="multipart/form-data">
-            <label class="form_name" for="date">Date</label>
-            <input class="form_id" type="date" name="date" required><br>
-            <label class="form_name" for="invoice_no">Invoice No.</label>
-            <input class="form_id" type="text" name="invoice_no" id="invoice_no" placeholder=" Optional"><br>
-            <label class="form_name" for="category">Category</label>
-            <select class="form_id" name="category" required>
-                <option value="">Select a category</option>
-                <option value="Allowance">Allowance</option>
-                <option value="Bank Charges">Bank Charges</option>
-                <option value="Custom Duties">Custom Duties</option>
-                <option value="Electricity & Water">Electricity & Water</option>
-                <option value="EPF">EPF</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Hardware & Tools">Hardware & Tools</option>
-                <option value="Handling Expenses">Handling Expenses</option>
-                <option value="Printing & Stationery">Printing & Stationery</option>
-                <option value="Petrol">Petrol</option>
-                <option value="Postage & Courier">Postage & Courier</option>
-                <option value="Rental of Shop">Rental of Shop</option>
-                <option value="Registration of Shop">Registration of Shop</option>
-                <option value="Salary">Salary</option>
-                <option value="SOCSO & SIP">SOCSO & SIP</option>
-                <option value="Staff Welfare">Staff Welfare</option>
-                <option value="Small Value Assets">Small Value Assets</option>
-                <option value="Sewage Charges">Sewage Charges</option>
-                <option value="Sundry Expenses">Sundry Expenses</option>
-                <option value="Wages">Wages</option>
-                <option value="Miscellaneous">Miscellaneous</option>
-            </select><br>
-            <label class="form_name" for="bank">Bank</label>
-            <select class="form_id" name="bank" required>
-                <option value="HongLeongBank">Hong Leong Bank</option>
-            </select><br>
-            <label class="form_name" for="name">Name</label>
-            <select class="form_id" id="name" name="name">
-              <option value="">Choose a Name</option>
-              <option value="Gdex">Gdex</option>
-              <option value="other">Other</option>
-            </select><br>
-            <label class="form_name" for="amount">Amount</label>
-            <input class="form_id" type="number" step="0.01" name="amount" required><br>
-            <label class="form_name" for="detail">Details</label><br>
-            <textarea class="form_detail" type="text" name="detail"></textarea><br>
-            <label class="formfile_name" for="file">File</label>
-            <input class="form_file" type="file" name="file" id="file-input"><br><br>
-            <div class="button">
-                <button class="form_button" type="submit">Submit</button>
-                <button class="form_button" type="reset">Clear</button>
-            </div>
-        </form>
+          <form id="yyexpenses-form" method="POST" action="/yyexpenses-record" enctype="multipart/form-data">
+              <label class="form_name" for="date">Date</label>
+              <input class="form_id" type="date" name="date" required><br>
+              <label class="form_name" for="invoice_no">Invoice No.</label>
+              <input class="form_id" type="text" name="invoice_no" id="invoice_no" placeholder=" Optional"><br>
+              <label class="form_name" for="category">Category</label>
+              <select class="form_id" name="category" required>
+                  <option value="">Select a category</option>
+                  <option value="Allowance">Allowance</option>
+                  <option value="Bank Charges">Bank Charges</option>
+                  <option value="Custom Duties">Custom Duties</option>
+                  <option value="Electricity & Water">Electricity & Water</option>
+                  <option value="EPF">EPF</option>
+                  <option value="Entertainment">Entertainment</option>
+                  <option value="Hardware & Tools">Hardware & Tools</option>
+                  <option value="Handling Expenses">Handling Expenses</option>
+                  <option value="Printing & Stationery">Printing & Stationery</option>
+                  <option value="Petrol">Petrol</option>
+                  <option value="Postage & Courier">Postage & Courier</option>
+                  <option value="Rental of Shop">Rental of Shop</option>
+                  <option value="Registration of Shop">Registration of Shop</option>
+                  <option value="Salary">Salary</option>
+                  <option value="SOCSO & SIP">SOCSO & SIP</option>
+                  <option value="Staff Welfare">Staff Welfare</option>
+                  <option value="Small Value Assets">Small Value Assets</option>
+                  <option value="Sewage Charges">Sewage Charges</option>
+                  <option value="Sundry Expenses">Sundry Expenses</option>
+                  <option value="Wages">Wages</option>
+                  <option value="Miscellaneous">Miscellaneous</option>
+              </select><br>
+              <label class="form_name" for="bank">Bank</label>
+              <select class="form_id" name="bank" required>
+                  <option value="HongLeongBank">Hong Leong Bank</option>
+              </select><br>
+              <label class="form_name" for="name">Name</label>
+              <select class="form_id" id="name" name="name">
+                <option value="">Choose a Name</option>
+                <option value="Gdex">Gdex</option>
+                <option value="other">Other</option>
+              </select><br>
+              <label class="form_name" for="amount">Amount</label>
+              <input class="form_id" type="number" step="0.01" name="amount" required><br>
+              <label class="form_name" for="detail">Details</label><br>
+              <textarea class="form_detail" type="text" name="detail"></textarea><br>
+              <label class="formfile_name" for="file">File</label>
+              <input class="form_file" type="file" name="file" id="file-input"><br><br>
+              <div class="button">
+                  <button class="form_button" type="submit">Submit</button>
+                  <button class="form_button" type="reset">Clear</button>
+              </div>
+          </form><br>
+          <table  class="table table-striped" style="width: 90%;">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Invoice No</th>
+                <th>Category</th>
+                <th>Bank</th>
+                <th>Name</th>
+                <th>Amount</th>
+                <th>Detail</th>
+                <th>File</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% data.forEach(function(row) { %>
+                <tr>
+                  <td><%= row.formattedDate %></td>
+                  <td><%= row.Invoice_No %></td>
+                  <td><%= row.Category %></td>
+                  <td><%= row.Bank %></td>
+                  <td><%= row.Name %></td>
+                  <td><%= row.Amount %></td>
+                  <td><%= row.Detail %></td>
+                  <td><%= row.File %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
         </main>
         <script>
           $(document).ready(function() {
@@ -135,6 +163,6 @@
             alert('An error occurred');
           }
         });
-          </script>
+        </script>
     </body>
 </html>

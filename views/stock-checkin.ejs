@@ -17,28 +17,126 @@
     <body class="main-contents">
         <%- include('partials/nav'); %>
         <main class="main-content">
-            <h1>Stock pending arrive</h1>
-            <table class="table table-striped">
+            <h1>Stock Check-In</h1>
+            <form id="stock-checkin-form" method="POST" action="/stockCheckin" enctype="multipart/form-data" style="display: flex;">
+                <div>
+                    <label class="form_name6" for="invoice">Invoice Number:</label><br>
+                    <input style="width: 280px;" type="text" name="invoice" id="invoice-input" required>
+                    <br>
+                    <label class="form_name6" for="name">Seller Name:</label><br>
+                    <input style="width: 280px;" type="text" name="name" disabled>
+                    <br>
+                    <label class="form_name6" for="bankname">Bank Name:</label><br>
+                    <input style="width: 280px;" type="text" name="bankname" disabled>
+                    <br>
+                    <label class="form_name6" for="bank">Bank Account Number:</label><br>
+                    <input style="width: 280px;" type="text" name="bank" disabled>
+                    <br>
+                    <label class="form_name6"  for="bankacc">Bank Account Name:</label><br>
+                    <input style="width: 280px;" type="text" name="bankacc" disabled>
+                    <br>
+                    <label class="form_name6" for="remarks">Remarks:</label><br>
+                    <textarea style="width: 280px;" name="remarks" disabled></textarea><br><br>
+                    <input class="form_button" type="submit" value="Submit">
+                    <input class="form_button" type="reset" value="Clear">
+                </div>
+                <div style="margin-left: 50px;">
+                    <table class="table table-striped" id="stock-checkin-table" style="width: 90%;">
+                        <thead>
+                            <tr>
+                                <th style="width: 200px;">SKU</th>
+                                <th style="width: 400px;">Product Name</th>
+                                <th style="width: 100px;">Size</th>
+                                <th style="width: 100px;">Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                            </tr>
+                        </tbody>
+                      </table>
+                </div>
+            </form><br><br>
+            <h2>In Transit Item</h2>
+            <table class="table table-striped" style="width: 90%;">
                 <thead>
-                    <tr>
-                        <th>PO number</th>
-                        <th>Sellerf Name</th>
-                        <th>Order Date</th>
-                        <th>Total Cost</th>
-                        <th>Check In</th>
-                    </tr>
+                  <tr>
+                    <th>Invoice Number</th>
+                    <th>SKU</th>
+                    <th>Product Name</th>
+                    <th>Size US</th>
+                    <th>Quantity</th>
+                  </tr>
                 </thead>
                 <tbody>
+                  <% for (let i = 0; i < items.length; i++) { %>
                     <tr>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td><a href="">22</a></td>
+                      <td><%= items[i].InvoiceNumber %></td>
+                      <td><%= items[i].Content_SKU %></td>
+                      <td><%= items[i].ProductName %></td>
+                      <td><%= items[i].SizeUS %></td>
+                      <td><%= items[i].total_quantity %></td>
                     </tr>
+                  <% } %>
                 </tbody>
-            </table>
-            <a href="/stock-checkins">sdfsf</a>
+              </table>
         </main>
+        <script>
+            function setupRemoveRowButtons() {
+              const removeRowBtns = document.querySelectorAll('.remove-row-btn');
+              removeRowBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                  const row = btn.parentNode.parentNode;
+                  row.parentNode.removeChild(row);
+                });
+              });
+            }
+          
+            const invoiceInput = document.getElementById('invoice-input');
+            const sellerNameInput = document.getElementsByName('name')[0];
+            const bankNameInput = document.getElementsByName('bankname')[0];
+            const bankNumberInput = document.getElementsByName('bank')[0];
+            const bankAccountInput = document.getElementsByName('bankacc')[0];
+            const stockCheckinTable = document.getElementById('stock-checkin-table');
+          
+            invoiceInput.addEventListener('blur', () => {
+              const invoiceNum = invoiceInput.value;
+              const xhr = new XMLHttpRequest();
+              xhr.onreadystatechange = function() {
+                if (this.readyState === 4 && this.status === 200) {
+                  const data = JSON.parse(this.responseText);
+          
+                  // set the seller name and bank fields based on the retrieved data
+                  sellerNameInput.value = data.seller[0];
+                  bankNameInput.value = data.bankName[0];
+                  bankNumberInput.value = data.bank[0];
+                  bankAccountInput.value = data.bankAccount[0];
+          
+                  // populate the table with the retrieved data
+                  // assuming the server sends data in the same format as the previous code snippet
+                  data.name.forEach((name, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                      <td><input type="text" class="form-control" name="field1[]" value="${data.sku[index]}" multiple></td>
+                      <td><input type="text" class="form-control" name="field2[]" value="${name}" multiple></td>
+                      <td><input type="text" class="form-control" name="field3[]" value="${data.size[index]}" multiple></td>
+                      <td><input type="text" class="form-control" name="field4[]" value="${data.quantity[index]}" multiple></td>
+                      <td><button type="button" class="btn btn-danger btn-sm remove-row-btn">Remove</button></td>
+                    `;
+                    stockCheckinTable.tBodies[0].appendChild(row);
+          
+                    // set the value of the product name input field as a string
+                    const productNameInput = row.querySelector('input[name="field2[]"]');
+                    productNameInput.value = name;
+                  });
+          
+                  // set up event listeners for remove row buttons
+                  setupRemoveRowButtons();
+                }
+              };
+              xhr.open('GET', `/stockcheckinasd?ponum=${invoiceNum}`);
+              xhr.send();
+            });
+        </script>
     </body>
 </html>
