@@ -84,9 +84,6 @@
   padding-top: 10px;
 }
 
-.container{
-  display: flex;
-}
 .leftside-container{
   padding-right: 50px;
   display: flex;

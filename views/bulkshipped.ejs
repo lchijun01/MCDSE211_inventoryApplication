@@ -33,9 +33,9 @@
                     </a>
                 </li>
             </ul>
-            <div class="container">
-                <div class="leftside-container">
-                    <form id="bulks-form" method="POST" action="/bulkshipped" enctype="multipart/form-data">
+            <div class="leftside-container">
+                <form style="display: flex;" id="bulks-form" method="POST" action="/bulkshipped" enctype="multipart/form-data">
+                    <div>
                         <label class="form_name3" for="trackingno">Tracking Number</label>
                         <input class="form_id" type="text" name="trackingno" required><br>
                         <label class="form_name3" for="date">Pick-up Date</label>
@@ -54,19 +54,25 @@
                             <button class="form_button" type="submit">Submit</button>
                             <button class="form_button" type="reset">Clear</button>
                         </div><br>
+                    </div>
+                    <div style="margin-left: 100px;">
                         <table class="table" id="inputTable">
                             <thead>
                                 <tr>
+                                    <th>Invoice</th>
                                     <th>Content / SKU</th>
+                                    <th>Product Name</th>
                                     <th>Size US</th>
                                     <th>Quantity</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
+                                    <td><input type="text" class="form-control" name="invoice[]"></td>
                                     <td><input type="text" class="form-control" name="field1[]"></td>
+                                    <td><input type="text" class="form-control" name="productname[]"></td>
                                     <td><input type="text" class="form-control" name="field2[]"></td>
-                                    <td><input type="text" class="form-control" name="field3[]"></td> <!-- Changed the name attribute -->
+                                    <td><input type="number" class="form-control" name="field3[]"></td>
                                     <td>
                                         <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
                                     </td>
@@ -74,25 +80,51 @@
                             </tbody>
                         </table>
                         <button type="button" class="btn btn-primary" id="addRow">Add Row</button>
-            
-                        <div class="button">
-                            <br><button class="form_button" type="submit">Submit</button>
-                            <button class="form_button" type="reset">Clear</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-    </div>
+        
+                    <div class="button">
+                        <br><button class="form_button" type="submit">Submit</button>
+                        <button class="form_button" type="reset">Clear</button>
+                    </div>
+                    </div>
+                </form>
+            </div><br>
+            <h1>Pending to Ship</h1>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Invoice NO.</th>
+                    <th>SKU</th>
+                    <th>Product Name</th>
+                    <th>Size US</th>
+                    <th>Quantity</th>
+                </tr>
+                </thead>
+                <tbody>
+                <% data.forEach(item => { %>
+                    <tr>
+                        <td><%= item.InvoiceNumber %></td>
+                        <td><%= item.Content_SKU %></td>
+                        <td><%= item.product_name %></td>
+                        <td><%= item.SizeUS %></td>
+                        <td><%= item.totalQuantity %></td>
+                    </tr>
+                <% }); %>
+                </tbody>
+            </table>
     <script>
         $(document).ready(function() {
     // Add a new row to the table
     $("#addRow").click(function() {
         let newRow = `<tr>
-                        <td><input type="text" class="form-control" name="field1[]"></td>
-                        <td><input type="text" class="form-control" name="field2[]"></td>
-                        <td><input type="text" class="form-control" name="field3[]"></td> <!-- Changed the name attribute -->
-                        <td><button type="button" class="btn btn-danger btn-sm removeRow">Remove</button></td>
-                      </tr>`;
+                                    <td><input type="text" class="form-control" name="invoice[]"></td>
+                                    <td><input type="text" class="form-control" name="field1[]"></td>
+                                    <td><input type="text" class="form-control" name="productname[]"></td>
+                                    <td><input type="text" class="form-control" name="field2[]"></td>
+                                    <td><input type="number" class="form-control" name="field3[]"></td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
+                                    </td>
+                                </tr>`;
         $("#inputTable tbody").append(newRow);
     });
 

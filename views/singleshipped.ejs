@@ -31,28 +31,59 @@
                     </a>
                 </li>
             </ul>
-            <form id="singles-form" method="POST" action="/singleshipped" enctype="multipart/form-data">
-                <label class="form_name3" for="trackingno">Tracking Number</label>
-                <input class="form_id" type="text" name="trackingno" required><br>
-                <label class="form_name3" for="date">Date</label>
-                <input class="form_id" type="date" name="date" required><br>
-                <label class="form_name3" for="sku">Content/SKU</label>
-                <input class="form_id" type="text" name="sku" required><br>
-                <label class="form_name3" for="size">Size US</label>
-                <input class="form_id" type="text" name="size" placeholder=" US"><br>
-                <label class="form_name3" for="category">Category</label>
-                <select class="form_id" name="category" required>
-                    <option value="">Select a category</option>
-                    <option value="Yong&Yi">Yong & Yi</option>
-                    <option value="Y.kickzoneShop">Y.KickZone Shop</option>
-                </select><br>
-                <label class="form_name3" for="remarks">Remarks</label><br>
-                <textarea class="form_detail2" type="text" name="remarks"></textarea><br><br>
-                <div class="button">
-                    <button class="form_button" type="submit">Submit</button>
-                    <button class="form_button" type="reset">Clear</button>
+            <div style="display: flex;">
+                <form id="singles-form" method="POST" action="/singleshipped" enctype="multipart/form-data">
+                    <label class="form_name3" for="trackingno">Tracking Number</label>
+                    <input class="form_id" type="text" name="trackingno" required><br>
+                    <label class="form_name3" for="date">Date</label>
+                    <input class="form_id" type="date" name="date" required><br>
+                    <label class="form_name3" for="sku">SKU</label>
+                    <input class="form_id" type="text" name="sku" required><br>
+                    <label class="form_name3" for="sku">Product Name</label>
+                    <input class="form_id" type="text" name="productname" required><br>
+                    <label class="form_name3" for="size">Size US</label>
+                    <input class="form_id" type="text" name="size" placeholder=" US"><br>
+                    <label class="form_name3" for="category">Category</label>
+                    <select class="form_id" name="category" required>
+                        <option value="">Select a category</option>
+                        <option value="Yong&Yi">Yong & Yi</option>
+                        <option value="Y.kickzoneShop">Y.KickZone Shop</option>
+                    </select><br>
+                    <label class="form_name3" for="invoice">Invoice Number</label>
+                    <input class="form_id" type="text" name="invoice"><br>
+                    <label class="form_name3" for="remarks">Remarks</label><br>
+                    <textarea style="width: 324.5px;" type="text" name="remarks"></textarea><br><br>
+                    <div class="button">
+                        <button class="form_button" type="submit">Submit</button>
+                        <button class="form_button" type="reset">Clear</button>
+                    </div>
+                </form><br>
+                <div style="margin-left: 100px;">
+                    <h1>Pending to Ship</h1>
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>Invoice NO.</th>
+                            <th>SKU</th>
+                            <th>Product Name</th>
+                            <th>Size US</th>
+                            <th>Quantity</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <% data.forEach(item => { %>
+                            <tr>
+                                <td><%= item.InvoiceNumber %></td>
+                                <td><%= item.Content_SKU %></td>
+                                <td><%= item.product_name %></td>
+                                <td><%= item.SizeUS %></td>
+                                <td><%= item.totalQuantity %></td>
+                            </tr>
+                        <% }); %>
+                        </tbody>
+                    </table>
                 </div>
-            </form>
+            </div>
         </main>
     </body>
 </html>

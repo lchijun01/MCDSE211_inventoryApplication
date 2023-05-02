@@ -24,7 +24,7 @@
       <div>
         <br><br>
         <div style="display: flex;justify-content: space-between;">
-          <h1 style="font-weight: bold;">Stock Left <br>Yong & Yi Partnership Enterprise</h1>
+          <h1 style="font-weight: bold;">Warehouse Stock<br>Yong & Yi Partnership Enterprise</h1>
           <div>
             <form action="/stock-check" method="get" style="display: flex;">
               <input type="search" name="sku" style="width: 250px;margin-right: 30px;" class="form-control me-2" placeholder="Search SKU" aria-label="Search">
@@ -39,32 +39,22 @@
         <table style="margin-top: 20px;width: 90%;" class="table table-striped">
           <thead>
             <tr>
-              <th>SKU</th>
+              <th style="width: 50px;">SKU</th>
               <th>Product Name</th>
-              <th>Size US</th>
-              <th>Total Quantity</th>
-              <th>Cost Price</th>
+              <th>Size</th>
+              <th>Quantity Left</th>
             </tr>
           </thead>
           <tbody>
-            <% let totalValue = 0 %>
-            <% data.forEach(function(item) { %>
-                <tr>
-                  <td><%= item.Content_SKU %></td>
-                  <td><%= item.ProductName %></td>
-                  <td><%= item.SizeUS %></td>
-                  <td><%= item.total_quantity %></td>
-                  <td><%= Number(item.Amount).toFixed(2) %></td>
-                </tr>
-                <% totalValue += (item.total_quantity * item.Amount) %>
-              <% }) %>
+            <% data.forEach(item => { %>
+              <tr>
+                <td><%= item.Content_SKU %></td>
+                <td><%= item.ProductName %></td>
+                <td><%= item.SizeNumber %></td>
+                <td><%= item.quantity_difference %></td>
+              </tr>
+            <% }); %>
           </tbody>
-          <tfoot>
-            <tr>
-              <th>Total Value of Stock</th>
-              <th>RM <%= totalValue.toFixed(2) %></th>
-            </tr>
-          </tfoot>
         </table>
       </div>
     </main>

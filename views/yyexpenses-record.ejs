@@ -19,55 +19,100 @@
         <main class="main-content">
           <h1>Yong&Yi Expenses Record Page</h1>
 
-          <form id="yyexpenses-form" method="POST" action="/yyexpenses-record" enctype="multipart/form-data">
-              <label class="form_name" for="date">Date</label>
-              <input class="form_id" type="date" name="date" required><br>
-              <label class="form_name" for="invoice_no">Invoice No.</label>
-              <input class="form_id" type="text" name="invoice_no" id="invoice_no" placeholder=" Optional"><br>
-              <label class="form_name" for="category">Category</label>
-              <select class="form_id" name="category" required>
-                  <option value="">Select a category</option>
-                  <option value="Allowance">Allowance</option>
-                  <option value="Bank Charges">Bank Charges</option>
-                  <option value="Custom Duties">Custom Duties</option>
-                  <option value="Electricity & Water">Electricity & Water</option>
-                  <option value="EPF">EPF</option>
-                  <option value="Entertainment">Entertainment</option>
-                  <option value="Hardware & Tools">Hardware & Tools</option>
-                  <option value="Handling Expenses">Handling Expenses</option>
-                  <option value="Printing & Stationery">Printing & Stationery</option>
-                  <option value="Petrol">Petrol</option>
-                  <option value="Postage & Courier">Postage & Courier</option>
-                  <option value="Rental of Shop">Rental of Shop</option>
-                  <option value="Registration of Shop">Registration of Shop</option>
-                  <option value="Salary">Salary</option>
-                  <option value="SOCSO & SIP">SOCSO & SIP</option>
-                  <option value="Staff Welfare">Staff Welfare</option>
-                  <option value="Small Value Assets">Small Value Assets</option>
-                  <option value="Sewage Charges">Sewage Charges</option>
-                  <option value="Sundry Expenses">Sundry Expenses</option>
-                  <option value="Wages">Wages</option>
-                  <option value="Miscellaneous">Miscellaneous</option>
-              </select><br>
-              <label class="form_name" for="bank">Bank</label>
-              <select class="form_id" name="bank" required>
-                  <option value="HongLeongBank">Hong Leong Bank</option>
-              </select><br>
-              <label class="form_name" for="name">Name</label>
-              <select class="form_id" id="name" name="name">
-                <option value="">Choose a Name</option>
-                <option value="Gdex">Gdex</option>
-                <option value="other">Other</option>
-              </select><br>
-              <label class="form_name" for="amount">Amount</label>
-              <input class="form_id" type="number" step="0.01" name="amount" required><br>
-              <label class="form_name" for="detail">Details</label><br>
-              <textarea class="form_detail" type="text" name="detail"></textarea><br>
-              <label class="formfile_name" for="file">File</label>
-              <input class="form_file" type="file" name="file" id="file-input"><br><br>
-              <div class="button">
-                  <button class="form_button" type="submit">Submit</button>
-                  <button class="form_button" type="reset">Clear</button>
+          <form style="display: flex;" id="yyexpenses-form" method="POST" action="/yyexpenses-record" enctype="multipart/form-data">
+              <div>
+                <label class="form_name" for="date">Date</label>
+                <input class="form_id" type="date" name="date" required><br>
+                <label class="form_name" for="invoice_no">Invoice No.</label>
+                <input class="form_id" type="text" name="invoice_no" id="invoice_no" placeholder=" Optional"><br>
+                <label class="form_name" for="category">Category</label>
+                <select class="form_id" name="category" required>
+                    <option value="">Select a category</option>
+                    <option value="Allowance">Allowance</option>
+                    <option value="Bank Charges">Bank Charges</option>
+                    <option value="Custom Duties">Custom Duties</option>
+                    <option value="Electricity & Water">Electricity & Water</option>
+                    <option value="EPF">EPF</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Hardware & Tools">Hardware & Tools</option>
+                    <option value="Handling Expenses">Handling Expenses</option>
+                    <option value="Printing & Stationery">Printing & Stationery</option>
+                    <option value="Petrol">Petrol</option>
+                    <option value="Postage & Courier">Postage & Courier</option>
+                    <option value="Rental of Shop">Rental of Shop</option>
+                    <option value="Registration of Shop">Registration of Shop</option>
+                    <option value="Salary">Salary</option>
+                    <option value="SOCSO & SIP">SOCSO & SIP</option>
+                    <option value="Staff Welfare">Staff Welfare</option>
+                    <option value="Small Value Assets">Small Value Assets</option>
+                    <option value="Sewage Charges">Sewage Charges</option>
+                    <option value="Sundry Expenses">Sundry Expenses</option>
+                    <option value="Wages">Wages</option>
+                    <option value="Miscellaneous">Miscellaneous</option>
+                </select><br>
+                <label class="form_name" for="bank">Bank</label>
+                <select class="form_id" name="bank" required>
+                    <option value="HongLeongBank">Hong Leong Bank</option>
+                </select><br>
+                <label class="form_name" for="name">Name</label>
+                <select class="form_id" id="name" name="name">
+                  <option value="">Choose a Name</option>
+                  <option value="Gdex">Gdex</option>
+                  <option value="other">Other</option>
+                </select><br>
+                <label class="form_name" for="amount">Amount</label>
+                <input class="form_id" type="number" step="0.01" name="amount" required><br>
+                <label class="form_name" for="detail">Details</label><br>
+                <textarea class="form_detail" type="text" name="detail"></textarea><br>
+                <label class="formfile_name" for="file">File</label>
+                <input class="form_file" type="file" name="file" id="file-input"><br><br>
+                <div class="button">
+                    <button class="form_button" type="submit">Submit</button>
+                    <button class="form_button" type="reset">Clear</button>
+                </div>
+              </div>
+              <div>
+                <table class="table table-striped" style="width: 100%;margin-left: 100px;">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Total Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% let categoryTotals = {} %>
+                    <% data.forEach(function(row) {
+                      const category = row.Category;
+                      const amount = parseFloat(row.Amount);
+                      if (!isNaN(amount)) {
+                        if (category in categoryTotals) {
+                          categoryTotals[category] += amount;
+                        } else {
+                          categoryTotals[category] = amount;
+                        }
+                      }
+                    }); %>
+                    <% Object.keys(categoryTotals).forEach(function(category) { %>
+                      <tr>
+                        <td><%= category %></td>
+                        <td>RM <%= categoryTotals[category].toFixed(2) %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <% let total = 0 %>
+                      <% data.forEach(function(row) {
+                        const amount = parseFloat(row.Amount);
+                        if (!isNaN(amount)) {
+                          total += amount;
+                        }
+                      }); %>
+                      <th class="text-end">Total Amount : </th>
+                      <th>RM <%= total.toFixed(2) %></th>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
           </form><br>
           <table  class="table table-striped" style="width: 90%;">

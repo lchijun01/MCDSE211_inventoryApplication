@@ -22,53 +22,50 @@
     <%- include('partials/nav'); %>
     <main class="main-content">
       <div>
-        <br>
+        <br><br>
         <div style="display: flex;justify-content: space-between;">
-          <h1 style="font-weight: bold;">Stock Audit<br>Yong & Yi Partnership Enterprise</h1>
-        </div>
-        <table class="table table-striped">
+          <h1 style="font-weight: bold;">Stock Audit <br>Yong & Yi Partnership Enterprise</h1>
+          <div>
+            <form action="/stock-check" method="get" style="display: flex;">
+              <input type="search" name="sku" style="width: 250px;margin-right: 30px;" class="form-control me-2" placeholder="Search SKU" aria-label="Search">
+              <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+            <form action="/stock-checka" method="get" style="display: flex;">
+              <input type="search" name="size" style="width: 250px;margin-right: 30px;" class="form-control me-2" placeholder="Search Size" aria-label="Search">
+              <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+          </div>
+        </div><br>
+        <table class="table table-striped" style="width: 40%;">
+          <% let totalValue = data.reduce((acc, item) => acc + (item.total_quantity * item.Amount), 0); %>
+            <thead>
+              <tr>
+                <th style="font-size: 30px;">Total Value of Stock :</th>
+                <th style="font-size: 30px;">RM <%= totalValue.toFixed(2) %></th>
+              </tr>
+            </thead>
+        </table>
+        <table style="margin-top: 20px;width: 90%;" class="table table-striped">
           <thead>
             <tr>
-              <th>InvoiceNumber</th>
               <th>SKU</th>
               <th>Product Name</th>
-              <th>Size</th>
-              <th>Unit Price</th>
-              <th>Quantity</th>
-              <th>Amount</th>
-              <th>Gender</th>
-              <th>Cost Price per item</th>
-              <th>Profit & Loss</th>
+              <th>Size US</th>
+              <th>Total Quantity</th>
+              <th>Cost Price</th>
             </tr>
           </thead>
           <tbody>
-            <% let totalProfit = 0 %>
-            <% let totalCost = 0 %>
             <% data.forEach(function(item) { %>
-              <tr>
-                <td><%= item.InvoiceNumber %></td>
-                <td><%= item.Content_SKU %></td>
-                <td><%= item.product_name %></td>
-                <td><%= item.SizeUS %></td>
-                <td><%= item.UnitPrice.toFixed(2) %></td>
-                <td><%= item.Quantity %></td>
-                <td><%= item.Amount.toFixed(2) %></td>
-                <td><%= item.gender %></td>
-                <td><%= Number(item.CostPrice).toFixed(2) %></td>
-                <td><%= ((Number(item.UnitPrice - item.CostPrice)) * Number(item.Quantity)).toFixed(2)  %></td>
-              </tr>
-              <% totalProfit += (item.UnitPrice - item.CostPrice) * Number(item.Quantity) %>
-              <% totalCost += item.CostPrice * Number(item.Quantity) %>
-            <% }); %>
+                <tr>
+                  <td><%= item.Content_SKU %></td>
+                  <td style="width: 300px;"><%= item.ProductName %></td>
+                  <td><%= item.SizeUS %></td>
+                  <td><%= item.total_quantity %></td>
+                  <td><%= Number(item.Amount).toFixed(2) %></td>
+                </tr>
+              <% }) %>
           </tbody>
-          <tfoot>
-            <tr>
-              <th>Total Profit :</th>
-              <td>RM <%= Number(totalProfit).toFixed(4) %></td>
-              <th>Total Cost :</th>
-              <td>RM <%= Number(totalCost).toFixed(4) %></td>
-            </tr>
-          </tfoot>
         </table>
       </div>
     </main>

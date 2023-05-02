@@ -18,7 +18,7 @@
         <%- include('partials/nav'); %>
         <main class="main-content">
             <h1>Stock Check-In</h1>
-            <form id="stock-checkin-form" method="POST" action="/stockCheckin" enctype="multipart/form-data" style="display: flex;">
+            <form id="stock-checkin-form" method="POST" action="/stock-checkin" enctype="multipart/form-data" style="display: flex;">
                 <div>
                     <label class="form_name6" for="invoice">Invoice Number:</label><br>
                     <input style="width: 280px;" type="text" name="invoice" id="invoice-input" required>
@@ -79,7 +79,7 @@
                     </tr>
                   <% } %>
                 </tbody>
-              </table>
+            </table>
         </main>
         <script>
             function setupRemoveRowButtons() {

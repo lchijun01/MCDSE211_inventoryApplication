@@ -547,7 +547,7 @@ app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
     .pipe(csv())
     .on('data', (data) => {
       // Extract the relevant data from the CSV row
-      const { InvoiceNo, Date, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, sku, Product_Name, SizeUS, Quantity, UnitPrice, Amount, gender, Remarks, CostPrice } = data;
+      const { InvoiceNo, Date, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, sku, Product_Name, SizeUS, Quantity, UnitPrice, Amount, gender, Remarks, CostPrice, ship } = data;
       const parsedUnitPrice = parseFloat(UnitPrice.replace(/[^0-9.-]+/g,""));
       const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
 
@@ -559,7 +559,7 @@ app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
             console.error(error);
           } else {
             // If the insert into sell_invoice is successful, insert the corresponding data into the items_sell table
-            pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, Quantity, UnitPrice, Amount, gender, CostPrice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, sku, Product_Name, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender, CostPrice], (error, results, fields) => {
+            pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, Quantity, UnitPrice, Amount, gender, CostPrice, ship) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, sku, Product_Name, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender, CostPrice, ship], (error, results, fields) => {
               if (error) {
                 console.error(error);
               } else {
@@ -570,7 +570,7 @@ app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
         });
       } else {
         // If the InvoiceNo has already been inserted into the sell_invoice table, insert the corresponding data into the items_sell table only
-        pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, Quantity, UnitPrice, Amount, gender, CostPrice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, sku, Product_Name, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender, CostPrice], (error, results, fields) => {
+        pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, Quantity, UnitPrice, Amount, gender, CostPrice, ship) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, sku, Product_Name, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender, CostPrice, ship], (error, results, fields) => {
           if (error) {
             console.error(error);
           } else {
@@ -585,10 +585,10 @@ app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
     });
 });
 app.get('/yyexportsell_csv', function(req, res) {
-  const sql = `SELECT yysell_invoice.Invoice_number, yysell_invoice.Name, yysell_invoice.Remarks, yysell_invoice.Phone, yysell_invoice.timestamp As date, yysell_invoice.Address1, yysell_invoice.Address2, yysell_invoice.Address3, yysell_invoice.PostCode, yysell_invoice.City, yysell_invoice.State, yysell_invoice.Country, yyitems_sell.Content_SKU, yyitems_sell.product_name, yyitems_sell.SizeUS, yyitems_sell.Quantity, yyitems_sell.UnitPrice, yyitems_sell.Amount, yyitems_sell.gender, yyitems_sell.CostPrice
+  const sql = `SELECT yysell_invoice.Invoice_number, yysell_invoice.Name, yysell_invoice.Remarks, yysell_invoice.Phone, yysell_invoice.timestamp As date, yysell_invoice.Address1, yysell_invoice.Address2, yysell_invoice.Address3, yysell_invoice.PostCode, yysell_invoice.City, yysell_invoice.State, yysell_invoice.Country, yyitems_sell.Content_SKU, yyitems_sell.product_name, yyitems_sell.SizeUS, yyitems_sell.Quantity, yyitems_sell.UnitPrice, yyitems_sell.Amount, yyitems_sell.gender, yyitems_sell.CostPrice, yyitems_sell.ship
                 FROM yysell_invoice
                 LEFT JOIN yyitems_sell ON yysell_invoice.Invoice_number = yyitems_sell.InvoiceNumber
-                ORDER BY yysell_invoice.Invoice_number, yyitems_sell.Content_SKU, yyitems_sell.CostPrice`;
+                ORDER BY yysell_invoice.Invoice_number, yyitems_sell.Content_SKU, yyitems_sell.CostPrice, yyitems_sell.ship`;
 
   pool.query(sql, function(error, results, fields) {
     if (error) throw error;
@@ -622,7 +622,8 @@ app.get('/yyexportsell_csv', function(req, res) {
           Amount: row.Amount,
           gender: row.gender,
           Remarks: row.Remarks,
-          CostPrice: row.CostPrice
+          CostPrice: row.CostPrice,
+          ship: row.ship
         });
         currentInvoiceNo = row.Invoice_number;
       } else {
@@ -646,7 +647,8 @@ app.get('/yyexportsell_csv', function(req, res) {
           UnitPrice: row.UnitPrice,
           Amount: row.Amount,
           gender: row.gender,
-          CostPrice: row.CostPrice
+          CostPrice: row.CostPrice,
+          ship: row.ship
         });
       }
     });
@@ -1041,7 +1043,7 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
 //-------------------------------------------------------------------------------------------------
 
 // Define route for stock check page
-app.get('/stock-check', function(req, res) {
+app.get('/stockaudit', function(req, res) {
   pool.query(`
   SELECT Content_SKU, SizeUS, ProductName, Amount, SUM(Quantity) as total_quantity 
   FROM yyitems_buy WHERE sold = 'no'
@@ -1053,7 +1055,7 @@ app.get('/stock-check', function(req, res) {
       res.status(500).send('Error fetching data');
     } else {
       const data = results.map(row => ({ ...row }));
-      res.render('stock-check', { data });
+      res.render('stockaudit', { data });
     }
   });
 });
@@ -1124,7 +1126,7 @@ app.get('/stockcheckinasd', (req, res) => {
   const query = `SELECT yyitems_buy.ProductName, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as TotalQuantity, yybuy_record.Name, yybuy_record.Bank, yybuy_record.BankName, yybuy_record.Bankaccount, yybuy_record.Remarks 
   FROM yyitems_buy yyitems_buy 
   JOIN yybuy_record yybuy_record ON yyitems_buy.InvoiceNumber = yybuy_record.Invoice_number 
-  WHERE yyitems_buy.InvoiceNumber = ?
+  WHERE yyitems_buy.InvoiceNumber = ? AND yyitems_buy.status = 'intransit'
   GROUP BY yyitems_buy.ProductName, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, yybuy_record.Name, yybuy_record.Bank, yybuy_record.BankName, yybuy_record.Bankaccount, yybuy_record.Remarks
   `;
   pool.query(query, [ponum], (err, results) => {
@@ -1143,17 +1145,14 @@ app.get('/stockcheckinasd', (req, res) => {
     res.send(data);
   });
 });
-app.post('/stockCheckin', upload.single('file'), urlencodedParser, function(req, res){
-  const invoice = req.body.invoice;
-  const skus = req.body['field1[]'];
-  const sizes = req.body['field3[]'];
-  const quantities = req.body['field4[]'];
+app.post('/stock-checkin', upload.single('file'), urlencodedParser, function(req, res){
+  const { invoice, field1 = [], field3 = [], field4 = [] } = req.body;
 
-  // Update the status column for each item in the form data
-  for (let i = 0; i < skus.length; i++) {
-    const sku = skus[i];
-    const size = sizes[i];
-    const quantity = parseInt(quantities[i]); // Convert string value to integer
+  // Loop through each item in the form data
+  for (let i = 0; i < field1.length; i++) {
+    const sku = field1[i];
+    const size = field3[i];
+    const quantity = parseInt(field4[i]); // Convert string value to integer
 
     pool.query(
       'UPDATE yyitems_buy SET status = "check" WHERE InvoiceNumber = ? AND Content_SKU = ? AND SizeUS = ? AND status = "intransit" LIMIT ?',
@@ -1164,59 +1163,37 @@ app.post('/stockCheckin', upload.single('file'), urlencodedParser, function(req,
       }
     );
   }
-  res.render('/stock-checkin');
+
+  const sql = "SELECT InvoiceNumber, Content_SKU, SizeUS , ProductName, SUM(Quantity) as total_quantity FROM yyitems_buy WHERE status = 'intransit' GROUP BY InvoiceNumber, Content_SKU, ProductName, SizeUS";
+  pool.query(sql, (err, result) => {
+    if (err) throw err;
+    res.render('stock-checkin', { items: result });
+  });
 });
-
-//for stock-check
-app.get('/stock-checkins', function(req, res){
-  res.render('stock-checkins')
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-app.get('/stockaudit', function(req, res) {
+app.get('/stock-check', function(req, res) {
   pool.query(`
-    SELECT InvoiceNumber, Content_SKU, product_name, CAST(SizeUS AS DECIMAL(10,2)) AS SizeUS, UnitPrice, SUM(Quantity) as Quantity, SUM(Amount) as Amount, gender, CostPrice
+  SELECT b.Content_SKU, b.ProductName, CAST(b.SizeUS AS DECIMAL(3,1)) AS SizeNumber, SUM(b.Quantity) - COALESCE(s.total_quantity, 0) AS quantity_difference
+  FROM yyitems_buy b
+  LEFT JOIN (
+    SELECT Content_SKU, SizeUS, SUM(Quantity) AS total_quantity
     FROM yyitems_sell
-    WHERE Content_SKU IS NOT NULL AND Content_SKU <> ''
-    GROUP BY InvoiceNumber, Content_SKU, SizeUS, UnitPrice, product_name, gender, CostPrice
-    ORDER BY InvoiceNumber DESC, CAST(SizeUS AS DECIMAL(10,2)) ASC
+    WHERE ship = 'shipped'
+    GROUP BY Content_SKU, SizeUS
+  ) s ON b.Content_SKU = s.Content_SKU AND b.SizeUS = s.SizeUS
+  WHERE b.status = 'check'
+  GROUP BY b.Content_SKU, b.ProductName, SizeNumber, s.total_quantity
+  HAVING quantity_difference <> 0
+  ORDER BY b.Content_SKU ASC, SizeNumber ASC;
   `, function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
     } else {
-      // Add the formattedDate field to each row of data
       const data = results.map(row => ({ ...row }));
-      res.render('stockaudit', { data });
+      res.render('stock-check', { data });
     }
   });
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1233,11 +1210,25 @@ app.get('/shippedrecord', function(req, res){
 });
 //for shipped record page - single ship
 app.get('/singleshipped', function(req, res){
-  res.render('singleshipped');
+  pool.query(`
+    SELECT InvoiceNumber, Content_SKU, product_name, SizeUS, SUM(Quantity) AS totalQuantity
+    FROM yyitems_sell
+    WHERE ship = "pending"
+    GROUP BY InvoiceNumber, Content_SKU, product_name, SizeUS
+  `, function(error, results, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    } else {
+      // Add the formattedDate field to each row of data
+      const data = results.map(row => ({ ...row }));
+      res.render('singleshipped', { data });
+    }
+  });
 });
 app.get('/singleshippeds', (req, res) => {
   const sku = req.query.sku;
-  const query = 'SELECT productname, size FROM stock_checkin WHERE sku = ?';
+  const query = 'SELECT ProductName, SizeUS FROM yyitems_buy WHERE Content_SKU = ? AND status = "pending"';
   pool.query(query, [sku], (err, results) => {
     if (err) {
       console.error(err);
@@ -1251,52 +1242,104 @@ app.get('/singleshippeds', (req, res) => {
     }
   });
 });
-app.post('/singleshipped',upload.single('file'),  urlencodedParser, function(req, res){
-  const { trackingno, date, sku, productname, size, category, remarks } = req.body;
+app.post('/singleshipped', upload.single('file'), urlencodedParser, function(req, res) {
+  const { trackingno, date, sku, productname, size, category, invoice, remarks } = req.body;
   const quantity = 1;
 
   // Insert the form data into MySQL
-  pool.query('INSERT INTO singleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, Category, Remarks, quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [trackingno, date, sku, productname, size, category, remarks, quantity], (error, results, fields) => {
+  pool.query('INSERT INTO singleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, Category, invoice, quantity, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [trackingno, date, sku, productname, size, category, invoice, quantity, remarks], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
     } else {
-      console.log(req.body);
-      res.render('singleshipped', { successMessage: 'Form submitted successfully' });
-    }
-  });
-});
-
-//for shipped record page - bulk ship
-app.get('/bulkshipped', function(req, res){
-  res.render('bulkshipped');
-});
-app.post('/bulkshipped', upload.single('file'), urlencodedParser, function (req, res) {
-  const { trackingno, date, boxno, category, remarks, productname, field1 = [], field2 = [], field3 = [] } = req.body;
-
-  // Insert the main form data into MySQL
-  pool.query('INSERT INTO bulkship (TrackingNumber, Date, BoxNumber, Category, Remarks) VALUES (?, ?, ?, ?, ?)', [trackingno, date, boxno, category, remarks], (error, results, fields) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send('Error saving form data');
-    } else {
-      const bulkShipBoxNumber = boxno;
-      const shippedItems = field1.map((item, index) => [bulkShipBoxNumber, item, field2[index], field3[index], productname[index]]);
-      console.log(shippedItems);
-      // Insert the shipped items data into MySQL
-      pool.query('INSERT INTO shipped_items (BulkShipBoxNumber, Content_SKU, SizeUS, Quantity, productname) VALUES ?', [shippedItems], (error, results, fields) => {
+      // Update yyitems_sell table
+      pool.query('UPDATE yyitems_sell SET ship=? WHERE InvoiceNumber=? AND Content_SKU=? AND SizeUS=? AND ship=? LIMIT 1', ['shipped', invoice, sku, size, 'pending'], (error, results, fields) => {
         if (error) {
           console.error(error);
-          res.status(500).send('Error saving shipped items data');
+          res.status(500).send('Error updating yyitems_sell table');
         } else {
           console.log(req.body);
-          res.render('bulkshipped', { successMessage: 'Form submitted successfully' });
+          res.render('singleshipped', { successMessage: 'Form submitted successfully' });
         }
       });
     }
   });
 });
+//for shipped record page - bulk ship
+app.get('/bulkshipped', function(req, res){
+  pool.query(`
+    SELECT InvoiceNumber, Content_SKU, product_name, SizeUS, SUM(Quantity) AS totalQuantity
+    FROM yyitems_sell
+    WHERE ship = "pending"
+    GROUP BY InvoiceNumber, Content_SKU, product_name, SizeUS
+  `, function(error, results, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    } else {
+      // Add the formattedDate field to each row of data
+      const data = results.map(row => ({ ...row }));
+      res.render('bulkshipped', { data });
+    }
+  });
+});
+app.post('/bulkshipped', upload.single('file'), urlencodedParser, function (req, res) {
+  const { trackingno, date, boxno, category, invoice = [], remarks, productname = [], field1 = [], field2 = [], field3 = [] } = req.body;
 
+  // Insert the main form data into MySQL
+  for (let i = 0; i < invoice.length; i++) {
+    pool.query('INSERT INTO bulkship (TrackingNumber, Date, BoxNumber, Category, Remarks, invoice) VALUES (?, ?, ?, ?, ?, ?)', [trackingno, date, boxno, category, remarks, invoice[i]], (error, results, fields) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error saving form data');
+      } else {
+        const bulkShipBoxNumber = boxno;
+        const shippedItems = field1.map((item, index) => [bulkShipBoxNumber, item, field2[index], field3[index], productname[index], invoice[i]]);
+        console.log(shippedItems);
+        // Insert the shipped items data into MySQL
+        pool.query('INSERT INTO shipped_items (BulkShipBoxNumber, Content_SKU, SizeUS, Quantity, productname, invoice) VALUES ?', [shippedItems], (error, results, fields) => {
+          if (error) {
+            console.error(error);
+            res.status(500).send('Error saving shipped items data');
+          } else {
+            console.log(req.body);
+
+            // Update the `ship` column in `yyitems_sell` table
+            for (let j = 0; j < field1.length; j++) {
+              pool.query(`
+                UPDATE yyitems_sell SET ship = "shipped" WHERE InvoiceNumber = ? AND Content_SKU = ? AND SizeUS = ? LIMIT ?
+              `, [invoice[i], field1[j], field2[j], parseInt(field3[j])], (error, results, fields) => {
+                if (error) {
+                  console.error(error);
+                  res.status(500).send('Error updating shipped items data');
+                } else {
+                  console.log(results);
+                }
+              });
+            }
+
+            // Fetch the data for the GET request
+            pool.query(`
+              SELECT InvoiceNumber, Content_SKU, product_name, SizeUS, SUM(Quantity) AS totalQuantity
+              FROM yyitems_sell
+              WHERE ship = "pending"
+              GROUP BY InvoiceNumber, Content_SKU, product_name, SizeUS
+            `, function(error, results, fields) {
+              if (error) {
+                console.error(error);
+                res.status(500).send('Error fetching data');
+              } else {
+                // Add the formattedDate field to each row of data
+                const data = results.map(row => ({ ...row }));
+                res.render('bulkshipped', { data, successMessage: 'Form submitted successfully' });
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+});
 //for database
 app.get('/inout', function(req, res){
   res.render('inout');
@@ -2063,11 +2106,11 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
           const sellItems = [];
           field1.forEach((item, index) => {
             for (let i = 0; i < field5[index]; i++) {
-              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index], 1 , field4[index], field7[index], field8[index]]);
+              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index], 1 , field4[index], field7[index], field8[index], 'pending']);
             }
           });
           // Insert the shipped items data into MySQL
-          pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, UnitPrice, Quantity, Amount, gender, CostPrice) VALUES ?', [sellItems], (error, results, fields) => {
+          pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, UnitPrice, Quantity, Amount, gender, CostPrice, ship) VALUES ?', [sellItems], (error, results, fields) => {
             if (error) {
               console.error(error);
               res.status(500).send('Error saving shipped items data');
@@ -2079,7 +2122,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
                 const qty = field5[index];
                 const unitPrice = field8[index];
                 for (let i = 0; i < qty; i++) {
-                  pool.query('UPDATE yyitems_buy SET sold = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND UnitPrice = ? AND sold = ?', ['yes', unitPrice, sku, size, unitPrice, 'no'], (error, results, fields) => {
+                  pool.query('UPDATE yyitems_buy SET sold = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND UnitPrice = ? AND sold = ? AND status = ?', ['yes', unitPrice, sku, size, unitPrice, 'no', 'check'], (error, results, fields) => {
                     if (error) {
                       console.error(error);
                       res.status(500).send('Error updating yyitems_buy table');
