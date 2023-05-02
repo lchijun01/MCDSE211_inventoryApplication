@@ -1059,60 +1059,6 @@ app.get('/stockaudit', function(req, res) {
     }
   });
 });
-app.get('/stock-checka', function(req, res) {
-  let stockQuery = 'SELECT sku, productname, size, SUM(quantity) AS Quantity FROM stock_checkin';
-  let shippedQuery = 'SELECT Content_SKU, SizeUS, SUM(Quantity) AS Quantity FROM shipped_items GROUP BY Content_SKU, SizeUS';
-  let singleQuery = 'SELECT Content_SKU, SizeUS, SUM(Quantity) AS Quantity FROM singleship GROUP BY Content_SKU, SizeUS';
-  let priceQuery = `
-  SELECT yyitems_buy.Content_SKU, yyitems_buy.UnitPrice, SUM(yyitems_buy.Quantity) AS Quantity 
-  FROM yyitems_buy 
-  INNER JOIN stock_checkin ON yyitems_buy.Content_SKU = stock_checkin.sku
-  GROUP BY yyitems_buy.Content_SKU, yyitems_buy.UnitPrice
-`;
-
-  const size = req.query.size;
-
-  let stockParams = [];
-  let shippedParams = [];
-  let singleParams = [];
-  let priceParams = [];
-
-  if (size) {
-    stockQuery += ` WHERE size = '${size}'`;
-  }
-
-  stockQuery += ' GROUP BY sku, productname, size';
-
-  pool.query(stockQuery, stockParams, function(error, stockData) {
-    if (error) {
-      console.log(error);
-      res.status(500).send('Error fetching stock data');
-    } else {
-      pool.query(shippedQuery, shippedParams, function(error, shippedData) {
-        if (error) {
-          console.log(error);
-          res.status(500).send('Error fetching shipped data');
-        } else {
-          pool.query(singleQuery, singleParams, function(error, singleData) {
-            if (error) {
-              console.log(error);
-              res.status(500).send('Error fetching single data');
-            } else {
-              pool.query(priceQuery, priceParams, function(error, priceData) {
-                if (error) {
-                  console.log(error);
-                  res.status(500).send('Error fetching price data');
-                } else {
-                  res.render('stock-check', { stockData, shippedData, singleData, priceData });
-                }
-              });
-            }
-          });
-        }
-      });
-    }
-  });
-});
 //for stock-checkin
 app.get('/stock-checkin', function(req, res){
   const sql = "SELECT InvoiceNumber, Content_SKU, SizeUS , ProductName, SUM(Quantity) as total_quantity FROM yyitems_buy WHERE status = 'intransit' GROUP BY InvoiceNumber, Content_SKU, ProductName, SizeUS";
@@ -1171,29 +1117,69 @@ app.post('/stock-checkin', upload.single('file'), urlencodedParser, function(req
   });
 });
 app.get('/stock-check', function(req, res) {
-  pool.query(`
-  SELECT b.Content_SKU, b.ProductName, CAST(b.SizeUS AS DECIMAL(3,1)) AS SizeNumber, SUM(b.Quantity) - COALESCE(s.total_quantity, 0) AS quantity_difference
-  FROM yyitems_buy b
-  LEFT JOIN (
-    SELECT Content_SKU, SizeUS, SUM(Quantity) AS total_quantity
-    FROM yyitems_sell
-    WHERE ship = 'shipped'
-    GROUP BY Content_SKU, SizeUS
-  ) s ON b.Content_SKU = s.Content_SKU AND b.SizeUS = s.SizeUS
-  WHERE b.status = 'check'
-  GROUP BY b.Content_SKU, b.ProductName, SizeNumber, s.total_quantity
-  HAVING quantity_difference <> 0
-  ORDER BY b.Content_SKU ASC, SizeNumber ASC;
-  `, function(error, results, fields) {
+  const searchTerm = req.query['search-term'];
+  const searchBy = req.query['search-by'];
+
+  let query = `
+    SELECT b.Content_SKU, b.ProductName, CAST(b.SizeUS AS DECIMAL(3,1)) AS SizeNumber, SUM(b.Quantity) - COALESCE(s.total_quantity, 0) AS quantity_difference
+    FROM yyitems_buy b
+    LEFT JOIN (
+      SELECT Content_SKU, SizeUS, SUM(Quantity) AS total_quantity
+      FROM yyitems_sell
+      WHERE ship = 'shipped'
+      GROUP BY Content_SKU, SizeUS
+    ) s ON b.Content_SKU = s.Content_SKU AND b.SizeUS = s.SizeUS
+    WHERE b.status = 'check'
+    GROUP BY b.Content_SKU, b.ProductName, SizeNumber, s.total_quantity
+    HAVING quantity_difference <> 0
+    ORDER BY b.Content_SKU ASC, SizeNumber ASC;
+  `;
+
+  if (searchTerm && searchBy) {
+    if (searchBy === 'size') {
+      query = `
+        SELECT b.Content_SKU, b.ProductName, CAST(b.SizeUS AS DECIMAL(3,1)) AS SizeNumber, SUM(b.Quantity) - COALESCE(s.total_quantity, 0) AS quantity_difference
+        FROM yyitems_buy b
+        LEFT JOIN (
+          SELECT Content_SKU, SizeUS, SUM(Quantity) AS total_quantity
+          FROM yyitems_sell
+          WHERE ship = 'shipped'
+          GROUP BY Content_SKU, SizeUS
+        ) s ON b.Content_SKU = s.Content_SKU AND b.SizeUS = s.SizeUS
+        WHERE b.status = 'check' AND CAST(b.SizeUS AS CHAR) = ?
+        GROUP BY b.Content_SKU, b.ProductName, SizeNumber, s.total_quantity
+        HAVING quantity_difference <> 0
+        ORDER BY b.Content_SKU ASC, SizeNumber ASC;
+      `;
+    } else if (searchBy === 'sku') {
+      query = `
+        SELECT b.Content_SKU, b.ProductName, CAST(b.SizeUS AS DECIMAL(3,1)) AS SizeNumber, SUM(b.Quantity) - COALESCE(s.total_quantity, 0) AS quantity_difference
+        FROM yyitems_buy b
+        LEFT JOIN (
+        SELECT Content_SKU, SizeUS, SUM(Quantity) AS total_quantity
+        FROM yyitems_sell
+        WHERE ship = 'shipped'
+        GROUP BY Content_SKU, SizeUS
+        ) s ON b.Content_SKU = s.Content_SKU AND b.SizeUS = s.SizeUS
+        WHERE b.status = 'check' AND b.Content_SKU LIKE ?
+        GROUP BY b.Content_SKU, b.ProductName, SizeNumber, s.total_quantity
+        HAVING quantity_difference <> 0
+        ORDER BY b.Content_SKU ASC, SizeNumber ASC;
+        `;
+    }
+  }
+        
+  pool.query(query, [searchTerm], function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
     } else {
       const data = results.map(row => ({ ...row }));
-      res.render('stock-check', { data });
+      res.render('stock-check', { data, searchTerm, searchBy });
     }
   });
 });
+
 
 
 

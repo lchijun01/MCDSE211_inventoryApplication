@@ -23,16 +23,22 @@
     <main class="main-content">
       <div>
         <br><br>
-        <div style="display: flex;justify-content: space-between;">
+        <div style="display: flex;width: 90%;justify-content: space-between;">
           <h1 style="font-weight: bold;">Warehouse Stock<br>Yong & Yi Partnership Enterprise</h1>
-          <div>
+          <div style="margin-top: 50px;">
             <form action="/stock-check" method="get" style="display: flex;">
-              <input type="search" name="sku" style="width: 250px;margin-right: 30px;" class="form-control me-2" placeholder="Search SKU" aria-label="Search">
-              <button type="submit" class="btn btn-primary">Search</button>
-            </form>
-            <form action="/stock-checka" method="get" style="display: flex;">
-              <input type="search" name="size" style="width: 250px;margin-right: 30px;" class="form-control me-2" placeholder="Search Size" aria-label="Search">
-              <button type="submit" class="btn btn-primary">Search</button>
+              <div>
+                <label for="search-term">Search:</label>
+                <input class="form-control" type="text" id="search-term" name="search-term">
+              </div>
+              <div style="margin-left: 20px;">
+                <label for="search-by">Search by:</label>
+                <select style="width: 80px;" class="form-control" id="search-by" name="search-by">
+                  <option value="size">Size</option>
+                  <option value="sku">SKU</option>
+                </select>
+              </div>
+              <button style="margin-left: 20px;" class="btn btn-success" type="submit">Search</button>
             </form>
           </div>
         </div>
