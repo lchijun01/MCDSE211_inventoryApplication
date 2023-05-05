@@ -47,17 +47,36 @@
         </tr>
         <% } %>
         </table>
+        <% if (refundResults && refundResults.length) { %>
+            <h2>Refunds</h2>
+            <table class="table table-striped">
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Remarks</th>
+              </tr>
+              <% for (let i = 0; i < refundResults.length; i++) { %>
+              <tr>
+                <td><%= refundResults[i].date %></td>
+                <td><%= refundResults[i].amount %></td>
+                <td><%= refundResults[i].remarks %></td>
+              </tr>
+              <% } %>
+            </table>
+          <% } %>
+          
         
         <h4><span style="font-weight: bold;">Total Paid:</span> RM <%= totalpaid %></h4><br>
         <% if (balance < 0) { %>
             <h2><p>Amount overpaid: RM <%= Math.abs(balance).toFixed(2) %></p></h2>
-        <% } else { %>
+          <% } else { %>
             <h2><p>Balance left: RM <%= balance.toFixed(2) %></p></h2>
-        <% } %>
-        <% } else if (buyrecordResults === null) { %>
+          <% } %>
+            </div>
+          <% } else if (buyrecordResults === null) { %>
             <h1>Purchase - Balance Check - Invoice No. <%= invoiceNumber %></h1>
             <p>No invoice found for Invoice Number <%= invoiceNumber %>.</p>
-        <% } %>
+          <% } %>
     </div>
     <a href="/yybuy-balancecheck">Back to Sales Balance Check</a>
     </main>

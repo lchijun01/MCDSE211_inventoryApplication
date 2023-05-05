@@ -56,59 +56,90 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-  const sellQuery = `
-  SELECT 
-    YEAR(s.timestamp) AS sell_year,
-    SUM(si.Amount) AS total_sell_amount
-  FROM 
-    yysell_invoice s 
-    JOIN yyitems_sell si ON s.Invoice_number = si.InvoiceNumber 
-  GROUP BY 
-    YEAR(s.timestamp);
-  `;
-  const buyQuery = `
-    SELECT 
-      YEAR(b.timestamp) AS buy_year,
-      SUM(bi.Amount) AS total_buy_amount
-    FROM 
-      yybuy_record b 
-      JOIN yyitems_buy bi ON b.Invoice_number = bi.InvoiceNumber 
-    GROUP BY 
-      YEAR(b.timestamp);
-  `;
+  // fetch total sales from yyitems_sell table
+  pool.query('SELECT SUM(UnitPrice) AS total_salesno FROM yyitems_sell', (err, results) => {
+    if (err) throw err;
+    const totalSalesno = results[0].total_salesno;
 
-  pool.query(sellQuery, (error, sellResults, fields) => {
-    if (error) {
-      console.error("Error querying sell data:", error);
-      throw error;
-    }
-  
-    pool.query(buyQuery, (error, buyResults, fields) => {
-      if (error) {
-        console.error("Error querying buy data:", error);
-        throw error;
-      }
-      const data = [];
+    // fetch total sales from yyitems_sell table where Content_SKU is not null
+    pool.query('SELECT SUM(Amount) AS total_sales FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != ""', (err, results) => {
+      if (err) throw err;
+      const totalSales = results[0].total_sales;
 
-      sellResults.forEach((row) => {
-        const sellYear = row.sell_year;
-        const totalSellAmount = row.total_sell_amount;
-      
-        const buyRow = buyResults.find((r) => r.buy_year === sellYear);
-      
-        if (buyRow) {
-          const totalBuyAmount = buyRow.total_buy_amount;
-          const profit = totalSellAmount - totalBuyAmount;
-          data.push({ year: sellYear, totalSellAmount, totalBuyAmount, profit });
-      
-        }
+      // fetch total purchases from yyitems_buy table
+      pool.query('SELECT SUM(Amount) AS total_purchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != ""', (err, results) => {
+        if (err) throw err;
+        const totalPurchases = results[0].total_purchases;
+
+        pool.query('SELECT SUM(Amount) AS total_purchasesno FROM yyitems_buy', (err, results) => {
+          if (err) throw err;
+          const totalPurchasesno = results[0].total_purchasesno;
+
+          // fetch total expenses from yyexpensesrecord table
+          pool.query('SELECT SUM(Amount) AS total_expenses FROM yyexpensesrecord WHERE Category != "Postage & Courier"', (err, results) => {
+            if (err) throw err;
+            const totalExpenses = results[0].total_expenses;
+
+            pool.query('SELECT Category, SUM(Amount) AS total FROM yyexpensesrecord WHERE Category != "Postage & Courier" GROUP BY Category', (err, results) => {
+              if (err) throw err;
+              const categories = results;
+              const totalExpensesByCategory = categories.reduce((acc, cur) => acc + cur.total, 0);
+
+              // fetch total stock value from yyitems_buy table
+              pool.query('SELECT SUM(UnitPrice) AS total_stock_value FROM yyitems_buy WHERE sold = "no"', (err, results) => {
+                if (err) throw err;
+                const totalStockValue = results[0].total_stock_value;
+
+                pool.query('SELECT SUM(Amount) AS total_ship FROM yyexpensesrecord WHERE Category = "Postage & Courier"', (err, results) => {
+                  if (err) throw err;
+                  const totalship = results[0].total_ship;
+
+                  pool.query('SELECT SUM(Amount) AS total_c2p FROM yycompanyfund2personal', (err, results) => {
+                    if (err) throw err;
+                    const totalc2p = results[0].total_c2p;
+
+                    pool.query('SELECT SUM(Amount) AS total_p2c FROM yypersonalfund2company', (err, results) => {
+                      if (err) throw err;
+                      const totalp2c = results[0].total_p2c;
+
+                      pool.query('SELECT SUM(amount) AS supRefund FROM refund WHERE fromSupplier = "yes"', (err, results) => {
+                        if (err) throw err;
+                        const supRefunds = results[0].supRefund;
+
+                        pool.query('SELECT SUM(amount) AS refundsales FROM refund WHERE refund2buyer = "yes"', (err, results) => {
+                          if (err) throw err;
+                          const refundsales = results[0].refundsales;
+
+                          // render the EJS template with the fetched data
+                          res.render('index', { 
+                            totalSales, 
+                            totalSalesno,
+                            totalPurchases, 
+                            totalExpenses: totalExpensesByCategory, 
+                            categories,
+                            totalStockValue,
+                            totalship,
+                            totalPurchasesno,
+                            totalc2p,
+                            totalp2c,
+                            supRefunds,
+                            refundsales
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
       });
-      
-
-      res.render('index', { data });
     });
   });
 });
+
+
 app.post('/logout', (req, res) => {
   // Destroy the user's session
   req.session.destroy();
@@ -1797,7 +1828,7 @@ app.get('/ordergenerate', (req, res) => {
       });
     } else {
       // Query the items_sell table
-      const itemsBuyQuery = `SELECT * FROM items_buy WHERE InvoiceNumber = '${invoiceNumber}'`;
+      const itemsBuyQuery = `SELECT * FROM items_buy WHERE InvoiceNumber = '${invoiceNumber}' AND status != "return" AND sold != "return"`;
       pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
         if (error) throw error;
 
@@ -2470,7 +2501,7 @@ app.get('/yybuy-balancecheck', (req, res) => {
   const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
   const invoice_number_params = invoice_number ? [invoice_number] : [];
   
-  pool.query(`SELECT * FROM yybuy_record WHERE Invoice_number ${invoice_number_query}`, invoice_number_params, (error, results) => {
+  pool.query(`SELECT * FROM yybuy_record WHERE Invoice_number ${invoice_number_query} `, invoice_number_params, (error, results) => {
     if (error) {
       console.log(`Error retrieving data from yybuy_record table: ${error}`);
     } else {
@@ -2497,6 +2528,28 @@ app.get('/yybuy-balancecheck', (req, res) => {
           }
         });
       };
+      
+      const getTotalRefund = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(amount) AS total_refund FROM refund WHERE invoice = ?', [InvoiceNumber], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from refund table: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_refund || 0);
+          }
+        });
+      };
+
+      const getTotalRefunditem = (InvoiceNumber, callback) => {
+        pool.query('SELECT SUM(Amount) AS total_refunditems FROM yyitems_buy WHERE InvoiceNumber = ? AND sold = ?', [InvoiceNumber, 'return'], (error, results) => {
+          if (error) {
+            console.log(`Error retrieving data from refund items: ${error}`);
+            callback(0);
+          } else {
+            callback(results[0].total_refunditems || 0);
+          }
+        });
+      };
 
       const processInvoiceData = (index, callback) => {
         if (index >= buy_record_data.length) {
@@ -2505,21 +2558,28 @@ app.get('/yybuy-balancecheck', (req, res) => {
           const invoice = buy_record_data[index];
           getTotalAmount(invoice.Invoice_number, (total_amount) => {
             getTotalPaidAmount(invoice.Invoice_number, (total_paid_amount) => {
-              const balance_left = total_amount.toFixed(2) - total_paid_amount.toFixed(2);
-              if (balance_left != 0) {
-                invoice.total_amount = total_amount;
-                invoice.total_paid_amount = total_paid_amount;
-                invoice.balance_left = balance_left;
-                processInvoiceData(index + 1, callback);
-              } else {
-                buy_record_data.splice(index, 1);
-                processInvoiceData(index, callback);
-              }
+              getTotalRefund(invoice.Invoice_number, (total_refund) => {
+                getTotalRefunditem(invoice.Invoice_number, (total_refunditems) => {
+                  const totalPaid = total_paid_amount - total_refund;
+                  const total_amounts = total_amount - total_refunditems;
+                  const balance_left = (total_amounts - totalPaid).toFixed(2);
+                  if (balance_left != 0) {
+                    invoice.total_amount = total_amounts;
+                    invoice.total_paid_amount = totalPaid;
+                    invoice.total_refund = total_refund;
+                    invoice.balance_left = balance_left;
+                    processInvoiceData(index + 1, callback);
+                  } else {
+                    buy_record_data.splice(index, 1);
+                    processInvoiceData(index, callback);
+                  }
+                });
+              });
             });
           });
         }
       };
-
+      
       processInvoiceData(0, () => {
         res.render('yybuy-balancecheck', { buy_record_data, invoice_number, results });
       });
@@ -2545,38 +2605,59 @@ app.get('/yysearchs', (req, res) => {
       });
     } else {
       // Query the items_buy table
-      const itemsBuyQuery = `SELECT * FROM yyitems_buy WHERE InvoiceNumber = '${invoiceNumber}'`;
+      const itemsBuyQuery = `SELECT * FROM yyitems_buy WHERE InvoiceNumber = '${invoiceNumber}' AND sold != "return"`;
       pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
         if (error) throw error;
-
-        // Calculate the total amount
-        let totalAmount = 0;
-        for (let i = 0; i < itemsBuyResults.length; i++) {
-          totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].Quantity);
-        }
 
         // Query the sales_paymentbreakdown table
         const BuyPaymentQuery = `SELECT * FROM yypurchase_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
         pool.query(BuyPaymentQuery, (error, buyPaymentResults) => {
           if (error) throw error;
 
-          // Calculate the total amount paid
-          let totalAmountPaid = 0;
-          for (let i = 0; i < buyPaymentResults.length; i++) {
-            totalAmountPaid += parseFloat(buyPaymentResults[i].Amount);
-          }
-          // Calculate the balance
-          const balance = totalAmount - totalAmountPaid;
+          // Query the sales_paymentbreakdown table
+          const refundQuery = `SELECT * FROM refund WHERE invoice = '${invoiceNumber}'`;
+          pool.query(refundQuery, (error, refundResults) => {
+            if (error) throw error;
 
-          // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
-          res.render('yybuy-details', {
-            invoiceNumber: invoiceNumber,
-            buyrecordResults: buyrecordResults,
-            name: buyrecordResults[0].Name,
-            totalAmount: totalAmount,
-            transactions: buyPaymentResults,
-            balance: balance,
-            totalpaid: totalAmountPaid,
+            // Calculate the total amount
+            let totalAmount = 0;
+            for (let i = 0; i < itemsBuyResults.length; i++) {
+              if (!isNaN(itemsBuyResults[i].UnitPrice) && !isNaN(itemsBuyResults[i].Quantity)) {
+                totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].Quantity);
+              }
+            }
+
+            // Calculate the total amount paid
+            let totalAmountPaid = 0;
+            for (let i = 0; i < buyPaymentResults.length; i++) {
+              if (!isNaN(parseFloat(buyPaymentResults[i].Amount))) {
+                totalAmountPaid += parseFloat(buyPaymentResults[i].Amount);
+              }
+            }
+
+            // Calculate the total amount refunded
+            let totalAmountRefund = 0;
+            for (let i = 0; i < refundResults.length; i++) {
+              if (!isNaN(parseFloat(refundResults[i].amount))) {
+                totalAmountRefund += parseFloat(refundResults[i].amount);
+              }
+            }
+
+            // Calculate the balance
+            const balance = (totalAmount + totalAmountRefund) - totalAmountPaid;
+
+
+            // Render the sales-details.ejs view, passing the invoice information, items information, transactions information, and the balance
+            res.render('yybuy-details', {
+              invoiceNumber: invoiceNumber,
+              buyrecordResults: buyrecordResults,
+              name: buyrecordResults[0].Name,
+              totalAmount: totalAmount,
+              transactions: buyPaymentResults,
+              refundResults: refundResults,
+              balance: balance,
+              totalpaid: totalAmountPaid,
+            });
           });
         });
       });
@@ -2606,7 +2687,7 @@ app.get('/yyordergenerate', (req, res) => {
       // Query the items_buy table with grouping by SKU, SizeUS, and UnitPrice
       const itemsBuyQuery = `SELECT Content_SKU, ProductName, SizeUS, UnitPrice, SUM(Quantity) as TotalQuantity
       FROM yyitems_buy
-      WHERE InvoiceNumber = '${invoiceNumber}'
+      WHERE InvoiceNumber = '${invoiceNumber}' AND NOT status = "return" AND NOT sold = "return"
       GROUP BY Content_SKU, ProductName, SizeUS, UnitPrice`;
       pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
         if (error) throw error;
@@ -2858,7 +2939,90 @@ app.post('/yytopupbalance', upload.single('file'), urlencodedParser, function(re
     }
   );  
 });
+app.get('/refund', function(req, res) {
+  const invoiceNumber = req.query.invoiceNumber;
+  pool.query(`
+  SELECT Content_SKU, product_name, SizeUS, SUM(Quantity) AS totalQuantity, CostPrice 
+  FROM yyitems_sell
+  WHERE InvoiceNumber = ?
+  GROUP BY Content_SKU, product_name, SizeUS, CostPrice
+  `, [invoiceNumber], function(error, results, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    } else {
+      const data = results.map(row => ({ ...row }));
+      res.render('refund', { data });
+    }
+  });
+});
+app.post('/refund2buyer', upload.single('file'), urlencodedParser, function(req, res){
+  const { invoice, amount, remarks, date, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
 
+  // Insert data into refund table
+  pool.query('INSERT INTO refund (invoice, amount, remarks, refund2buyer, date) VALUES (?, ?, ?, "yes", ?)', [invoice, amount, remarks, date], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      console.log(req.body);
+
+      if (field1) {
+        // Update data in yyitems_sell table
+        pool.query('UPDATE yyitems_sell SET ship = "return" WHERE InvoiceNumber = ? AND Content_SKU = ? AND SizeUS = ? AND CostPrice = ? LIMIT ?', [invoice, field1, field3, field5, field4], (error, results, fields) => {
+          if (error) {
+            console.error(error);
+            res.status(500).send('Error updating form data');
+          } else {
+            console.log('Updated rows in yyitems_sell:', results.affectedRows);
+
+            // Update data in yyitems_buy table
+            pool.query('UPDATE yyitems_buy SET sold = "no", status = "check" WHERE Content_SKU = ? AND SizeUS = ? AND Amount = ? LIMIT ?', [field1, field3, field5, field4], (error, results, fields) => {
+              if (error) {
+                console.error(error);
+                res.status(500).send('Error updating form data');
+              } else {
+                console.log('Updated rows in yyitems_buy:', results.affectedRows);
+                res.redirect('refund');
+              }
+            });
+          }
+        });
+      } else {
+        res.redirect('refund');
+      }
+    }
+  });
+});
+app.post('/refund', upload.single('file'), urlencodedParser, function(req, res){
+  const { invoice, amount, remarks, date, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [] } = req.body;
+
+  // Insert data into refund table
+  pool.query('INSERT INTO refund (invoice, amount, remarks, fromSupplier, date) VALUES (?, ?, ?, "yes", ?)', [invoice, amount, remarks, date], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      console.log(req.body);
+
+      // Update data in yyitems_buy table only if fields 1-4 are not empty
+      if (field1) {
+        const limit = parseInt(field4, 10); // Convert field4 to an integer
+        pool.query('UPDATE yyitems_buy SET sold = "return", status = "return" WHERE Content_SKU = ? AND SizeUS = ? AND Amount = ? LIMIT ?', [field1, field3, field5, limit], (error, results, fields) => {
+          if (error) {
+            console.error(error);
+            res.status(500).send('Error updating form data');
+          } else {
+            console.log('Updated rows:', results.affectedRows);
+            res.redirect('refund');
+          }
+        });
+      } else {
+        res.redirect('refund');
+      }
+    }
+  });
+});
 //----------------------Ending--------------------------------------------------------------------------------
 app.get('/profile/:name', function(req, res){
     res.render('profile', {person: req.params.name});

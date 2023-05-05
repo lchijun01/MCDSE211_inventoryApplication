@@ -39,7 +39,7 @@
               <tr>
                 <td><%= invoice.Invoice_number %></td>
                 <td><%= invoice.Name %></td>
-                <td><%= invoice.total_amount %></td>
+                <td><%= invoice.total_amount.toFixed(2) %></td>
                 <td><%= invoice.total_paid_amount %></td>
                 <td><%= invoice.balance_left < 0 ? -invoice.balance_left : 0 %></td>
                 <td><%= invoice.balance_left >= 0 ? invoice.balance_left : 0 %></td>

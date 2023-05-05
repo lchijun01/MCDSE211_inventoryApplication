@@ -83,6 +83,7 @@
                 <tr>
                   <th id="h1" style="width: 60px;color:darkblue">No #</th>
                   <th style="width: 480px;text-align: center;color:darkblue">Description</th>
+                  <th style="width: 80px;text-align: center;color:darkblue">SizeUS</th>
                   <th style="width: 80px;text-align: center;color:darkblue">Qty</th>
                   <th style="width: 120px;text-align: center;color:darkblue">Unit Price</th>
                   <th style="width: 120px;text-align: center;color:darkblue">Total Price</th>
@@ -95,6 +96,7 @@
                 <tr>
                 <td style="font-weight: bold;padding-left: 10px;"><%= counter %>.</td>
                 <td style="font-weight: bold;"><%= itemsBuyResults[i].Content_SKU %><span style="margin-left:15px;font-size: 14px;"><%= itemsBuyResults[i].ProductName %></span></td>
+                <td style="text-align: center;"><%= itemsBuyResults[i].SizeUS %></td>
                 <td style="text-align: center;"><%= itemsBuyResults[i].TotalQuantity %></td>
                 <td style="text-align: center;">RM <%= itemsBuyResults[i].UnitPrice.toFixed(2) %></td>
                 <% total =  itemsBuyResults[i].TotalQuantity *itemsBuyResults[i].UnitPrice %>
