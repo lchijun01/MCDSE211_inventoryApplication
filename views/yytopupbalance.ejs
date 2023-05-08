@@ -43,7 +43,8 @@
                     <option value="">choose a wallet</option>
                     <option value="Gdex">Gdex</option>
                 </select>
-                <input name="amounts" id="amounts" type="number" placeholder="RM 0.00"><br>
+                <input name="amounts" id="amounts" type="number" placeholder="RM 0.00">
+                <input name="bonus" id="bonus" type="number" placeholder="bonus RM 0.00"><br>
                 <input type="file" name="file" id="file-input"><br>
                 <button style="justify-content: center;" type="submit">Submit</button>
             </form>
@@ -60,6 +61,7 @@
               <th>ID</th>
               <th>Wallet</th>
               <th>Topup Amount</th>
+              <th>Bonus Amount</th>
               <th>Date</th>
             </tr>
           </thead>
@@ -69,6 +71,7 @@
                 <td><%= row.ID %></td>
                 <td><%= row.wallet %></td>
                 <td><%= row.amount %></td>
+                <td><%= row.bonuscredit %></td>
                 <td><%= row.date %></td>
               </tr>
             <% }); %>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <link href="style.css" type="text/css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Home-BalanceSheet</title>
+  </head>
+    <body class="main-contents">
+      <%- include('partials/nav');%>
+      <main class="main-content">
+        <form method="get">
+          <label for="year">Select Year:</label>
+          <select id="year" name="year">
+            <% years.forEach(year => { %>
+              <option value="<%= year.year %>" <%= year.year === selectedYear ? 'selected' : '' %>><%= year.year %></option>
+            <% }); %>
+          </select>
+          <button type="submit">Filter</button>
+        </form>
+        <% if (selectedYear) { %>
+          <h1 style="font-weight: bold;font-size: 70px;">Yong & Yi Partners Enterprise Balance Sheet <%= selectedYear %></h1>
+        <% } else { %>
+          <h1 style="font-weight: bold;font-size: 70px;">Yong & Yi Partners Enterprise Balance Sheet  </h1>
+        <% } %>
+
+        <div style="display: flex;">
+          <div>
+            <h1>Fixed Assets</h1>
+            <table class="table table-striped" style="width: auto;">
+                <thead>
+                    <tr>
+                    <th></th>
+                    <th style="text-align: end;">Amount (RM)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                    <th>Office Equipment</th>
+                    <td style="text-align: end;">0.00</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                    <th style="text-align: end;">Total:</th>
+                    <th style="text-align: end;">RM 0.00</th>
+                    </tr>
+                </tfoot>
+            </table>
+          </div>
+        </div><br>
+        <div style="display: flex;">
+          <div>
+            <h1>Current Assets</h1>
+            <table class="table table-striped" style="width: auto;">
+                <thead>
+                    <tr>
+                    <th></th>
+                    <th style="text-align: end;">Amount (RM)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                      <td>Closing Stock</td>
+                      <td style="text-align: end;"><%= (totalPurchases - totalCost).toFixed(2) %></td>
+                    </tr>
+                    <tr>
+                      <td>Account Receivable</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td>Cash in Bank</td>
+                      <td><input type="number" placeholder=" RM"></td>
+                    </tr>
+                    <tr>
+                        <td>Cash in GDEX</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Deposit</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                    <th style="text-align: end;">Total:</th>
+                    <th style="text-align: end;">RM </th>
+                    </tr>
+                </tfoot>
+            </table>
+          </div>
+        </div><br>
+
+        <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div><br>
+        <div style="display: flex;">
+            <div>
+              <h1>Current Liabilities</h1>
+              <table class="table table-striped" style="width: auto;">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th style="text-align: end;">Amount (RM)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Account Payables</td>
+                        <td style="text-align: end;"></td>
+                    </tr>
+                    <tr>
+                        <td>Other Creditor</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Accruals</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th style="text-align: end;">Total:</th>
+                        <th style="text-align: end;">RM </th>
+                    </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div><br>
+
+          <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div><br>
+          <div style="display: flex;">
+            <div>
+              <h1>Equity</h1>
+              <table class="table table-striped" style="width: auto;">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th style="text-align: end;">Amount (RM)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                      <td>CAPITAL ACCOUNT</td>
+                      <td style="text-align: end;"><input type="number" placeholder=" RM"></td>
+                    </tr>
+                    <tr>
+                      <td>Balance B/F</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td>CURRENT YEAR'S PROFIT/(LOSS)</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td>Drawings</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                    <td>Balance C/F</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th style="text-align: end;">Total:</th>
+                        <th style="text-align: end;">RM </th>
+                    </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div><br>
+
+      </main>
+    </body>  
+</html>
