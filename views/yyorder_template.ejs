@@ -115,7 +115,7 @@
                 <thead>
                   <tr>
                     <th style="width: 130px;text-align: right;font-weight: 500;">Subtotal</th>
-                    <td style="width: 200px;text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount.toFixed(2) %></td>
+                    <td style="width: 200px;text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount %></td>
                   </tr>
                   <tr>
                     <th style="width: 300px;text-align: right;font-weight: 500;">Shipping & handling</th>
@@ -127,16 +127,16 @@
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;font-weight: 500;">Total</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount.toFixed(2) %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount %></td>
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;">Amount Paid</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalpaid.toFixed(2) %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalpaid %></td>
                   </tr>
                   <% if (balance < 0) { %>
                   <tr>
                     <th style="width: 130px;text-align: right;">Over Paid</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= Math.abs(balance).toFixed(2) %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= Math.abs(balance) %></td>
                   </tr>
                   <% } else { %>
                     <tr>

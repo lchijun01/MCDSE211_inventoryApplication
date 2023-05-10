@@ -8,12 +8,119 @@
     <link href="style.css" type="text/css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>Home-Dashboard</title>
+    <style>
+      #a {
+        margin: 0.5rem 1rem;
+      }
+    </style>
   </head>
     <body class="main-contents">
       <%- include('partials/nav');%>
       <main class="main-content">
-        <a href="/profitlossstate">profitlossstate</a>
-        <a href="/balanceSheet">Balance Sheet</a>
+        <div>
+          <div style="display: flex;font-size: 50px;">
+            <h1 style="border-bottom: 3px solid;width: fit-content;font-weight: bolder;margin-top: 10px;margin-right: 5px;">Yong & Yi Partners Enterprise Dashboard</h1>
+            <i class="bi bi-clipboard-pulse"></i>
+          </div><br>
+          <div>
+            <form action="/" method="get">
+              <label for="startDate">Start Date:</label>
+              <input type="date" name="startDate" id="startDate" required>
+        
+              <label for="endDate">End Date:</label>
+              <input type="date" name="endDate" id="endDate" required>
+        
+              <button type="submit">Get Data</button>
+            </form><br>
+            <h5>Sneaker Sales Analysis <%= startDate ? 'between ' + startDate + ' and ' + endDate : 'for all time' %></h5>
+          </div>
+          <% if (rows && rows.length > 0) { %>
+            <table class="table table-striped" style="width: 90%;">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Product Name</th>
+                  <th>Total Quantity</th>
+                  <th>Total Sales</th>
+                  <th>Total Profit</th>
+                  <th>Total Cost</th>
+                  <th>Average Profit</th>
+                  <th>Average Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% let currentSku = '' %>
+                <% let currentProduct = '' %>
+                <% let totalQuantity = 0 %>
+                <% let totalSales = 0 %>
+                <% let totalProfit = 0 %>
+                <% let totalCost = 0 %>
+                <% let averageProfit = 0 %>
+                <% let averagePrice = 0 %>
+                <% let totall = 0 %>
+                <% for (let i = 0; i < rows.length; i++) { %>
+                  <% const row = rows[i] %>
+                  <% if (currentSku !== row.Content_SKU) { %>
+                    <% if (i > 0) { %>
+                      <tr>
+                        <td><%= currentSku %></td>
+                        <td><%= currentProduct %></td>
+                        <td><%= totalQuantity %></td>
+                        <td><%= totalSales.toFixed(2) %></td>
+                        <td><%= totalProfit.toFixed(2) %></td>
+                        <td><%= totalCost.toFixed(2) %></td>
+                        <td><%= averageProfit.toFixed(2) %></td>
+                        <td><%= averagePrice.toFixed(2) %></td>
+                      </tr>
+                    <% } %>
+                    <% totall += totalSales %>
+                    <% currentSku = row.Content_SKU %>
+                    <% currentProduct = row.product_name %>
+                    <% totalQuantity = 0 %>
+                    <% totalSales = 0 %>
+                    <% totalProfit = 0 %>
+                    <% totalCost = 0 %>
+                    <% averageProfit = 0 %>
+                    <% averagePrice = 0 %>
+                  <% } %>
+                  <% totalQuantity += row.totalQuantity %>
+                  <% totalSales += row.totalSales %>
+                  <% totalProfit += row.totalProfit %>
+                  <% totalCost += row.totalCost %>
+                  <% averageProfit += row.averageProfit %>
+                  <% averagePrice += row.averagePrice %>
+                  <% if (i === rows.length - 1) { %>
+                    <tr>
+                      <td><%= currentSku %></td>
+                      <td><%= currentProduct %></td>
+                      <td><%= totalQuantity %></td>
+                      <td><%= totalSales.toFixed(2) %></td>
+                      <td><%= totalProfit.toFixed(2) %></td>
+                      <td><%= totalCost.toFixed(2) %></td>
+                      <td><%= (totalQuantity > 0) ? (totalProfit/totalQuantity).toFixed(2) : '0.00' %></td>
+                      <td><%= (totalQuantity > 0) ? (totalSales/totalQuantity).toFixed(2) : '0.00' %></td>
+                    </tr>
+                  <% } %>
+                <% } %>
+                <% totall += totalSales %>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th>Total Sales:</th>
+                  <th><%= totall.toFixed(2) %></th>
+                </tr>
+              </tfoot>
+            </table>
+          <% } else { %>
+            <p>No data found for the selected date range.</p>
+          <% } %>
+        </div>
+        <div>
+          <h1 style="font-weight: bold;font-size: 40px;">Financial Overview</h1>
+          <a id="a" href="/profitlossstate" class="btn btn-success">Profit & Loss</a>
+          <a id="a" href="/balanceSheet" class="btn btn-success">Balance Sheet</a>
+          <a id="a" href="/trialbalance" class="btn btn-success">Trial Balance</a>
+        </div>
       </main>
     </body>  
 </html>

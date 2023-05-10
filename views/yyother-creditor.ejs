@@ -16,20 +16,13 @@
     <body class="main-contents">
         <%- include('partials/nav'); %>
         <main class="main-content">
-            <h1>Other Creditor Page</h1>
+            <h1>Yong & Yi Other Creditor Page</h1>
 
-            <form id="other-form" method="POST" action="/other-creditor" enctype="multipart/form-data">
+            <form id="other-form" method="POST" action="/yyother-creditor" enctype="multipart/form-data">
             <label class="form_name" for="date">Date</label>
             <input class="form_id" type="date" name="date" required><br>
             <label class="form_name" for="invoice_no">Invoice No.</label>
             <input class="form_id" type="text" name="invoice_no" id="invoice_no" placeholder="optional"><br>
-            <label class="form_name" for="category">Category</label>
-            <select class="form_id" name="category" required>
-                <option value="">Select a category</option>
-                <option value="1">1</option>
-                <option value="2">22</option>
-                <option value="3">333</option>
-            </select><br>
             <label class="form_name" for="bank">Bank</label>
             <select class="form_id" name="bank" required>
                 <option value="">Select a bank</option>
@@ -68,7 +61,7 @@
         
           try {
             // Send form data to your server-side code
-            await fetch('/other-creditor', {
+            await fetch('/yyother-creditor', {
               method: 'POST',
               body: formData,
             });

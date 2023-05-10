@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <link href="style.css" type="text/css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Home-TrialBalance</title>
+  </head>
+    <body class="main-contents">
+      <%- include('partials/nav');%>
+      <main class="main-content">
+        <form method="get">
+          <label for="year">Select Year:</label>
+          <select id="year" name="year">
+            <% years.forEach(year => { %>
+              <option value="<%= year.year %>" <%= year.year === selectedYear ? 'selected' : '' %>><%= year.year %></option>
+            <% }) %>
+          </select>
+          <button type="submit">Filter</button>
+        </form>
+        <% if (selectedYear) { %>
+          <h1 style="font-weight: bold;font-size: 70px;">Yong & Yi Partners Enterprise Trial Balance <%= selectedYear %></h1>
+        <% } else { %>
+          <h1 style="font-weight: bold;font-size: 70px;">Yong & Yi Partners Enterprise Trial Balance</h1>
+        <% } %>
+        <br>
+        <table class="table table-striped" style="width: 50%;">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th style="text-align: end;">Debit</th>
+              <th style="text-align: end;">Credit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>OFFICE EQUIPMENT</td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>ACCUM DEPN-OFFICE EQUIPMENT</td>
+              <td></td>
+              <td></td>
+            </tr>
+            <% assetsData.forEach(function(item) { %>
+              <tr>
+                <td>CASH IN BANK - <%= item.bank %></td>
+                <td style="text-align: end;"><%= item.amount %></td>
+                <td></td>
+              </tr>
+            <% }); %>
+            <tr>
+              <td>CASH IN OTDER ACC. - GDEX</td>
+              <td style="text-align: end;"><%= (totalTopup + bonus2 - totalgdex).toFixed(2) %></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>DEPOSIT</td>
+              <td style="text-align: end;"><%= (totaldeposit && totaldeposit !== 0 ? totaldeposit : 0).toFixed(2) %></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>ACCOUNT PAYABLES</td>
+              <td></td>
+              <td style="text-align: end;"><%= (totalPurchasesno2 - totalBuypaid).toFixed(2) %></td>
+            </tr>
+            <tr>
+              <td>ACCOUNT RECEIVABLE</td>
+              <td style="text-align: end;"><%= (totalSalesno2 - totalSalespaid).toFixed(2) %></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>OTDER DEBTOR</td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>OTDER CREDITOR</td>
+              <td></td>
+              <td style="text-align: end;"><%= (totalotcredit && totalotcredit !== 0 ? totalotcredit : 0).toFixed(2) %></td>
+            </tr>
+            <tr>
+              <td>OPENING STOCK</td>
+              <td style="text-align: end;"><%= (totalPurchasesLastyear - totalCostLastyear).toFixed(2) %></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>ACCRUALS</td>
+              <td></td>
+              <td style="text-align: end;"><%= (totalaccrued && totalaccrued !== 0 ? totalaccrued : 0).toFixed(2) %></td>
+            </tr>
+            <tr>
+              <td>Capital</td>
+              <td></td>
+              <td style="text-align: end;"><%= totalcapital.toFixed(2) %></td>
+            </tr>
+            <tr>
+              <td>Retained Profit & Loss B/F</td>
+              <td></td>
+              <td style="text-align: end;"><%= (((((((bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bftotalSalesno && bftotalSalesno !== 0 ? bftotalSalesno : 0)
+                - (bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bfbonus && bfbonus !== 0 ? bfbonus : 0)) - (bfrefundsales && bfrefundsales !== 0 ? bfrefundsales : 0)) - 
+               (((bftotalPurchasesLastyear && bftotalPurchasesLastyear !== 0 ? bftotalPurchasesLastyear : 0) - (bftotalCostLastyear && bftotalCostLastyear !== 0 ? bftotalCostLastyear : 0))
+                + (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0) + (bftotalship && bftotalship !== 0 ? bftotalship : 0) - 
+               ((bftotalPurchases && bftotalPurchases !== 0 ? bftotalPurchases : 0) - (bftotalCost && bftotalCost !== 0 ? bftotalCost : 0)) - 
+               (bfsupRefunds && bfsupRefunds !== 0 ? bfsupRefunds : 0) + ((bftotalPurchasesno && bftotalPurchasesno !== 0 ? bftotalPurchasesno : 0) - 
+               (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0))))-(bftotalExpenses && bftotalExpenses !== 0 ? bftotalExpenses : 0)) + 
+               (bftotalc2p && bftotalc2p !== 0 ? bftotalc2p : 0) - (bftotalp2c && bftotalp2c !== 0 ? bftotalp2c : 0))).toFixed(2) %></td>
+            </tr>
+            <tr>
+              <td>Sales</td>
+              <td></td>
+              <td style="text-align: end;"><%= totalSales.toFixed(2) %></td>
+            </tr>
+            <tr>
+              <td>Return Outwards</td>
+              <td style="text-align: end;"><%= (refundsales && refundsales !== 0 ? refundsales : 0).toFixed(2) %></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>Return Inwards</td>
+              <td></td>
+              <td style="text-align: end;"><%= (supRefunds && supRefunds !== 0 ? supRefunds : 0).toFixed(2) %></td>
+            </tr>
+            <tr>
+              <td>Sales Discount</td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>Purchase Discount</td>
+              <td style="text-align: end;"><%= total_purchasesWOnosku.toFixed(2) %></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>Other Income</td>
+              <td></td>
+              <td style="text-align: end;"><%= (totalSalesno - totalSales + bonus).toFixed(2) %></td>
+            </tr>
+            <tr>
+              <td>Other Expenses</td>
+              <td style="text-align: end;"><%= (totalPurchasesno - total_purchasesWOnosku).toFixed(2) %></td>
+              <td></td>
+            </tr>
+            <% for (let i = 0; i < categoriesss.length; i++) { %>
+              <tr>
+                <td><%= categoriesss[i].Category %></td>
+                <td style="text-align: end;"><%= (categoriesss[i].total).toFixed(2) %></td>
+                <td></td>
+              </tr>
+            <% } %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td></td>
+              <td style="text-align: end;"><%= %></td>
+              <td style="text-align: end;"><%= %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </main>
+    </body>
+    <script>
+      // calculate total debit and credit
+      let totalDebit = 0;
+      let totalCredit = 0;
+      const rows = document.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const debitCell = row.querySelector('td:nth-child(2)');
+        const creditCell = row.querySelector('td:nth-child(3)');
+        if (debitCell.textContent) {
+          totalDebit += parseFloat(debitCell.textContent);
+        }
+        if (creditCell.textContent) {
+          totalCredit += parseFloat(creditCell.textContent);
+        }
+      });
+    
+      // display total debit and credit in table footer
+      const debitFooterCell = document.querySelector('tfoot tr td:nth-child(2)');
+      const creditFooterCell = document.querySelector('tfoot tr td:nth-child(3)');
+      debitFooterCell.textContent = totalDebit.toFixed(2);
+      creditFooterCell.textContent = totalCredit.toFixed(2);
+    </script>
+</html>

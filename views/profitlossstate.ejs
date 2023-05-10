@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <link href="style.css" type="text/css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <title>Home-Dashboard</title>
+    <title>Home-Profit&Loss</title>
   </head>
     <body class="main-contents">
       <%- include('partials/nav');%>
@@ -29,7 +29,7 @@
         <% } %>
         <div style="display: flex;">
           <div>
-            <h1>Sales</h1>
+            <h1>Revenue</h1>
             <table class="table table-striped" style="width: auto;">
               <thead>
                 <tr>
@@ -39,16 +39,20 @@
               </thead>
               <tbody>
                 <tr>
-                  <td>Sales ( Shoe )</td>
+                  <td>Sales</td>
                   <td style="text-align: end;"><%= totalSales.toFixed(2) %></td>
                 </tr>
                 <tr>
-                  <td>Other Income ( In the Invoice )</td>
+                  <td>Other Income</td>
                   <td style="text-align: end;"><%= (totalSalesno - totalSales + bonus).toFixed(2) %></td>
                 </tr>
                 <tr>
-                  <td>Refund to Buyer</td>
-                  <td style="text-align: end;">-<%= (refundsales && refundsales !== 0 ? refundsales : 0).toFixed(2) %></td>
+                  <td>Refund Outwards(-)</td>
+                  <td style="text-align: end;"><%= (refundsales && refundsales !== 0 ? refundsales : 0).toFixed(2) %></td>
+                </tr>
+                <tr>
+                  <td>Sales Discounts(-)</td>
+                  <td style="text-align: end;"><%= (refundsales && refundsales !== 0 ? refundsales : 0).toFixed(2) %></td>
                 </tr>
               </tbody>
               <tfoot>
@@ -81,16 +85,20 @@
                 <td style="text-align: end;"><%= total_purchasesWOnosku.toFixed(2) %></td>
               </tr>
               <tr>
-                <td>Shipping</td>
+                <td>Postage & Courier</td>
                 <td style="text-align: end;"><%= totalship.toFixed(2) %></td>
               </tr>
               <tr>
-                <td>Closing Stock</td>
-                <td style="text-align: end;">-<%= (totalPurchases - totalCost).toFixed(2) %></td>
+                <td>Closing Stock(-)</td>
+                <td style="text-align: end;"><%= (totalPurchases - totalCost).toFixed(2) %></td>
               </tr>
               <tr>
-                <td>Refund from Supplier</td>
-                <td style="text-align: end;">-<%= (supRefunds && supRefunds !== 0 ? supRefunds : 0).toFixed(2) %></td>
+                <td>Return Inwards(-)</td>
+                <td style="text-align: end;"><%= (supRefunds && supRefunds !== 0 ? supRefunds : 0).toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Purchases Discounts(-)</td>
+                <td style="text-align: end;"></td>
               </tr>
               <tr>
                 <td>Other Expenses</td>
@@ -99,7 +107,7 @@
             </tbody>
             <tfoot>
               <tr>
-                <th style="text-align: end;">Cost of Goods Sold:</th>
+                <th style="text-align: end;">Total:</th>
                 <th style="text-align: end;">RM <%= 
                   ((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
                   (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku)).toFixed(2) %></th>
@@ -120,12 +128,12 @@
           </thead>
           <tbody>
             <tr>
-              <td>Sales</td>
+              <td>Revenue</td>
               <td style="text-align: end;"><%= ((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0)).toFixed(2) %></td>
             </tr>
             <tr>
-              <td>Cost of Goods Sold</td>
-              <td style="text-align: end;">-<%= ((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
+              <td>Cost of Goods Sold(-)</td>
+              <td style="text-align: end;"><%= ((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
                 (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku)).toFixed(2) %></td>
             </tr>
           </tbody>
@@ -141,7 +149,7 @@
 
         <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div><br>
         <div>
-          <h1>Expenses by Category</h1>
+          <h1>Expenditure</h1>
           <table class="table table-striped" style="width: 30%;">
             <thead>
               <tr>
@@ -179,12 +187,13 @@
           <tbody>
             <tr>
               <td>Gross Profit</td>
-              <td style="text-align: end;"><%= (((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0)) - ((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
+              <td style="text-align: end;"><%= (((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0)) - ((totalPurchasesLastyear - totalCostLastyear)
+                 + total_purchasesWOnosku + totalship - 
                 (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku))).toFixed(2) %></td>
             </tr>
             <tr>
-              <td>Expenditure</td>
-              <td style="text-align: end;">-<%= totalExpenses.toFixed(2) %></td>
+              <td>Expenditure(-)</td>
+              <td style="text-align: end;"><%= totalExpenses.toFixed(2) %></td>
             </tr>
           </tbody>
           <tfoot>
@@ -199,27 +208,17 @@
 
         <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div><br>
         <div>
-          <h1>Drawing</h1>
+          <h1>Distribution to Owners</h1>
         <table class="table table-striped" style="width: 30%;">
           <thead>
             <tr>
-              <th>Category</th>
+              <th></th>
               <th style="text-align: end;">Amount (RM)</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>Advance</td>
-              <td style="text-align: end;"><%= (totalc2p && totalc2p !== 0 ? totalc2p : 0).toFixed(2) %></td>
-            </tr>
-            <tr>
-              <td>Need Claim</td>
-              <td style="text-align: end;">-<%= (totalp2c && totalp2c !== 0 ? totalp2c : 0).toFixed(2) %></td>
-            </tr>
-          </tbody>
           <tfoot>
             <tr>
-              <th  style="text-align: end;">Total:</th>
+              <th style="text-align: end;">Total:</th>
               <th style="text-align: end;">RM <%= ((totalc2p && totalc2p !== 0 ? totalc2p : 0) - (totalp2c && totalp2c !== 0 ? totalp2c : 0)).toFixed(2) %></th>
             </tr>
           </tfoot>
@@ -230,6 +229,12 @@
         <div>
           <h1>Retained Profit&Loss B/F</h1>
         <table class="table table-striped" style="width: 30%;">
+          <thead>
+            <tr>
+              <th></th>
+              <th style="text-align: end;">Amount (RM)</th>
+            </tr>
+          </thead>
           <tfoot>
             <tr>
               <th style="text-align: end;">Total:</th>
@@ -266,7 +271,7 @@
                (bftotalc2p && bftotalc2p !== 0 ? bftotalc2p : 0) - (bftotalp2c && bftotalp2c !== 0 ? bftotalp2c : 0))).toFixed(2) %></td>
             </tr>
             <tr>
-              <td>Drawing Account</td>
+              <td>Distribution to Owners(-)</td>
               <td style="text-align: end;"><%= ((totalc2p && totalc2p !== 0 ? totalc2p : 0) - (totalp2c && totalp2c !== 0 ? totalp2c : 0)).toFixed(2) %></td>
             </tr>
           </tbody>
