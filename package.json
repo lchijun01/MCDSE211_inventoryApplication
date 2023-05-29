@@ -13,6 +13,7 @@
     "body-parser": "^1.20.2",
     "busboy": "^1.6.0",
     "chart.js": "^4.2.1",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "csv": "^6.2.8",
     "csv-parser": "^3.0.0",
     "decimal.js": "^10.4.3",

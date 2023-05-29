@@ -113,27 +113,26 @@
             </table>
     <script>
         $(document).ready(function() {
-    // Add a new row to the table
-    $("#addRow").click(function() {
-        let newRow = `<tr>
-                                    <td><input type="text" class="form-control" name="invoice[]"></td>
-                                    <td><input type="text" class="form-control" name="field1[]"></td>
-                                    <td><input type="text" class="form-control" name="productname[]"></td>
-                                    <td><input type="text" class="form-control" name="field2[]"></td>
-                                    <td><input type="number" class="form-control" name="field3[]"></td>
-                                    <td>
-                                        <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
-                                    </td>
-                                </tr>`;
-        $("#inputTable tbody").append(newRow);
-    });
+            // Add a new row to the table
+            $("#addRow").click(function() {
+                let newRow = `<tr>
+                                <td><input type="text" class="form-control" name="invoice[]"></td>
+                                <td><input type="text" class="form-control" name="field1[]"></td>
+                                <td><input type="text" class="form-control" name="productname[]"></td>
+                                <td><input type="text" class="form-control" name="field2[]"></td>
+                                <td><input type="number" class="form-control" name="field3[]"></td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
+                                </td>
+                            </tr>`;
+                $("#inputTable tbody").append(newRow);
+            });
 
-    // Remove a row from the table
-    $("#inputTable").on("click", ".removeRow", function() {
-        $(this).closest("tr").remove();
-    });
-});
-
+            // Remove a row from the table
+            $("#inputTable").on("click", ".removeRow", function() {
+                $(this).closest("tr").remove();
+            });
+        });
     </script>
         </main>
     </body>

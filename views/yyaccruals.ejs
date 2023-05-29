@@ -16,8 +16,39 @@
     <body class="main-contents">
         <%- include('partials/nav'); %>
         <main class="main-content">
-            <h1>Yong & Yi Accruals Page</h1>
-            <form id="accruals-form" method="POST" action="/accruals" enctype="multipart/form-data">
+          <% if (expensesData.length > 0) { %>
+            <h1>Not Settle Yet</h1>
+            <table class="table table-striped" style="width: 90%;">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Date</th>
+                  <th>Invoice No.</th>
+                  <th>Category</th>
+                  <th>Bank</th>
+                  <th>Name</th>
+                  <th>Amount</th>
+                  <th>Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% expensesData.forEach(function(row) { %>
+                  <tr>
+                    <td><%= row.ID %></td>
+                    <td><%= row.Date.toLocaleDateString('en-GB') %></td>
+                    <td><%= row.Invoice_No %></td>
+                    <td><%= row.Category %></td>
+                    <td><%= row.Bank %></td>
+                    <td><%= row.Name %></td>
+                    <td><%= row.Amount %></td>
+                    <td><%= row.Detail %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+            <% } %>
+            <h1>Yong & Yi Accruals-Paymentbreakdown Page</h1>
+            <form id="accruals-form" method="POST" action="/yyaccruals" enctype="multipart/form-data">
             <label class="form_name" for="id">ID</label>
             <input class="form_id" type="text" name="id" required><br>
             <label class="form_name" for="date">Date</label>
@@ -44,35 +75,33 @@
               <button class="form_button" type="reset">Clear</button>
             </div>
           </form><br>
+          <h1>Paymentbreak Record</h1>
           <table class="table table-striped" style="width: 90%;">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Date</th>
-                <th>Invoice No.</th>
-                <th>Category</th>
+                <th>Invoice Number</th>
                 <th>Bank</th>
                 <th>Name</th>
                 <th>Amount</th>
                 <th>Detail</th>
+                <th>File</th>
               </tr>
             </thead>
             <tbody>
-              <% data.forEach(function(row) { %>
+              <% for (let i = 0; i < accrualsData.length; i++) { %>
                 <tr>
-                  <td><%= row.ID %></td>
-                  <td><%= row.Date %></td>
-                  <td><%= row.Invoice_No %></td>
-                  <td><%= row.Category %></td>
-                  <td><%= row.Bank %></td>
-                  <td><%= row.Name %></td>
-                  <td><%= row.Amount %></td>
-                  <td><%= row.Detail %></td>
+                  <td><%= accrualsData[i].Date %></td>
+                  <td><%= accrualsData[i].Invoice_No %></td>
+                  <td><%= accrualsData[i].Bank %></td>
+                  <td><%= accrualsData[i].Name %></td>
+                  <td><%= accrualsData[i].Amount %></td>
+                  <td><%= accrualsData[i].Detail %></td>
+                  <td><%= accrualsData[i].File %></td>
                 </tr>
-              <% }); %>
+              <% } %>
             </tbody>
           </table>
-          
         </main>
         <script>
             document.getElementById('accruals-form').addEventListener('submit', async (event) => {
@@ -91,7 +120,7 @@
         
           try {
             // Send form data to your server-side code
-            await fetch('/accruals', {
+            await fetch('/yyaccruals', {
               method: 'POST',
               body: formData,
             });

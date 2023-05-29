@@ -98,9 +98,9 @@
                 <td style="font-weight: bold;"><%= itemsBuyResults[i].Content_SKU %><span style="margin-left:15px;font-size: 14px;"><%= itemsBuyResults[i].ProductName %></span></td>
                 <td style="text-align: center;"><%= itemsBuyResults[i].SizeUS %></td>
                 <td style="text-align: center;"><%= itemsBuyResults[i].TotalQuantity %></td>
-                <td style="text-align: center;">RM <%= itemsBuyResults[i].UnitPrice.toFixed(2) %></td>
+                <td style="text-align: center;"><%= itemsBuyResults[i].UnitPrice.toFixed(2) %></td>
                 <% total =  itemsBuyResults[i].TotalQuantity *itemsBuyResults[i].UnitPrice %>
-                <td style="text-align: center;">RM <%= total.toFixed(2) %></td>
+                <td style="text-align: center;"><%= total.toFixed(2) %></td>
                 </tr>
                 <% counter++ %>
                 <% } %>

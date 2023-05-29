@@ -74,12 +74,12 @@
               <td></td>
             </tr>
             <tr>
-              <td>OTDER DEBTOR</td>
+              <td>OTHER DEBTOR</td>
               <td></td>
               <td></td>
             </tr>
             <tr>
-              <td>OTDER CREDITOR</td>
+              <td>OTHER CREDITOR</td>
               <td></td>
               <td style="text-align: end;"><%= (totalotcredit && totalotcredit !== 0 ? totalotcredit : 0).toFixed(2) %></td>
             </tr>
@@ -127,11 +127,16 @@
             </tr>
             <tr>
               <td>Sales Discount</td>
-              <td></td>
+              <td style="text-align: end;"><%= Math.abs(total_selldiscount).toFixed(2) %></td>
               <td></td>
             </tr>
             <tr>
               <td>Purchase Discount</td>
+              <td></td>
+              <td style="text-align: end;"><%= Math.abs(total_buydiscount).toFixed(2) %></td>
+            </tr>
+            <tr>
+              <td>Purchase</td>
               <td style="text-align: end;"><%= total_purchasesWOnosku.toFixed(2) %></td>
               <td></td>
             </tr>

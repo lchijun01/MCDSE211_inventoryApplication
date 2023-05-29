@@ -16,7 +16,39 @@
   <body class="main-contents">
     <%- include('partials/nav'); %>
     <main class="main-content">
-      <h1>Sales - Payment Breakdown</h1>
+      <div style="display: flex;justify-content: space-between;width: 80%;">
+        <h1>Sales - Payment Breakdown</h1>
+        <form action="/yysearch" method="get" class="d-flex mt-4">
+          <input type="search" name="invoice_number" style="width: 250px;" class="form-control me-2" placeholder="Enter Invoice Number" aria-label="Search">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+      </div>
+      <% if (sell_invoice_data.length > 0) { %>
+      <h1>Not settle yet</h1>
+      <table class="table table-striped" style="width: 90%;">
+        <thead>
+          <tr>
+            <th>Invoice Number</th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Paid Amount</th>
+            <th>Over Paid</th>
+            <th>Total Balance Left</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% sell_invoice_data.forEach((invoice) => { %>
+            <tr>
+              <td><%= invoice.Invoice_number %></td>
+              <td><%= invoice.Name %></td>
+              <td><%= invoice.total_amount %></td>
+              <td><%= invoice.total_paid_amount %></td>
+              <td><%= (invoice.balance_left < 0 ? -invoice.balance_left : 0).toFixed(2) %></td>
+              <td><%= (invoice.balance_left >= 0 ? invoice.balance_left : 0).toFixed(2) %></td>
+            </tr>
+          <% });} %>
+        </tbody>
+      </table>
       <form id="yyspaymentbreak-form" method="POST" action="/yysales-paymentbreak" enctype="multipart/form-data">
         <label class="form_name" for="date">Date</label>
         <input id="date" class="form_id" type="date" name="date" required><br>
