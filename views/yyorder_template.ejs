@@ -115,7 +115,7 @@
                 <thead>
                   <tr>
                     <th style="width: 130px;text-align: right;font-weight: 500;">Subtotal</th>
-                    <td style="width: 200px;text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount %></td>
+                    <td style="width: 200px;text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount.toFixed(2) %></td>
                   </tr>
                   <tr>
                     <th style="width: 300px;text-align: right;font-weight: 500;">Shipping & handling</th>
@@ -127,7 +127,7 @@
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;font-weight: 500;">Total</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount.toFixed(2) %></td>
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;">Amount Paid</th>

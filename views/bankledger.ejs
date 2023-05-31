@@ -35,7 +35,10 @@
                   ...totalDrawing.map(row => ({ Date: row.Date, Category: 'Drawing', Debit: row.amount, Credit: '' })),
                   ...totalDeposit.map(row => ({ Date: row.date, Category: 'Deposit', Debit: '', Credit: row.amount })),
                   ...totalCapital.map(row => ({ Date: row.date, Category: 'Capital', Debit: row.amount, Credit: '' })),
-                  ...totalCreditor.map(row => ({ Date: row.Date, Category: 'Other Creditor', Debit: row.Amount, Credit: '' }))
+                  ...totalCreditor.map(row => ({ Date: row.Date, Category: 'Other Creditor', Debit: row.Amount, Credit: '' })),
+                  ...totalCreditorpaymentbreak.map(row => ({ Date: row.date, Category: 'Other Creditor Paymentbreakdown', Debit: '', Credit: 'row.amount' })),
+                  ...totalDebtorpaymentbreak.map(row => ({ Date: row.date, Category: 'Other Debtor Paymentbreakdown', Debit: row.amount, Credit: '' })),
+                  ...totalDebtor.map(row => ({ Date: row.date, Category: 'Other Debtor', Debit: '', Credit: 'row.Amount' }))
                 ];
               
                 const sortedRows = combinedRows.sort((a, b) => new Date(a.Date) - new Date(b.Date));

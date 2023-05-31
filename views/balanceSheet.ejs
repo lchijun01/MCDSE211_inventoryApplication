@@ -98,7 +98,8 @@
                         <tr>
                           <td style="padding-left: 60px;"><%= item.bank %></td>
                           <td style="text-align: end;"><%= item.amount %></td>
-                          <td style="text-align: end;"><%= totalCashInBank %></td>
+                          <td style="text-align: end;color: rgb(204, 0, 255);"><%= bankledger.toFixed(2) %></td>
+                          <td>(submit cash in bank must match <a style="color: rgb(204, 0, 255);">bankledger</a>)</td>
                         </tr>
                       <% }); %>
                       <tr>
@@ -127,7 +128,7 @@
                         <th></th>
                         <th style="text-align: end;">Total:</th>
                         <th style="text-align: end;">RM <%= ((totalPurchases - totalCost) + (totalSalesno2 - totalSalespaid) +
-                           (totalTopup + bonus2 - totalgdex) + (totaldeposit && totaldeposit !== 0 ? totaldeposit : 0) + totalCashInBank).toFixed(2) %></th>
+                           (totalTopup + bonus2 - totalgdex) + (totaldeposit && totaldeposit !== 0 ? totaldeposit : 0) + bankledger).toFixed(2) %></th>
                       </tr>
                   </tfoot>
               </table>

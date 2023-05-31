@@ -46,13 +46,11 @@
               <td></td>
               <td></td>
             </tr>
-            <% assetsData.forEach(function(item) { %>
-              <tr>
-                <td>CASH IN BANK - <%= item.bank %></td>
-                <td style="text-align: end;"><%= item.amount %></td>
-                <td></td>
-              </tr>
-            <% }); %>
+            <tr>
+              <td>CASH IN BANK - Hong Leong Bank</td>
+              <td style="text-align: end;"><%= bankledger.toFixed(2) %></td>
+              <td></td>
+            </tr>
             <tr>
               <td>CASH IN OTDER ACC. - GDEX</td>
               <td style="text-align: end;"><%= (totalTopup + bonus2 - totalgdex).toFixed(2) %></td>

@@ -23,7 +23,6 @@
   <body class="main-contents">
     <%- include('partials/nav');%>
     <main class="main-content">
-      <a id="a" href="/bankledger" class="btn btn-success">Bank Ledger</a>
       <div>
         <div style="display: flex;font-size: 50px;">
           <h1 style="border-bottom: 3px solid;width: fit-content;font-weight: bolder;margin-top: 10px;margin-right: 5px;">Yong & Yi Partners Enterprise Dashboard</h1>
@@ -210,12 +209,8 @@
       <div>
         <div>
           <div style="display: flex;">
-            <% if (selectedYear) { %>
-              <h1 style="font-weight: bold;font-size: 40px;border-bottom: 3px solid">Financial Overview <%= selectedYear %></h1>
-            <% } else { %>
-              <h1 style="font-weight: bold;font-size: 40px;border-bottom: 3px solid">Financial Overview</h1>
-            <% } %>
-            <form method="get" action="/" style="margin-left: 15px;margin-top: 10px;">
+            <h1 style="font-weight: bold;font-size: 40px;border-bottom: 3px solid">Financial Overview</h1>
+            <form method="get" action="/" style="margin-left: 15px;margin-top: 10px;" onsubmit="saveScrollPosition()">
               <label for="year">Select Year:</label>
               <select id="year" name="year">
                 <% years.forEach(year => { %>
@@ -224,10 +219,25 @@
               </select>
               <button type="submit">Filter</button> 
             </form>
+            <script>
+              function saveScrollPosition() {
+                sessionStorage.setItem('scrollPosition', window.scrollY);
+              }
+
+              // Restore scroll position after page reloads
+              window.onload = function() {
+                var scrollPosition = sessionStorage.getItem('scrollPosition');
+                if (scrollPosition) {
+                  window.scrollTo(0, scrollPosition);
+                  sessionStorage.removeItem('scrollPosition');
+                }
+              };
+            </script>
           </div>
           <a id="a" href="/profitlossstate" class="btn btn-success">Profit & Loss</a>
           <a id="a" href="/balanceSheet" class="btn btn-success">Balance Sheet</a>
           <a id="a" href="/trialbalance" class="btn btn-success">Trial Balance</a>
+          <a id="a" href="/bankledger" class="btn btn-success">Bank Ledger</a>
           <br><br>
             <div style="width: 95%;">
               <div>

@@ -25,8 +25,7 @@ const pool = mysql.createPool({
     user: 'root',
     password: '123456',
     database: 'test11'
-  });
-
+});
 const urlencodedParser = bodyParser.urlencoded({extended: false});
 app.set('view engine', 'ejs');
 app.use(session({
@@ -34,7 +33,6 @@ app.use(session({
   resave: false,
   saveUninitialized: true
 }));
-
 function requireLogin(req, res, next) {
   if (req.session && req.session.user) {
     if (!req.session.logout) {
@@ -49,11 +47,35 @@ function requireLogin(req, res, next) {
     res.redirect('/login');
   }
 }
-
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   next();
 });
+
+
+
+
+//change password here
+app.post('/login', urlencodedParser, async (req, res) => {
+  const { username, password } = req.body;
+
+  // You can replace this with a database query to fetch the user's details
+  const user = {
+    username: 'yongyi',
+    password: await bcrypt.hash('Copcop21@', 10)
+  };
+
+  if (username === user.username && await bcrypt.compare(password, user.password)) {
+    req.session.user = username;
+    res.redirect('/');
+  } else {
+    res.render('login', { error: 'Invalid username or password' });
+  }
+});
+
+
+
+
 
 
 app.get('/', (req, res) => {
@@ -802,18 +824,48 @@ app.get('/bankledger', (req, res) => {
                                         res.status(500).send('An error occurred');
                                       } else {
                                         const totalCapital = capitalResults;
+
+                                        pool.query('SELECT * FROM yyothercreditor_paymentbreakdown', (error, capitalpayResults) => {
+                                          if (error) {
+                                            console.error(error);
+                                            res.status(500).send('An error occurred');
+                                          } else {
+                                            const totalCreditorpaymentbreak = capitalpayResults;
+
+                                            pool.query('SELECT * FROM yyotherdebtor', (error, debtorResults) => {
+                                              if (error) {
+                                                console.error(error);
+                                                res.status(500).send('An error occurred');
+                                              } else {
+                                                const totalDebtor = debtorResults;
+
+                                                pool.query('SELECT * FROM yyotherdebtor_paymentbreakdown', (error, debtorpayResults) => {
+                                                  if (error) {
+                                                    console.error(error);
+                                                    res.status(500).send('An error occurred');
+                                                  } else {
+                                                    const totalDebtorpaymentbreak = debtorpayResults;
                               
-                                        res.render('bankledger', { 
-                                          totalSalesPaymentbreakdown, 
-                                          totalPurchasePaymentbreakdown,
-                                          totalExpenses ,
-                                          totalExpensesPaymentbreakdown,
-                                          topupBalance,
-                                          refund,
-                                          totalDrawing,
-                                          totalDeposit,
-                                          totalCapital,
-                                          totalCreditor
+                                                    res.render('bankledger', { 
+                                                      totalDebtorpaymentbreak,
+                                                      totalDebtor,
+                                                      totalCreditorpaymentbreak,
+                                                      totalSalesPaymentbreakdown, 
+                                                      totalPurchasePaymentbreakdown,
+                                                      totalExpenses ,
+                                                      totalExpensesPaymentbreakdown,
+                                                      topupBalance,
+                                                      refund,
+                                                      totalDrawing,
+                                                      totalDeposit,
+                                                      totalCapital,
+                                                      totalCreditor
+                                                    });
+                                                  }
+                                                });
+                                              }
+                                            });
+                                          }
                                         });
                                       }
                                     });
@@ -836,12 +888,7 @@ app.get('/bankledger', (req, res) => {
     }
   });
 });
-
-
-                                                                                                                                                                                        
-
-
-app.get('/profitlossstate', (req, res) => {
+app.get('/profitlossstate', requireLogin, (req, res) => {
   const currentYear = new Date().getFullYear(); // get current year
 
   // fetch distinct years from yyitems_sell table
@@ -1075,7 +1122,7 @@ app.get('/profitlossstate', (req, res) => {
     });
   });
 });
-app.get('/balanceSheet', (req, res) => {
+app.get('/balanceSheet', requireLogin, (req, res) => {
   const currentYear = new Date().getFullYear(); // get current year
 
   // fetch distinct years from yyitems_sell table
@@ -1298,62 +1345,136 @@ app.get('/balanceSheet', (req, res) => {
                                                                                           } else {
                                                                                             const assetsData = assetsResults.map(row => ({ ...row }));
 
+                                                                                            pool.query('SELECT SUM(Amount) as Atotalsalespay FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                              if (err) throw err;
+                                                                                              const Atotalsalespay = results[0].Atotalsalespay;
+                                                                                          
+                                                                                                pool.query('SELECT SUM(Amount) as Atotalbuypay FROM yypurchase_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                  if (err) throw err;
+                                                                                                  const Atotalbuypay = results[0].Atotalbuypay;
 
-                                                                                          // render the EJS template with the fetched data
-                                                                                          res.render('balanceSheet', { 
-                                                                                            totalaccrued,
-                                                                                            totaldeposit,
-                                                                                            totalSalesno2,
-                                                                                            totalPurchasesno2,
-                                                                                            totalcapital,
-                                                                                            totalotcredit,
-                                                                                            totalBuypaid,
-                                                                                            totalTopup,
-                                                                                            totalSalespaid,
-                                                                                            totalSales, 
-                                                                                            totalSalesno,
-                                                                                            totalCost,
-                                                                                            totalPurchases, 
-                                                                                            totalExpenses: totalExpensesByCategory, 
-                                                                                            categories,
-                                                                                            totalStockValue,
-                                                                                            totalship,
-                                                                                            totalPurchasesno,
-                                                                                            totalc2p,
-                                                                                            totalp2c,
-                                                                                            supRefunds,
-                                                                                            refundsales,
-                                                                                            years,
-                                                                                            selectedYear,
-                                                                                            total_purchasesWOnosku,
-                                                                                            totalbuy,
-                                                                                            totalPurchasesLastyear,
-                                                                                            totalCostLastyear,
-                                                                                            bonus,
-                                                                                            bonus2,
-                                                                                            bftotalSales,
-                                                                                            bftotalPurchasesno,
-                                                                                            bftotal_purchasesWOnosku,
-                                                                                            bftotalship,
-                                                                                            bftotalc2p,
-                                                                                            bftotalp2c,
-                                                                                            bfsupRefunds,
-                                                                                            bfrefundsales,
-                                                                                            bfbonus,
-                                                                                            bftotalPurchasesLastyear,
-                                                                                            bftotalCostLastyear,
-                                                                                            bftotalPurchasesno,
-                                                                                            bftotal_purchasesWOnosku,
-                                                                                            bftotalCost,
-                                                                                            bftotalPurchases,
-                                                                                            bftotalExpenses: bftotalExpensesByCategory,
-                                                                                            bftotalSalesno,
-                                                                                            totalgdex,
-                                                                                            assetsData 
+                                                                                                  pool.query('SELECT SUM(Amount) as Atotalexpenses FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL AND Name != "Gdex" AND YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                    if (err) throw err;
+                                                                                                    const Atotalexpenses = results[0].Atotalexpenses;
+
+                                                                                                    pool.query('SELECT SUM(Amount) as AtotalExpensesPaymentbreakdown FROM yyaccruals WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                      if (err) throw err;
+                                                                                                      const AtotalExpensesPaymentbreakdown = results[0].AtotalExpensesPaymentbreakdown;
+
+                                                                                                      pool.query('SELECT SUM(Amount) as Atotaltopup FROM yytopupbalance WHERE wallet = "Gdex" AND YEAR(date) <= ? ORDER BY ID DESC', [selectedYear], (error, results) => {
+                                                                                                        if (err) throw err;
+                                                                                                        const Atotaltopup = results[0].Atotaltopup;
+
+                                                                                                        pool.query('SELECT SUM(amount) as Arefund2buyer FROM refund WHERE refund2buyer = "yes" AND YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                          if (err) throw err;
+                                                                                                          const Arefund2buyer = results[0].Arefund2buyer;
+
+                                                                                                          pool.query('SELECT SUM(amount) as AfromSupplier FROM refund WHERE fromSupplier = "yes" AND YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                            if (err) throw err;
+                                                                                                            const AfromSupplier = results[0].AfromSupplier;
+
+                                                                                                            pool.query('SELECT SUM(Amount) as Acompanyfund2personal FROM yycompanyfund2personal WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                              if (err) throw err;
+                                                                                                              const Acompanyfund2personal = results[0].Acompanyfund2personal;
+
+                                                                                                              pool.query('SELECT SUM(amount) as Adeposit FROM yydeposit WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                if (err) throw err;
+                                                                                                                const Adeposit = results[0].Adeposit;
+
+                                                                                                                pool.query('SELECT SUM(Amount) as Acreditor FROM yyothercreditor WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                  if (err) throw err;
+                                                                                                                  const Acreditor = results[0].Acreditor;
+
+                                                                                                                  pool.query('SELECT SUM(amount) as Aequity FROM yyequity WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                    if (err) throw err;
+                                                                                                                    const Acapital = results[0].Aequity;
+
+                                                                                                                    pool.query('SELECT SUM(amount) as Acreditorpayment FROM yyothercreditor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                      if (err) throw err;
+                                                                                                                      const Acreditorpayment = results[0].Acreditorpayment;
+
+                                                                                                                      pool.query('SELECT SUM(Amount) as Adebtor FROM yyotherdebtor WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                        if (err) throw err;
+                                                                                                                        const Adebtor = results[0].Adebtor;
+
+                                                                                                                        pool.query('SELECT SUM(amount) as Adebtorpayment FROM yyotherdebtor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                          if (err) throw err;
+                                                                                                                          const Adebtorpayment = results[0].Adebtorpayment;
+
+                                                                                                                          const bankledger = (Atotalsalespay-Atotalbuypay-Atotalexpenses-Atotaltopup-AtotalExpensesPaymentbreakdown-Arefund2buyer+AfromSupplier-Adeposit+Acapital+Acreditor-Acreditorpayment+Adebtorpayment-Adebtor+Acompanyfund2personal);
+                                                                                                                         
+                                                                                                                          // render the EJS template with the fetched data
+                                                                                                                          res.render('balanceSheet', { 
+                                                                                                                            bankledger,
+                                                                                                                            totalaccrued,
+                                                                                                                            totaldeposit,
+                                                                                                                            totalSalesno2,
+                                                                                                                            totalPurchasesno2,
+                                                                                                                            totalcapital,
+                                                                                                                            totalotcredit,
+                                                                                                                            totalBuypaid,
+                                                                                                                            totalTopup,
+                                                                                                                            totalSalespaid,
+                                                                                                                            totalSales, 
+                                                                                                                            totalSalesno,
+                                                                                                                            totalCost,
+                                                                                                                            totalPurchases, 
+                                                                                                                            totalExpenses: totalExpensesByCategory, 
+                                                                                                                            categories,
+                                                                                                                            totalStockValue,
+                                                                                                                            totalship,
+                                                                                                                            totalPurchasesno,
+                                                                                                                            totalc2p,
+                                                                                                                            totalp2c,
+                                                                                                                            supRefunds,
+                                                                                                                            refundsales,
+                                                                                                                            years,
+                                                                                                                            selectedYear,
+                                                                                                                            total_purchasesWOnosku,
+                                                                                                                            totalbuy,
+                                                                                                                            totalPurchasesLastyear,
+                                                                                                                            totalCostLastyear,
+                                                                                                                            bonus,
+                                                                                                                            bonus2,
+                                                                                                                            bftotalSales,
+                                                                                                                            bftotalPurchasesno,
+                                                                                                                            bftotal_purchasesWOnosku,
+                                                                                                                            bftotalship,
+                                                                                                                            bftotalc2p,
+                                                                                                                            bftotalp2c,
+                                                                                                                            bfsupRefunds,
+                                                                                                                            bfrefundsales,
+                                                                                                                            bfbonus,
+                                                                                                                            bftotalPurchasesLastyear,
+                                                                                                                            bftotalCostLastyear,
+                                                                                                                            bftotalPurchasesno,
+                                                                                                                            bftotal_purchasesWOnosku,
+                                                                                                                            bftotalCost,
+                                                                                                                            bftotalPurchases,
+                                                                                                                            bftotalExpenses: bftotalExpensesByCategory,
+                                                                                                                            bftotalSalesno,
+                                                                                                                            totalgdex,
+                                                                                                                            assetsData 
+                                                                                                                          });
+                                                                                                                        });
+                                                                                                                      });
+                                                                                                                    });
+                                                                                                                  });
+                                                                                                                });
+                                                                                                              });
+                                                                                                            });
+                                                                                                          });
+                                                                                                        });
+                                                                                                      });
+                                                                                                    });
+                                                                                                  });
+                                                                                                });
+                                                                                              });
+                                                                                            };
                                                                                           });
-                                                                                        };
-                                                                                      })});
-                                                                                    });});
+                                                                                        });
+                                                                                      });
+                                                                                    });
                                                                                   });
                                                                                 });
                                                                               });
@@ -1396,7 +1517,7 @@ app.get('/balanceSheet', (req, res) => {
     });
   });
 });
-app.get('/trialbalance', (req, res) => {
+app.get('/trialbalance', requireLogin, (req, res) => {
   const currentYear = new Date().getFullYear(); // get current year
 
   // fetch distinct years from yyitems_sell table
@@ -1631,63 +1752,140 @@ app.get('/trialbalance', (req, res) => {
                                                                                               } else {
                                                                                                 const assetsData = assetsResults.map(row => ({ ...row }));
 
-                                                                                              // render the EJS template with the fetched data
-                                                                                              res.render('trialbalance', { 
-                                                                                                total_selldiscount,
-                                                                                                total_buydiscount,
-                                                                                                totaldeposit,
-                                                                                                totalSalesno2,
-                                                                                                totalPurchasesno2,
-                                                                                                totalcapital,
-                                                                                                totalotcredit,
-                                                                                                totalBuypaid,
-                                                                                                totalTopup,
-                                                                                                totalSalespaid,
-                                                                                                totalSales, 
-                                                                                                totalSalesno,
-                                                                                                totalCost,
-                                                                                                totalPurchases, 
-                                                                                                totalExpenses: totalExpensesByCategory, 
-                                                                                                categories,
-                                                                                                totalStockValue,
-                                                                                                totalship,
-                                                                                                totalPurchasesno,
-                                                                                                totalc2p,
-                                                                                                totalp2c,
-                                                                                                supRefunds,
-                                                                                                refundsales,
-                                                                                                years,
-                                                                                                selectedYear,
-                                                                                                total_purchasesWOnosku,
-                                                                                                totalbuy,
-                                                                                                totalPurchasesLastyear,
-                                                                                                totalCostLastyear,
-                                                                                                bonus,
-                                                                                                bonus2,
-                                                                                                bftotalSales,
-                                                                                                bftotalPurchasesno,
-                                                                                                bftotal_purchasesWOnosku,
-                                                                                                bftotalship,
-                                                                                                bftotalc2p,
-                                                                                                bftotalp2c,
-                                                                                                bfsupRefunds,
-                                                                                                bfrefundsales,
-                                                                                                bfbonus,
-                                                                                                bftotalPurchasesLastyear,
-                                                                                                bftotalCostLastyear,
-                                                                                                bftotalPurchasesno,
-                                                                                                bftotal_purchasesWOnosku,
-                                                                                                bftotalCost,
-                                                                                                bftotalPurchases,
-                                                                                                bftotalExpenses: bftotalExpensesByCategory,
-                                                                                                bftotalSalesno,
-                                                                                                totalgdex,
-                                                                                                assetsData,
-                                                                                                totalaccrued,
-                                                                                                categoriesss 
+                                                                                                pool.query('SELECT SUM(Amount) as Atotalsalespay FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                  if (err) throw err;
+                                                                                                  const Atotalsalespay = results[0].Atotalsalespay;
+                                                                                              
+                                                                                                    pool.query('SELECT SUM(Amount) as Atotalbuypay FROM yypurchase_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                      if (err) throw err;
+                                                                                                      const Atotalbuypay = results[0].Atotalbuypay;
+    
+                                                                                                      pool.query('SELECT SUM(Amount) as Atotalexpenses FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL AND Name != "Gdex" AND YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                        if (err) throw err;
+                                                                                                        const Atotalexpenses = results[0].Atotalexpenses;
+    
+                                                                                                        pool.query('SELECT SUM(Amount) as AtotalExpensesPaymentbreakdown FROM yyaccruals WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                          if (err) throw err;
+                                                                                                          const AtotalExpensesPaymentbreakdown = results[0].AtotalExpensesPaymentbreakdown;
+    
+                                                                                                          pool.query('SELECT SUM(Amount) as Atotaltopup FROM yytopupbalance WHERE wallet = "Gdex" AND YEAR(date) <= ? ORDER BY ID DESC', [selectedYear], (error, results) => {
+                                                                                                            if (err) throw err;
+                                                                                                            const Atotaltopup = results[0].Atotaltopup;
+    
+                                                                                                            pool.query('SELECT SUM(amount) as Arefund2buyer FROM refund WHERE refund2buyer = "yes" AND YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                              if (err) throw err;
+                                                                                                              const Arefund2buyer = results[0].Arefund2buyer;
+    
+                                                                                                              pool.query('SELECT SUM(amount) as AfromSupplier FROM refund WHERE fromSupplier = "yes" AND YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                if (err) throw err;
+                                                                                                                const AfromSupplier = results[0].AfromSupplier;
+    
+                                                                                                                pool.query('SELECT SUM(Amount) as Acompanyfund2personal FROM yycompanyfund2personal WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                  if (err) throw err;
+                                                                                                                  const Acompanyfund2personal = results[0].Acompanyfund2personal;
+    
+                                                                                                                  pool.query('SELECT SUM(amount) as Adeposit FROM yydeposit WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                    if (err) throw err;
+                                                                                                                    const Adeposit = results[0].Adeposit;
+    
+                                                                                                                    pool.query('SELECT SUM(Amount) as Acreditor FROM yyothercreditor WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                      if (err) throw err;
+                                                                                                                      const Acreditor = results[0].Acreditor;
+    
+                                                                                                                      pool.query('SELECT SUM(amount) as Aequity FROM yyequity WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                        if (err) throw err;
+                                                                                                                        const Acapital = results[0].Aequity;
+    
+                                                                                                                        pool.query('SELECT SUM(amount) as Acreditorpayment FROM yyothercreditor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                          if (err) throw err;
+                                                                                                                          const Acreditorpayment = results[0].Acreditorpayment;
+    
+                                                                                                                          pool.query('SELECT SUM(Amount) as Adebtor FROM yyotherdebtor WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                            if (err) throw err;
+                                                                                                                            const Adebtor = results[0].Adebtor;
+    
+                                                                                                                            pool.query('SELECT SUM(amount) as Adebtorpayment FROM yyotherdebtor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
+                                                                                                                              if (err) throw err;
+                                                                                                                              const Adebtorpayment = results[0].Adebtorpayment;
+    
+                                                                                                                              const bankledger = (Atotalsalespay-Atotalbuypay-Atotalexpenses-Atotaltopup-AtotalExpensesPaymentbreakdown-Arefund2buyer+AfromSupplier-Adeposit+Acapital+Acreditor-Acreditorpayment+Adebtorpayment-Adebtor+Acompanyfund2personal);
+                                                                                                                             
+
+                                                                                                                              // render the EJS template with the fetched data
+                                                                                                                              res.render('trialbalance', { 
+                                                                                                                                bankledger,
+                                                                                                                                total_selldiscount,
+                                                                                                                                total_buydiscount,
+                                                                                                                                totaldeposit,
+                                                                                                                                totalSalesno2,
+                                                                                                                                totalPurchasesno2,
+                                                                                                                                totalcapital,
+                                                                                                                                totalotcredit,
+                                                                                                                                totalBuypaid,
+                                                                                                                                totalTopup,
+                                                                                                                                totalSalespaid,
+                                                                                                                                totalSales, 
+                                                                                                                                totalSalesno,
+                                                                                                                                totalCost,
+                                                                                                                                totalPurchases, 
+                                                                                                                                totalExpenses: totalExpensesByCategory, 
+                                                                                                                                categories,
+                                                                                                                                totalStockValue,
+                                                                                                                                totalship,
+                                                                                                                                totalPurchasesno,
+                                                                                                                                totalc2p,
+                                                                                                                                totalp2c,
+                                                                                                                                supRefunds,
+                                                                                                                                refundsales,
+                                                                                                                                years,
+                                                                                                                                selectedYear,
+                                                                                                                                total_purchasesWOnosku,
+                                                                                                                                totalbuy,
+                                                                                                                                totalPurchasesLastyear,
+                                                                                                                                totalCostLastyear,
+                                                                                                                                bonus,
+                                                                                                                                bonus2,
+                                                                                                                                bftotalSales,
+                                                                                                                                bftotalPurchasesno,
+                                                                                                                                bftotal_purchasesWOnosku,
+                                                                                                                                bftotalship,
+                                                                                                                                bftotalc2p,
+                                                                                                                                bftotalp2c,
+                                                                                                                                bfsupRefunds,
+                                                                                                                                bfrefundsales,
+                                                                                                                                bfbonus,
+                                                                                                                                bftotalPurchasesLastyear,
+                                                                                                                                bftotalCostLastyear,
+                                                                                                                                bftotalPurchasesno,
+                                                                                                                                bftotal_purchasesWOnosku,
+                                                                                                                                bftotalCost,
+                                                                                                                                bftotalPurchases,
+                                                                                                                                bftotalExpenses: bftotalExpensesByCategory,
+                                                                                                                                bftotalSalesno,
+                                                                                                                                totalgdex,
+                                                                                                                                assetsData,
+                                                                                                                                totalaccrued,
+                                                                                                                                categoriesss 
+                                                                                                                                });
+                                                                                                                              });
+                                                                                                                            });
+                                                                                                                          });
+                                                                                                                        });
+                                                                                                                      });
+                                                                                                                    });
+                                                                                                                  });
+                                                                                                                });
+                                                                                                              });
+                                                                                                            });
+                                                                                                          });
+                                                                                                        });
+                                                                                                      });
+                                                                                                    });
+                                                                                                  };
+                                                                                                });
                                                                                               });
-                                                                                            };
-                                                                                          })});
+                                                                                            });
+                                                                                          });
                                                                                         });
                                                                                       });
                                                                                     });
@@ -1708,7 +1906,7 @@ app.get('/trialbalance', (req, res) => {
                                                       });
                                                     });
                                                   });
-                                                });});});
+                                                });
                                               });
                                             });
                                           });
@@ -1733,7 +1931,7 @@ app.get('/trialbalance', (req, res) => {
     });
   });
 });
-app.get('/yyequity', function(req, res){
+app.get('/yyequity', requireLogin, function(req, res){
   pool.query('SELECT *, DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate FROM yyequity', function(error, results, fields) {
     if (error) {
       console.error(error);
@@ -1767,7 +1965,7 @@ app.post('/yyequity', upload.array(), function (req, res) {
     }
   });
 });
-app.get('/yydeposit', function(req, res){
+app.get('/yydeposit', requireLogin, function(req, res){
   pool.query('SELECT *, DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate FROM yydeposit', function(error, results, fields) {
     if (error) {
       console.error(error);
@@ -1801,7 +1999,7 @@ app.post('/yydeposit', upload.array(), function (req, res) {
     }
   });
 });
-app.get('/yycurrentassets', function(req, res){
+app.get('/yycurrentassets', requireLogin, function(req, res){
   pool.query('SELECT *, DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate FROM yycurrent_assets', function(error, results, fields) {
     if (error) {
       console.error(error);
@@ -1855,24 +2053,8 @@ app.get('/login', (req, res) => {
 app.get('/signup', (req, res) => {
   res.render('signup');
 });
-app.post('/login', urlencodedParser, async (req, res) => {
-  const { username, password } = req.body;
-
-  // You can replace this with a database query to fetch the user's details
-  const user = {
-    username: 'ykzone',
-    password: await bcrypt.hash('amitofo123', 10)
-  };
-
-  if (username === user.username && await bcrypt.compare(password, user.password)) {
-    req.session.user = username;
-    res.redirect('/');
-  } else {
-    res.render('login', { error: 'Invalid username or password' });
-  }
-});
 //-------------------------------------Import & Export---------------------------------------------------------------------------------------------------------------------
-app.get('/inout', function(req, res) {
+app.get('/inout', requireLogin, function(req, res) {
   const successMessage = req.query.success; // Get the success parameter from the query string
   res.render('inout', { successMessage: successMessage });
 });
@@ -2681,8 +2863,32 @@ app.get('/yyexportexpenses_csv', function(req, res) {
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
+app.post('/importcheckin_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { pono, date, seller, bankname, bank, bankacc, remarks, sku, productname, size, quantity } = data;
+
+      pool.query('INSERT INTO stock_checkin ( pono, date, sku, productname, size, quantity, seller, bank, bankname, bankacc, remarks ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [pono, date, sku, productname, size, quantity, seller, bank, bankname, bankacc, remarks], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${pono}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
 app.get('/exportcheckin_csv', function(req, res) {
-  const sql = `SELECT stock_checkin.pono, stock_checkin.date as date, stock_checkin.sku, stock_checkin.productname, stock_checkin.size, stock_checkin.quantity,stock_checkin.seller, stock_checkin.bank, stock_checkin.bankname,stock_checkin.bankacc
+  const sql = `SELECT stock_checkin.pono, stock_checkin.date as date, stock_checkin.sku, stock_checkin.productname, stock_checkin.size, stock_checkin.quantity,stock_checkin.seller, stock_checkin.bank, stock_checkin.bankname, stock_checkin.bankacc, stock_checkin.remarks
                FROM stock_checkin
                ORDER BY stock_checkin.pono`;
 
@@ -2714,14 +2920,429 @@ app.get('/exportcheckin_csv', function(req, res) {
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
+app.post('/importdistributer2owner_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const {  Date, Invoice_No, Category, Bank, Name, Amount, Detail, banknum } = data;
 
+      pool.query('INSERT INTO yycompanyfund2personal ( Date, Invoice_No, Category, Bank, Name, Amount, Detail, banknum ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [Date, Invoice_No, Category, Bank, Name, Amount, Detail, banknum], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${Invoice_No}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportdistributer2owner_csv', function(req, res) {
+  const sql = `SELECT Date, Invoice_No, Category, Bank, Name, Amount, Detail, banknum, File
+               FROM yycompanyfund2personal
+               ORDER BY yycompanyfund2personal.Date`;
 
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
 
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          Date: formattedDate,
+          Invoice_No: row.Invoice_No,
+          Category: row.Category,
+          Bank: row.Bank,
+          Name: row.Name,
+          Amount: row.Amount,
+          Detail: row.Detail,
+          banknum: row.banknum,
+          File: row.File
+        });
+    });
 
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=Distributer_to_Owner.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importyyothercreditor_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { Date, Invoice_No, Bank, Name, Amount, Detail, File, settle } = data;
 
+      pool.query('INSERT INTO yyothercreditor ( Date, Invoice_No, Bank, Name, Amount, Detail, File, settle ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [Date, Invoice_No, Bank, Name, Amount, Detail, File, settle], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${Invoice_No}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportyyothercreditor_csv', function(req, res) {
+  const sql = `SELECT Date, Invoice_No, Bank, Name, Amount, Detail, File, settle
+               FROM yyothercreditor
+               ORDER BY Date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          Date: formattedDate,
+          Invoice_No: row.Invoice_No,
+          Bank: row.Bank,
+          Name: row.Name,
+          Amount: row.Amount,
+          Detail: row.Detail,
+          File: row.File,
+          settle: row.settle
+        });
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yyotherCreditor.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importyyothercreditorpaymentbreak_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { date, invoiceNo, name, amount, detail, file } = data;
+
+      pool.query('INSERT INTO yyothercreditor_paymentbreakdown ( date, invoiceNo, name, amount, detail, file ) VALUES (?, ?, ?, ?, ?, ?)', [date, invoiceNo, name, amount, detail, file], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${invoiceNo}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportyyothercreditorpaymentbreak_csv', function(req, res) {
+  const sql = `SELECT date, invoiceNo, name, amount, detail, file
+               FROM yyothercreditor_paymentbreakdown
+               ORDER BY date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          date: formattedDate,
+          invoiceNo: row.invoiceNo,
+          name: row.name,
+          amount: row.amount,
+          detail: row.detail,
+          file: row.file
+        });
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yyotherCreditor_paymentbreakdown.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importyyotherdebtor_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { Date, Invoice_No, Category, Bank, Name, Amount, Detail, File, settle } = data;
+
+      pool.query('INSERT INTO yyotherdebtor ( Date, Invoice_No, Category, Bank, Name, Amount, Detail, File, settle ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [Date, Invoice_No, Category, Bank, Name, Amount, Detail, File, settle], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${Invoice_No}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportyyotherdebtor_csv', function(req, res) {
+  const sql = `SELECT Date, Invoice_No, Category, Bank, Name, Amount, Detail, File, settle
+               FROM yyotherdebtor
+               ORDER BY Date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          Date: formattedDate,
+          Invoice_No: row.Invoice_No,
+          Category: row.Category,
+          Bank: row.Bank,
+          Name: row.Name,
+          Amount: row.Amount,
+          Detail: row.Detail,
+          File: row.File,
+          settle: row.settle
+        });
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yyotherCreditor.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importyyotherdebtorpaymentbreak_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { date, invoiceNo, name, amount, detail, file } = data;
+
+      pool.query('INSERT INTO yyotherdebtor_paymentbreakdown ( date, invoiceNo, name, amount, detail, file ) VALUES (?, ?, ?, ?, ?, ?)', [date, invoiceNo, name, amount, detail, file], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${invoiceNo}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportyyotherdebtorpaymentbreak_csv', function(req, res) {
+  const sql = `SELECT date, invoiceNo, name, amount, detail, file
+               FROM yyotherdebtor_paymentbreakdown
+               ORDER BY date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          date: formattedDate,
+          invoiceNo: row.invoiceNo,
+          name: row.name,
+          amount: row.amount,
+          detail: row.detail,
+          file: row.file
+        });
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yyotherDebtor_paymentbreakdown.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/yyimportyyaccrualpaymentbreak_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { Date, Invoice_No, Bank, Name, Amount, Detail, File } = data;
+
+      pool.query('INSERT INTO yyaccruals ( Date, Invoice_No, Bank, Name, Amount, Detail, File ) VALUES (?, ?, ?, ?, ?, ?, ?)', [Date, Invoice_No, Bank, Name, Amount, Detail, File], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for InvoiceNo ${Invoice_No}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/yyexportyyaccrualpaymentbreak_csv', function(req, res) {
+  const sql = `SELECT Date, Invoice_No, Bank, Name, Amount, Detail, File
+               FROM yyaccruals
+               ORDER BY Date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          Date: formattedDate,
+          Invoice_No: row.Invoice_No,
+          Bank: row.Bank,
+          Name: row.Name,
+          Amount: row.Amount,
+          Detail: row.Detail,
+          File: row.File
+        });
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yyAccruals_paymentbreakdown.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importyydeposit_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { date, amount, details } = data;
+      const purpose = data.for;
+
+      pool.query('INSERT INTO yydeposit ( date, amount, for, details ) VALUES (?, ?, ?, ?)', [date, amount, purpose, details], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for Date: ${date}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportyydeposit_csv', function(req, res) {
+  const sql = `SELECT date, amount, for, details
+               FROM yydeposit
+               ORDER BY date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          date: formattedDate,
+          amount: row.amount,
+          for: row.for,
+          details: row.details
+        });
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yydeposit.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importyyequity_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { date, amount, account } = data;
+
+      pool.query('INSERT INTO yyequity ( date, amount, account ) VALUES (?, ?, ?)', [date, amount, account], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for Date: ${date}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportyyequity_csv', function(req, res) {
+  const sql = `SELECT date, amount, account
+               FROM yyequity
+               ORDER BY date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          date: formattedDate,
+          amount: row.amount,
+          account: row.account
+        });
+    });
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=yycapitalAccount.csv');
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
 //-------------------------------------Bank statement---------------------------------------------------
-
-app.get('/expenses-record', function(req, res){
+app.get('/expenses-record', requireLogin, function(req, res){
     res.render('expenses-record');
 });
 app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(req, res){
@@ -2741,11 +3362,9 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
       }
     });
 });
-
 //-------------------------------------------------------------------------------------------------
-
 // Define route for stock check page
-app.get('/stockaudit', function(req, res) {
+app.get('/stockaudit', requireLogin, function(req, res) {
   pool.query(`
   SELECT Content_SKU, SizeUS, ProductName, Amount, SUM(Quantity) as total_quantity 
   FROM yyitems_buy WHERE sold = 'no' AND Content_SKU != "" AND sold != "return"
@@ -2762,14 +3381,14 @@ app.get('/stockaudit', function(req, res) {
   });
 });
 //for stock-checkin
-app.get('/stock-checkin', function(req, res){
+app.get('/stock-checkin', requireLogin, function(req, res){
   const sql = "SELECT InvoiceNumber, Content_SKU, SizeUS , ProductName, SUM(Quantity) as total_quantity FROM yyitems_buy WHERE status = 'intransit' GROUP BY InvoiceNumber, Content_SKU, ProductName, SizeUS";
   pool.query(sql, (err, result) => {
     if (err) throw err;
     res.render('stock-checkin', { items: result });
   });
 });
-app.get('/stockcheckinasd', (req, res) => {
+app.get('/stockcheckinasd', requireLogin, (req, res) => {
   const ponum = req.query.ponum;
   const query = `SELECT yyitems_buy.ProductName, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as TotalQuantity, yybuy_record.Name, yybuy_record.Bank, yybuy_record.BankName, yybuy_record.Bankaccount, yybuy_record.Remarks 
   FROM yyitems_buy yyitems_buy 
@@ -2818,7 +3437,7 @@ app.post('/stock-checkin', upload.single('file'), urlencodedParser, function(req
     res.render('stock-checkin', { items: result });
   });
 });
-app.get('/stock-check', function(req, res) {
+app.get('/stock-check', requireLogin, function(req, res) {
   const searchTerm = req.query['search-term'];
   const searchBy = req.query['search-by'];
 
@@ -2881,23 +3500,12 @@ app.get('/stock-check', function(req, res) {
     }
   });
 });
-
-
-
-
-
-
-
-
-
-
-
 //for shipped record page
-app.get('/shippedrecord', function(req, res){
+app.get('/shippedrecord', requireLogin, function(req, res){
   res.render('shippedrecord');
 });
 //for shipped record page - single ship
-app.get('/singleshipped', function(req, res){
+app.get('/singleshipped', requireLogin, function(req, res){
   pool.query(`
     SELECT InvoiceNumber, Content_SKU, product_name, SizeUS, SUM(Quantity) AS totalQuantity
     FROM yyitems_sell
@@ -2914,7 +3522,7 @@ app.get('/singleshipped', function(req, res){
     }
   });
 });
-app.get('/singleshippeds', (req, res) => {
+app.get('/singleshippeds', requireLogin, (req, res) => {
   const sku = req.query.sku;
   const query = 'SELECT ProductName, SizeUS FROM yyitems_buy WHERE Content_SKU = ? AND status = "pending"';
   pool.query(query, [sku], (err, results) => {
@@ -2931,11 +3539,11 @@ app.get('/singleshippeds', (req, res) => {
   });
 });
 app.post('/singleshipped', upload.single('file'), urlencodedParser, function(req, res) {
-  const { trackingno, date, sku, productname, size, category, invoice, remarks } = req.body;
+  const { trackingno, date, sku, productname, size, invoice, remarks } = req.body;
   const quantity = 1;
 
   // Insert the form data into MySQL
-  pool.query('INSERT INTO singleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, Category, invoice, quantity, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [trackingno, date, sku, productname, size, category, invoice, quantity, remarks], (error, results, fields) => {
+  pool.query('INSERT INTO singleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [trackingno, date, sku, productname, size, invoice, quantity, remarks], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
@@ -2946,15 +3554,29 @@ app.post('/singleshipped', upload.single('file'), urlencodedParser, function(req
           console.error(error);
           res.status(500).send('Error updating yyitems_sell table');
         } else {
-          console.log(req.body);
-          res.render('singleshipped', { successMessage: 'Form submitted successfully' });
+          pool.query(`
+            SELECT InvoiceNumber, Content_SKU, product_name, SizeUS, SUM(Quantity) AS totalQuantity
+            FROM yyitems_sell
+            WHERE ship = "pending"
+            GROUP BY InvoiceNumber, Content_SKU, product_name, SizeUS
+          `, function(error, results, fields) {
+            if (error) {
+              console.error(error);
+              res.status(500).send('Error fetching data');
+            } else {
+              // Add the formattedDate field to each row of data
+              const data = results.map(row => ({ ...row }));
+              console.log(req.body);
+              res.render('singleshipped', { successMessage: 'Form submitted successfully', data });
+            }
+          });
         }
       });
     }
   });
 });
 //for shipped record page - bulk ship
-app.get('/bulkshipped', function(req, res){
+app.get('/bulkshipped', requireLogin, function(req, res){
   pool.query(`
     SELECT InvoiceNumber, Content_SKU, product_name, SizeUS, SUM(Quantity) AS totalQuantity
     FROM yyitems_sell
@@ -3029,11 +3651,9 @@ app.post('/bulkshipped', upload.single('file'), urlencodedParser, function (req,
   }
 });
 //for database
-app.get('/inout', function(req, res){
+app.get('/inout', requireLogin, function(req, res){
   res.render('inout');
 });
-
-
 //-------below is for Y Kick Zone Shop----------------------------------------------------------------------------------
 //------------------Sales--------------------------------------------------------------------------
 //for sales - sell invoice
@@ -3707,12 +4327,10 @@ app.post('/topupbalance', upload.single('file'), urlencodedParser, function(req,
     }
   );  
 });
-
-
 //-------below is for Yong & Yi  Partnership Enterprise-----------------------------------------------------------------------------
 //-------------------Sales-----------------------------------------------------------------------------
 //for sales - sell invoice
-app.get('/yysell_invoice', function(req, res){
+app.get('/yysell_invoice', requireLogin, function(req, res){
   pool.query(`
     SELECT InvoiceNumber, Content_SKU, product_name, CAST(SizeUS AS DECIMAL(10,2)) AS SizeUS, UnitPrice, SUM(Quantity) as Quantity, SUM(Amount) as Amount, gender, CostPrice
     FROM yyitems_sell
@@ -3730,7 +4348,7 @@ app.get('/yysell_invoice', function(req, res){
     }
   });
 });
-app.get('/yyproduct-details', (req, res) => {
+app.get('/yyproduct-details', requireLogin, (req, res) => {
   const sku = req.query.sku;
   const size = req.query.size;
   const query = `
@@ -3752,7 +4370,7 @@ app.get('/yyproduct-details', (req, res) => {
     });
   });
 });
-app.get('/yyproduct-name', (req, res) => {
+app.get('/yyproduct-name', requireLogin, (req, res) => {
   const sku = req.query.sku;
   const query = `
     SELECT DISTINCT ProductName
@@ -3773,10 +4391,46 @@ app.get('/yyproduct-name', (req, res) => {
     });
   });
 });
+app.get('/getQuantityAndCostPrice', (req, res) => {
+  // Retrieve SKU and Size from the query parameters
+  const sku = req.query.sku;
+  const size = req.query.size;
+
+  // Perform the necessary database query to retrieve the quantity and distinct unit prices
+  const query = `SELECT SUM(Quantity) AS quantity, UnitPrice 
+                 FROM yyitems_buy 
+                 WHERE Content_SKU = '${sku}' AND SizeUS = '${size}' AND sold = 'no' 
+                 GROUP BY UnitPrice`;
+
+  // Execute the query and retrieve the results using the database connection pool
+  pool.query(query, (err, result) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+
+    // Check if the query result contains any rows
+    if (result.length === 0) {
+      res.status(404).json({ error: 'No data found' });
+      return;
+    }
+
+    // Prepare the response data as an array of objects
+    const responseData = result.map(row => {
+      return {
+        quantity: row.quantity,
+        costPrice: row.UnitPrice
+      };
+    });
+
+    // Send the response data as JSON response
+    res.json(responseData);
+  });
+});
 app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
   const { name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [], field8 = []} = req.body;
 
-  // Fetch the last inserted Invoice_number value from sell_invoice table
   pool.query('SELECT MAX(Invoice_number) as maxInvoiceNumber FROM yysell_invoice', (error, results, fields) => {
     if (error) {
       console.error(error);
@@ -3785,7 +4439,6 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
       const maxInvoiceNumber = results[0].maxInvoiceNumber;
       const invoice_number = (maxInvoiceNumber ? parseInt(maxInvoiceNumber) : 0) + 1;
 
-      // Insert the main form data into MySQL
       pool.query('INSERT INTO yysell_invoice (Invoice_number, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [invoice_number, name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks], (error, results, fields) => {
         if (error) {
           console.error(error);
@@ -3794,16 +4447,31 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
           const sellItems = [];
           field1.forEach((item, index) => {
             for (let i = 0; i < field5[index]; i++) {
-              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index], 1 , field4[index], field7[index], field8[index], 'pending']);
+              let shipStatus = 'pending';
+              if (name.toLowerCase() === 'goat') {
+                shipStatus = 'shipped';
+                // Insert into singgleship table
+                const trackingNumber = 'goat';
+                const currentDate = new Date().toISOString();
+                const content_SKU = item;
+                const productName = field2[index];
+                const sizeUS = field3[index];
+
+                pool.query('INSERT INTO singgleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)', [trackingNumber, currentDate, content_SKU, productName, sizeUS, invoice_number, 1], (error, results, fields) => {
+                  if (error) {
+                    console.error(error);
+                    res.status(500).send('Error saving data to singgleship table');
+                  }
+                });
+              }
+              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index], 1 , field4[index], field7[index], field8[index], shipStatus]);
             }
           });
-          // Insert the shipped items data into MySQL
           pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, UnitPrice, Quantity, Amount, gender, CostPrice, ship) VALUES ?', [sellItems], (error, results, fields) => {
             if (error) {
               console.error(error);
               res.status(500).send('Error saving shipped items data');
             } else {
-              // Update yyitems_buy table with sold items
               field1.forEach((item, index) => {
                 const sku = item;
                 const size = field3[index];
@@ -3836,7 +4504,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
   });
 });
 //for sales-payment break
-app.get('/yysales-paymentbreak', function(req, res) {
+app.get('/yysales-paymentbreak', requireLogin, function(req, res) {
   pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Amount, Remarks, File FROM yysales_paymentbreakdown ORDER BY Invoice_No DESC', function(error, results, fields) {
     if (error) {
       console.error(error);
@@ -3924,7 +4592,7 @@ app.post('/yysales-paymentbreak',upload.single('file'), urlencodedParser, functi
   });
 });
 // Set up the searchs route for balance check details
-app.get('/yysearch', (req, res) => {
+app.get('/yysearch', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -3980,7 +4648,7 @@ app.get('/yysearch', (req, res) => {
   });
 });
 // for sales invoice generate
-app.get('/yyinvoice_generate', function(req, res) {
+app.get('/yyinvoice_generate', requireLogin, function(req, res) {
   pool.query(`
   SELECT yysell_invoice.Invoice_number, yysell_invoice.Name, DATE_FORMAT(yysell_invoice.timestamp, "%d/%m/%Y") AS formattedDate, 
   yyitems_sell.Content_SKU, yyitems_sell.product_name, SUM(yyitems_sell.Quantity) AS totalQuantity, SUM(yyitems_sell.Amount) AS totalAmount
@@ -3994,11 +4662,10 @@ app.get('/yyinvoice_generate', function(req, res) {
     } else {
       const invoiceData = results;
       res.render('yyinvoice_generate', { invoiceData });
-      console.log(invoiceData);
     }
   });
 });
-app.get('/yygenerate', (req, res) => {
+app.get('/yygenerate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -4059,10 +4726,9 @@ app.get('/yygenerate', (req, res) => {
     }
   });
 });
-
 //---------------------Purchase-------------------------------------------------------------------------
 //for buy -- invoice
-app.get('/yybuy-payby', function(req, res){
+app.get('/yybuy-payby', requireLogin, function(req, res){
   pool.query(`
     SELECT InvoiceNumber, Content_SKU, ProductName, CAST(SizeUS AS DECIMAL(10,2)) as SizeUS, UnitPrice, SUM(Quantity) as Quantity, SUM(Amount) as Amount, gender
     FROM yyitems_buy
@@ -4080,7 +4746,7 @@ app.get('/yybuy-payby', function(req, res){
     }
   });
 });
-app.get('/yybuyproduct-name', (req, res) => {
+app.get('/yybuyproduct-name', requireLogin, (req, res) => {
   const sku = req.query.sku;
   const query = `
     SELECT DISTINCT ProductName
@@ -4132,7 +4798,7 @@ app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req,
               res.status(500).send('Error saving shipped items data');
             } else {
               // Fetch all items from yyitems_buy table and pass to view
-              pool.query('SELECT * FROM yyitems_buy', (error, results, fields) => {
+              pool.query('SELECT * FROM yyitems_buy ORDER BY InvoiceNumber DESC', (error, results, fields) => {
                 if (error) {
                   console.error(error);
                   res.status(500).send('Error fetching data');
@@ -4149,7 +4815,7 @@ app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req,
   });
 });
 //for buy-payment break
-app.get('/yybuy-paymentbreak', function(req, res){
+app.get('/yybuy-paymentbreak', requireLogin, function(req, res){
   pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Amount, Remarks, File FROM yypurchase_paymentbreakdown ORDER BY Invoice_No DESC', function(error, results, fields) {
     if (error) {
       console.error(error);
@@ -4267,7 +4933,7 @@ app.post('/yybuy-paymentbreak',upload.single('file'),  urlencodedParser, functio
     });
 });
 // Set up the searchs route for balance check details
-app.get('/yysearchs', (req, res) => {
+app.get('/yysearchs', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the buy_record table
@@ -4344,7 +5010,7 @@ app.get('/yysearchs', (req, res) => {
   });
 });
 // for purchase order generate
-app.get('/yyorder_generate', function(req, res) {
+app.get('/yyorder_generate', requireLogin, function(req, res) {
   pool.query(`
   SELECT yybuy_record.Invoice_number, yybuy_record.Name, DATE_FORMAT(yybuy_record.timestamp, "%d/%m/%Y") AS formattedDate, 
   yyitems_buy.Content_SKU, yyitems_buy.ProductName, SUM(yyitems_buy.Quantity) AS totalQuantity, SUM(Amount) AS totalAmount
@@ -4361,7 +5027,7 @@ app.get('/yyorder_generate', function(req, res) {
     }
   });
 });
-app.get('/yyordergenerate', (req, res) => {
+app.get('/yyordergenerate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -4426,7 +5092,7 @@ app.get('/yyordergenerate', (req, res) => {
 });
 //=-----------------------Drawing-------------------------------------------------------------------------
 //for company fund 2 personal 
-app.get('/yycompany2personal', function(req, res) {
+app.get('/yycompany2personal', requireLogin, function(req, res) {
   pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Category, Bank, Name, Amount, Detail, File, banknum FROM yycompanyfund2personal', function(error, results, fields) {
     if (error) {
       console.error(error);
@@ -4455,7 +5121,7 @@ app.post('/yycompany2personal',upload.single('file'),  urlencodedParser, functio
   });
 });
 //for personal 2 company
-app.get('/yypersonal2company', function(req, res) {
+app.get('/yypersonal2company', requireLogin, function(req, res) {
   pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Category, Bank, Name, Amount, Detail, File FROM yypersonalfund2company', function(error, results, fields) {
     if (error) {
       console.error(error);
@@ -4484,7 +5150,7 @@ app.post('/yypersonal2company',upload.single('file'),  urlencodedParser, functio
         });
 });
 //expenses yong yi
-app.get('/yyexpenses-record', function(req, res) {
+app.get('/yyexpenses-record', requireLogin, function(req, res) {
   pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Category, Bank, Name, Amount, Detail, File FROM yyexpensesrecord ORDER BY Date DESC', function(error, results, fields) {
     if (error) {
       console.error(error);
@@ -4536,7 +5202,7 @@ app.post('/yyexpenses-record', upload.single('file'), urlencodedParser, function
   });
 });
 //for ykickzone top up and check balance left
-app.get('/yytopupbalance', (req, res) => {
+app.get('/yytopupbalance', requireLogin, (req, res) => {
   pool.query(
     `SELECT ID, wallet, amount, lastbalance, DATE_FORMAT(date, "%Y-%m-%d") as date, bonuscredit FROM yytopupbalance WHERE wallet = 'Gdex' ORDER BY ID DESC `,
     (err, topupResult) => {
@@ -4636,7 +5302,7 @@ app.post('/yytopupbalance', upload.single('file'), urlencodedParser, function(re
     }
   );  
 });
-app.get('/refund', function(req, res) {
+app.get('/refund', requireLogin, function(req, res) {
   const fromSupQuery = 'SELECT * FROM refund WHERE fromSupplier = ? ORDER BY date DESC';
   const refund2BuyerQuery = 'SELECT * FROM refund WHERE refund2buyer = ? ORDER BY date DESC';
   
@@ -4735,7 +5401,7 @@ app.post('/refund', upload.single('file'), urlencodedParser, function(req, res){
     }
   });
 });
-app.get('/returned', function(req, res){
+app.get('/returned', requireLogin, function(req, res){
   pool.query(`
     SELECT SUM(Quantity) AS totalQuantity, InvoiceNumber, SizeUS, Content_SKU, UnitPrice, status, ProductName
     FROM yyitems_buy
@@ -4753,7 +5419,7 @@ app.get('/returned', function(req, res){
     }
   });
 });
-app.get('/yyother-creditor', function(req, res){
+app.get('/yyother-creditor', requireLogin, function(req, res){
   res.render('yyother-creditor');
 });
 app.post('/yyother-creditor',upload.single('file'),  urlencodedParser, function(req, res){
@@ -4773,7 +5439,7 @@ app.post('/yyother-creditor',upload.single('file'),  urlencodedParser, function(
     }
   });
 });
-app.get('/yyothercreditor_paymentbreakdown', function(req, res){
+app.get('/yyothercreditor_paymentbreakdown', requireLogin, function(req, res){
   pool.query("SELECT * FROM yyothercreditor WHERE settle = 'no'", function(err, results){
     if(err) {
       console.error(err);
@@ -4815,7 +5481,7 @@ app.post('/yyothercreditor_paymentbreakdown', upload.single('file'), urlencodedP
     }
   });
 });
-app.get('/yydebtor', function(req, res){
+app.get('/yydebtor', requireLogin, function(req, res){
   res.render('yydebtor');
 });
 app.post('/yydebtor',upload.single('file'),  urlencodedParser, function(req, res){
@@ -4835,7 +5501,7 @@ app.post('/yydebtor',upload.single('file'),  urlencodedParser, function(req, res
     }
   });
 });
-app.get('/yyotherdebtor_paymentbreakdown', function(req, res){
+app.get('/yyotherdebtor_paymentbreakdown', requireLogin, function(req, res){
   pool.query("SELECT * FROM yyotherdebtor WHERE settle = 'no'", function(err, results){
     if(err) {
       console.error(err);
@@ -4877,7 +5543,7 @@ app.post('/yyothercreditor_paymentbreakdown', upload.single('file'), urlencodedP
     }
   });
 });
-app.get('/yyaccruals', function(req, res) {
+app.get('/yyaccruals', requireLogin, function(req, res) {
   pool.query('SELECT * FROM yyexpensesrecord WHERE accrued = "yes" AND settle = "no" ORDER BY Invoice_No DESC', function(error, expensesResults, fields) {
     if (error) {
       console.error(error);
@@ -4921,7 +5587,7 @@ app.post('/yyaccruals', upload.single('file'), urlencodedParser, function(req, r
   });
 });
 //----------------------Ending--------------------------------------------------------------------------------
-app.get('/profile/:name', function(req, res){
+app.get('/profile/:name', requireLogin, function(req, res){
     res.render('profile', {person: req.params.name});
 });
 app.listen(5000, '0.0.0.0', () => {

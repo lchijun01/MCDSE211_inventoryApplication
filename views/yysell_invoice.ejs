@@ -119,6 +119,7 @@
                             <td>
                                 <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
                             </td>
+                            <td><button type="button" class="btn btn-info btn-sm hoverButton">?</button></td>
                         </tr>
                     </tbody>
                     <tfoot>
@@ -159,11 +160,11 @@
                         <td><%= row.Content_SKU %></td>
                         <td><%= row.product_name %></td>
                         <td><%= row.SizeUS %></td>
-                        <td>RM <%= row.UnitPrice.toFixed(2) %></td>
+                        <td><%= row.UnitPrice.toFixed(2) %></td>
                         <td><%= row.Quantity %></td>
-                        <td>RM <%= row.Amount.toFixed(2) %></td>
+                        <td><%= row.Amount.toFixed(2) %></td>
                         <td><%= row.gender %></td>
-                        <td>RM <%= Number(row.CostPrice).toFixed(2) %></td>
+                        <td><%= Number(row.CostPrice).toFixed(2) %></td>
                     </tr>
                     <% }); %>
                 </tbody>
@@ -228,6 +229,7 @@
                             <td>
                             <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
                         </td>
+                        <td><button type="button" class="btn btn-info btn-sm hoverButton">?</button></td>
                     </tr>`;
                         newRow = $(newRow);
                         $("#inputTable tbody").append(newRow);
@@ -332,6 +334,43 @@
                     document.getElementById('totalAmount').innerHTML = total.toFixed(2);
                     }
             </script>
+            <script>
+                // Function to handle the hover event and display quantity and cost price
+                function handleHover(event) {
+                  const currentRow = event.target.closest('tr');
+                  const skuInput = currentRow.querySelector('.sku');
+                  const sizeInput = currentRow.querySelector('.size');
+              
+                  const sku = skuInput.value;
+                  const size = sizeInput.value;
+              
+                  // Make an AJAX request to the server to retrieve the quantity and cost price information
+                  $.ajax({
+                    url: `/getQuantityAndCostPrice?sku=${sku}&size=${size}`,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                      // Display the information to the user
+                      const quantityRows = data.map(row => {
+                        return `Quantity: ${row.quantity}, Cost Price: ${row.costPrice}`;
+                      });
+              
+                      // Join the quantity rows with line breaks
+                      const message = quantityRows.join('\n');
+              
+                      // Display the message to the user
+                      alert(message);
+                    },
+                    error: function(error) {
+                      console.error('Error:', error);
+                    }
+                  });
+                }
+              
+                // Add event listener for hover button
+                $(document).on('mouseenter', '.hoverButton', handleHover);
+              </script>
+              
         </main>
     </body>
 </html>
