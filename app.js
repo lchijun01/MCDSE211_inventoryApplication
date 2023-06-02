@@ -2568,10 +2568,13 @@ app.get('/yyexportsell_csv', function(req, res) {
         });
       }
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yysales.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yysell_data.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -2620,10 +2623,13 @@ app.get('/yyexportspay_csv', function(req, res) {
           OtherCurrencyRemark: row.Remarks
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yysalespaymentbreakdown_data.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yysalespaymentbreakdown_data.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -2748,10 +2754,13 @@ app.get('/yyexportbuy_csv', function(req, res) {
         });
       }
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yybuy_data.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yybuy_data.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -2801,10 +2810,13 @@ app.get('/yyexportbpay_csv', function(req, res) {
           BankRefs: row.BankRefs
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yypurchasepaymentbreakdown_data.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yypurchasepaymentbreakdown_data.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -2856,10 +2868,13 @@ app.get('/yyexportexpenses_csv', function(req, res) {
           Detail: row.Detail
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yyexpenses.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yyexpenses_record_data.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -2913,10 +2928,13 @@ app.get('/exportcheckin_csv', function(req, res) {
           quantity: row.quantity,
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_check_in_data.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=check_in_data.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -2968,10 +2986,13 @@ app.get('/exportdistributer2owner_csv', function(req, res) {
           File: row.File
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_Distributer_to_Owner.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=Distributer_to_Owner.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -3022,10 +3043,13 @@ app.get('/exportyyothercreditor_csv', function(req, res) {
           settle: row.settle
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yyotherCreditor.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yyotherCreditor.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -3074,10 +3098,13 @@ app.get('/exportyyothercreditorpaymentbreak_csv', function(req, res) {
           file: row.file
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yyotherCreditor_paymentbreakdown.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yyotherCreditor_paymentbreakdown.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -3129,10 +3156,13 @@ app.get('/exportyyotherdebtor_csv', function(req, res) {
           settle: row.settle
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yyotherDebtor.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yyotherCreditor.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -3181,10 +3211,13 @@ app.get('/exportyyotherdebtorpaymentbreak_csv', function(req, res) {
           file: row.file
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yyotherDebtor_paymentbreakdown.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yyotherDebtor_paymentbreakdown.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -3234,10 +3267,13 @@ app.get('/yyexportyyaccrualpaymentbreak_csv', function(req, res) {
           File: row.File
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yyAccruals_paymentbreakdown.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yyAccruals_paymentbreakdown.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -3267,7 +3303,7 @@ app.post('/importyydeposit_csv', upload.single('file'), function (req, res) {
     });
 });
 app.get('/exportyydeposit_csv', function(req, res) {
-  const sql = `SELECT date, amount, for, details
+  const sql = `SELECT date, amount, \`for\`, details
                FROM yydeposit
                ORDER BY date`;
 
@@ -3285,10 +3321,13 @@ app.get('/exportyydeposit_csv', function(req, res) {
           details: row.details
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yydeposit.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yydeposit.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
@@ -3316,7 +3355,7 @@ app.post('/importyyequity_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportyyequity_csv', function(req, res) {
+app.get('/exportyyequity_csv', function(req, res) {0
   const sql = `SELECT date, amount, account
                FROM yyequity
                ORDER BY date`;
@@ -3334,13 +3373,280 @@ app.get('/exportyyequity_csv', function(req, res) {
           account: row.account
         });
     });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yyequity.csv`;
 
     // Use fast-csv to stream the CSV data to the HTTP response
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=yycapitalAccount.csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
     fastCsv.write(csvData, { headers: true }).pipe(res);
   });
 });
+app.post('/importbulkshipdata_csv', upload.single('file'), function(req, res) {
+  const { path: csvFilePath } = req.file;
+
+  const bulkshipData = new Set(); // Set to keep track of unique Date and BoxNumber combinations
+
+  // Parse the CSV file and insert the data into the bulkship and shipped_items tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { TrackingNumber, Date, BoxNumber, Category, invoice, Remarks, Content_SKU, productname, SizeUS, Quantity, BulkShipBoxNumber } = data;
+
+      // Create a unique key using Date and BoxNumber
+      const key = `${Date}-${BoxNumber}`;
+
+      // Check if the combination of Date and BoxNumber is already processed
+      if (!bulkshipData.has(key)) {
+        bulkshipData.add(key); // Add the unique key to the Set of already-processed combinations
+
+        // Check if a row with the same Date and BoxNumber exists in the bulkship table
+        pool.query('SELECT * FROM bulkship WHERE Date = ? AND BoxNumber = ?', [Date, BoxNumber], (error, results) => {
+          if (error) {
+            console.error(error);
+          } else {
+            if (results.length === 0) {
+              // If no row exists with the same Date and BoxNumber, insert the row into the bulkship table
+              pool.query('INSERT INTO bulkship (TrackingNumber, Date, BoxNumber, Category, invoice, Remarks) VALUES (?, ?, ?, ?, ?, ?)', [TrackingNumber, Date, BoxNumber, Category, invoice, Remarks], (error, results) => {
+                if (error) {
+                  console.error(error);
+                } else {
+                  console.log(`Data successfully inserted for Date: ${Date}, BoxNumber: ${BoxNumber}`);
+                }
+              });
+            } else {
+              console.log(`Data already exists for Date: ${Date}, BoxNumber: ${BoxNumber}`);
+            }
+          }
+        });
+      }
+
+      // Insert the corresponding data into the shipped_items table
+      pool.query('INSERT INTO shipped_items (BulkShipBoxNumber, Content_SKU, productname, SizeUS, Quantity, invoice) VALUES (?, ?, ?, ?, ?, ?)', [BulkShipBoxNumber, Content_SKU, productname, SizeUS, Quantity, invoice], (error, results) => {
+        if (error) {
+          console.error(error);
+        } else {
+          console.log(`Data successfully inserted into shipped_items for InvoiceNo: ${invoice}, BulkShipBoxNumber: ${BoxNumber}`);
+        }
+      });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportbulkshipdata_csv', function(req, res) {
+  const sql = `SELECT si.BulkShipBoxNumber, si.Content_SKU, si.productname, si.SizeUS, si.Quantity, si.invoice, 
+               bs.TrackingNumber, bs.Date, bs.BoxNumber, bs.Category, bs.invoice AS bulkship_invoice, bs.Remarks
+               FROM shipped_items si
+               JOIN bulkship bs ON si.invoice = bs.invoice AND si.BulkShipBoxNumber = bs.BoxNumber`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.Date).format('YYYY-MM-DD');
+      csvData.push({
+        BulkShipBoxNumber: row.BulkShipBoxNumber,
+        Content_SKU: row.Content_SKU,
+        productname: row.productname,
+        SizeUS: row.SizeUS,
+        Quantity: row.Quantity,
+        invoice: row.invoice,
+        TrackingNumber: row.TrackingNumber,
+        Date: formattedDate,
+        BoxNumber: row.BoxNumber,
+        Category: row.Category,
+        bulkship_invoice: row.bulkship_invoice,
+        Remarks: row.Remarks
+      });
+    });
+
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yybulkship.csv`;
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importsinggleship_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity, remarks } = data;
+
+      pool.query('INSERT INTO singleship ( TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity, remarks ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity, remarks], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for Date: ${date}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportsinggleship_csv', function(req, res) {
+  const sql = `SELECT TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity, remarks
+               FROM singleship
+               ORDER BY Date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          TrackingNumber: row.TrackingNumber,
+          Date: formattedDate,
+          Content_SKU: row.Content_SKU,
+          Productname: row.Productname,
+          SizeUS: row.SizeUS,
+          invoice: row.invoice,
+          quantity: row.quantity,
+          remarks: row.remarks
+        });
+    });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yysinggleship.csv`;
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importrefunds_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { invoice, amount, remarks, refund2buyer, fromSupplier, date } = data;
+
+      pool.query('INSERT INTO refund ( invoice, amount, remarks, refund2buyer, fromSupplier, date ) VALUES (?, ?, ?, ?, ?, ?)', [invoice, amount, remarks, refund2buyer, fromSupplier, date], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for Date: ${date}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportrefunds_csv', function(req, res) {
+  const sql = `SELECT invoice, amount, remarks, refund2buyer, fromSupplier, date
+               FROM refund
+               ORDER BY date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          invoice: row.invoice,
+          amount: row.amount,
+          remarks: row.remarks,
+          refund2buyer: row.refund2buyer,
+          fromSupplier: row.fromSupplier,
+          date: formattedDate
+        });
+    });
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yyrefunds.csv`;
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/importtopup_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { wallet, amount, lastbalance, date, bonuscredit } = data;
+
+      pool.query('INSERT INTO yytopupbalance ( wallet, amount, lastbalance, date, bonuscredit ) VALUES (?, ?, ?, ?, ?)', [wallet, amount, lastbalance, date, bonuscredit], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for Date: ${date}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exporttopup_csv', function(req, res) {
+  const sql = `SELECT wallet, amount, lastbalance, date, bonuscredit
+               FROM yytopupbalance
+               ORDER BY date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+        csvData.push({
+          wallet: row.wallet,
+          amount: row.amount,
+          lastbalance: row.lastbalance,
+          date: formattedDate,
+          bonuscredit: row.bonuscredit
+        });
+    });
+
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_yytopup.csv`;
+
+    // Set the response headers with the updated file name
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+
 //-------------------------------------Bank statement---------------------------------------------------
 app.get('/expenses-record', requireLogin, function(req, res){
     res.render('expenses-record');
