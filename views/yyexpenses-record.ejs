@@ -127,13 +127,22 @@
                           total += amount;
                         }
                       }); %>
-                      <th class="text-end">Total Amount : </th>
+                      <th class="text-end">Total Amount:</th>
                       <th>RM <%= total.toFixed(2) %></th>
                     </tr>
                   </tfoot>
                 </table>
               </div>
           </form><br>
+          <div>
+            <label for="year">Select Year:</label>
+            <select id="year" name="year" onchange="selectYear(this.value)">
+              <option value="">All</option>
+              <% years.forEach(function(year) { %>
+                <option value="<%= year %>" <% if (selectedYear === year.toString()) { %>selected<% } %>><%= year %></option>
+              <% }); %>
+            </select>
+          </div>
           <table  class="table table-striped" style="width: 90%;">
             <thead>
               <tr>
@@ -222,6 +231,13 @@
             alert('An error occurred');
           }
         });
+        </script>
+        <script>
+        function selectYear(year) {
+          const url = new URL(window.location.href);
+          url.searchParams.set('year', year);
+          window.location.href = url.href;
+        }
         </script>
     </body>
 </html>

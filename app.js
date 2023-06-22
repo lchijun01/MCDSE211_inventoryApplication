@@ -26,7 +26,7 @@ const pool = mysql.createPool({
     password: '123456',
     database: 'test11'
 });
-const urlencodedParser = bodyParser.urlencoded({extended: false});
+const urlencodedParser = bodyParser.urlencoded({extended: true});
 app.set('view engine', 'ejs');
 app.use(session({
   secret: 'my-secret-key',
@@ -53,7 +53,8 @@ app.use((req, res, next) => {
 });
 
 
-
+// Set up body-parser middleware
+app.use(bodyParser.urlencoded({ extended: true }));
 
 //change password here
 app.post('/login', urlencodedParser, async (req, res) => {
@@ -72,7 +73,6 @@ app.post('/login', urlencodedParser, async (req, res) => {
     res.render('login', { error: 'Invalid username or password' });
   }
 });
-
 
 
 
@@ -948,7 +948,7 @@ app.get('/profitlossstate', requireLogin, (req, res) => {
                       const total_purchasesWOnosku = results[0].total_purchasesWOnosku;
 
                       // fetch total expenses for the selected year from yyexpensesrecord table
-                      pool.query('SELECT Category, SUM(Amount) AS total FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ? GROUP BY Category', [selectedYear], (err, results) => {
+                      pool.query('SELECT Category, SUM(Amount) AS total FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND Category != "Office Equipment" AND YEAR(Date) = ? GROUP BY Category', [selectedYear], (err, results) => {
                         if (err) throw err;
                         const categories = results;
                         const totalExpensesByCategory = categories.reduce((acc, cur) => acc + cur.total, 0);
@@ -1160,7 +1160,7 @@ app.get('/balanceSheet', requireLogin, (req, res) => {
             const totalCost = results[0].total_cost;
 
             // fetch total purchases for the selected year from yyitems_buy table
-            pool.query('SELECT SUM(Amount) AS total_purchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
+            pool.query('SELECT SUM(Amount) AS total_purchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND status != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
               if (err) throw err;
               const totalPurchases = results[0].total_purchases;
 
@@ -1403,58 +1403,64 @@ app.get('/balanceSheet', requireLogin, (req, res) => {
 
                                                                                                                           const bankledger = (Atotalsalespay-Atotalbuypay-Atotalexpenses-Atotaltopup-AtotalExpensesPaymentbreakdown-Arefund2buyer+AfromSupplier-Adeposit+Acapital+Acreditor-Acreditorpayment+Adebtorpayment-Adebtor+Acompanyfund2personal);
                                                                                                                          
-                                                                                                                          // render the EJS template with the fetched data
-                                                                                                                          res.render('balanceSheet', { 
-                                                                                                                            bankledger,
-                                                                                                                            totalaccrued,
-                                                                                                                            totaldeposit,
-                                                                                                                            totalSalesno2,
-                                                                                                                            totalPurchasesno2,
-                                                                                                                            totalcapital,
-                                                                                                                            totalotcredit,
-                                                                                                                            totalBuypaid,
-                                                                                                                            totalTopup,
-                                                                                                                            totalSalespaid,
-                                                                                                                            totalSales, 
-                                                                                                                            totalSalesno,
-                                                                                                                            totalCost,
-                                                                                                                            totalPurchases, 
-                                                                                                                            totalExpenses: totalExpensesByCategory, 
-                                                                                                                            categories,
-                                                                                                                            totalStockValue,
-                                                                                                                            totalship,
-                                                                                                                            totalPurchasesno,
-                                                                                                                            totalc2p,
-                                                                                                                            totalp2c,
-                                                                                                                            supRefunds,
-                                                                                                                            refundsales,
-                                                                                                                            years,
-                                                                                                                            selectedYear,
-                                                                                                                            total_purchasesWOnosku,
-                                                                                                                            totalbuy,
-                                                                                                                            totalPurchasesLastyear,
-                                                                                                                            totalCostLastyear,
-                                                                                                                            bonus,
-                                                                                                                            bonus2,
-                                                                                                                            bftotalSales,
-                                                                                                                            bftotalPurchasesno,
-                                                                                                                            bftotal_purchasesWOnosku,
-                                                                                                                            bftotalship,
-                                                                                                                            bftotalc2p,
-                                                                                                                            bftotalp2c,
-                                                                                                                            bfsupRefunds,
-                                                                                                                            bfrefundsales,
-                                                                                                                            bfbonus,
-                                                                                                                            bftotalPurchasesLastyear,
-                                                                                                                            bftotalCostLastyear,
-                                                                                                                            bftotalPurchasesno,
-                                                                                                                            bftotal_purchasesWOnosku,
-                                                                                                                            bftotalCost,
-                                                                                                                            bftotalPurchases,
-                                                                                                                            bftotalExpenses: bftotalExpensesByCategory,
-                                                                                                                            bftotalSalesno,
-                                                                                                                            totalgdex,
-                                                                                                                            assetsData 
+                                                                                                                          pool.query('SELECT SUM(Amount) as officeEquipment FROM yyexpensesrecord WHERE Category = "Office Equipment" AND YEAR(Date) = ?', [selectedYear], (err, results) => {
+                                                                                                                            if (err) throw err;
+                                                                                                                            const officeEquipment = results[0].officeEquipment;
+
+                                                                                                                            // render the EJS template with the fetched data
+                                                                                                                            res.render('balanceSheet', { 
+                                                                                                                              officeEquipment,
+                                                                                                                              bankledger,
+                                                                                                                              totalaccrued,
+                                                                                                                              totaldeposit,
+                                                                                                                              totalSalesno2,
+                                                                                                                              totalPurchasesno2,
+                                                                                                                              totalcapital,
+                                                                                                                              totalotcredit,
+                                                                                                                              totalBuypaid,
+                                                                                                                              totalTopup,
+                                                                                                                              totalSalespaid,
+                                                                                                                              totalSales, 
+                                                                                                                              totalSalesno,
+                                                                                                                              totalCost,
+                                                                                                                              totalPurchases, 
+                                                                                                                              totalExpenses: totalExpensesByCategory, 
+                                                                                                                              categories,
+                                                                                                                              totalStockValue,
+                                                                                                                              totalship,
+                                                                                                                              totalPurchasesno,
+                                                                                                                              totalc2p,
+                                                                                                                              totalp2c,
+                                                                                                                              supRefunds,
+                                                                                                                              refundsales,
+                                                                                                                              years,
+                                                                                                                              selectedYear,
+                                                                                                                              total_purchasesWOnosku,
+                                                                                                                              totalbuy,
+                                                                                                                              totalPurchasesLastyear,
+                                                                                                                              totalCostLastyear,
+                                                                                                                              bonus,
+                                                                                                                              bonus2,
+                                                                                                                              bftotalSales,
+                                                                                                                              bftotalPurchasesno,
+                                                                                                                              bftotal_purchasesWOnosku,
+                                                                                                                              bftotalship,
+                                                                                                                              bftotalc2p,
+                                                                                                                              bftotalp2c,
+                                                                                                                              bfsupRefunds,
+                                                                                                                              bfrefundsales,
+                                                                                                                              bfbonus,
+                                                                                                                              bftotalPurchasesLastyear,
+                                                                                                                              bftotalCostLastyear,
+                                                                                                                              bftotalPurchasesno,
+                                                                                                                              bftotal_purchasesWOnosku,
+                                                                                                                              bftotalCost,
+                                                                                                                              bftotalPurchases,
+                                                                                                                              bftotalExpenses: bftotalExpensesByCategory,
+                                                                                                                              bftotalSalesno,
+                                                                                                                              totalgdex,
+                                                                                                                              assetsData 
+                                                                                                                            });
                                                                                                                           });
                                                                                                                         });
                                                                                                                       });
@@ -3672,9 +3678,9 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
 // Define route for stock check page
 app.get('/stockaudit', requireLogin, function(req, res) {
   pool.query(`
-  SELECT Content_SKU, SizeUS, ProductName, Amount, SUM(Quantity) as total_quantity 
-  FROM yyitems_buy WHERE sold = 'no' AND Content_SKU != "" AND sold != "return"
-  GROUP BY Content_SKU, ProductName, SizeUS, Amount 
+  SELECT Content_SKU, SizeUS, ProductName, Amount, SUM(Quantity) as total_quantity, status
+  FROM yyitems_buy WHERE sold = 'no' AND Content_SKU != ""
+  GROUP BY Content_SKU, ProductName, SizeUS, Amount, status
   ORDER BY Content_SKU ASC, CAST(SizeUS AS SIGNED) ASC;
   `, function(error, results, fields) {
     if (error) {
@@ -3743,7 +3749,7 @@ app.post('/stock-checkin', upload.single('file'), urlencodedParser, function(req
     res.render('stock-checkin', { items: result });
   });
 });
-app.get('/stock-check', requireLogin, function(req, res) {
+app.get('/stock-summarize', requireLogin, function(req, res) {
   const searchTerm = req.query['search-term'];
   const searchBy = req.query['search-by'];
 
@@ -3802,16 +3808,114 @@ app.get('/stock-check', requireLogin, function(req, res) {
       res.status(500).send('Error fetching data');
     } else {
       const data = results.map(row => ({ ...row }));
+      res.render('stock-summarize', { data, searchTerm, searchBy });
+    }
+  });
+});
+app.get('/stock-check', requireLogin, function(req, res) {
+  const searchTerm = req.query['search-term'];
+  const searchBy = req.query['search-by'];
+
+  let query = `
+    SELECT b.Content_SKU, b.ProductName, CAST(b.SizeUS AS DECIMAL(3,1)) AS SizeNumber, SUM(b.Quantity) AS totalQuantity, b.checkindate
+    FROM yyitems_buy b
+    WHERE b.status = 'check' AND b.sold = 'no'
+  `;
+
+  if (searchTerm && searchBy) {
+    if (searchBy === 'size') {
+      query += ` AND CAST(b.SizeUS AS CHAR) = ?`;
+    } else if (searchBy === 'sku') {
+      query += ` AND b.Content_SKU LIKE ?`;
+    }
+  }
+
+  query += ` GROUP BY b.Content_SKU, b.ProductName, SizeNumber, b.checkindate ORDER BY b.Content_SKU ASC, SizeNumber ASC;`;
+
+  pool.query(query, [searchTerm], function(error, results, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    } else {
+      const data = results.map(row => ({ ...row }));
       res.render('stock-check', { data, searchTerm, searchBy });
     }
   });
 });
-//for shipped record page
-app.get('/shippedrecord', requireLogin, function(req, res){
-  res.render('shippedrecord');
+app.post('/stock-location', (req, res) => {
+  const invoice = req.body.invoice;
+  const location = req.body.location;
+  const skus = req.body.sku;
+  const sizes = req.body.size;
+  const quantities = req.body.quantity;
+  const currentLocations = req.body.currlocation;
+  console.log(invoice);
+  console.log(location);
+  console.log(skus);
+  console.log(sizes);
+  console.log(quantities);
+  console.log(currentLocations);
+
+  for (let i = 0; i < skus.length; i++) {
+    const updateQuery = 'UPDATE yyitems_buy SET location = ? WHERE InvoiceNumber = ? AND Content_SKU = ? AND SizeUS = ? AND sold = "no" AND status = "check" AND (location IS NULL OR location = ?) LIMIT ?';
+    pool.query(updateQuery, [location, invoice, skus[i], sizes[i], currentLocations[i], parseInt(quantities[i])], (error, results) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error updating location');
+        return;
+      }
+    });
+  }
+  
+  res.redirect('/stocklocation');
 });
-//for shipped record page - single ship
-app.get('/singleshipped', requireLogin, function(req, res){
+app.get('/stocklocationasd', (req, res) => {
+  const ponum = req.query.ponum;
+  const query = `
+    SELECT yyitems_buy.ProductName, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as TotalQuantity, yyitems_buy.location
+    FROM yyitems_buy yyitems_buy
+    JOIN yybuy_record yybuy_record ON yyitems_buy.InvoiceNumber = yybuy_record.Invoice_number
+    WHERE yyitems_buy.InvoiceNumber = ? AND yyitems_buy.sold = 'no' AND yyitems_buy.status = 'check'
+    GROUP BY yyitems_buy.ProductName, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, yybuy_record.Name, yybuy_record.Bank, yybuy_record.BankName, yybuy_record.Bankaccount, yybuy_record.Remarks, yyitems_buy.location
+  `;
+  pool.query(query, [ponum], (err, results) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Error fetching items');
+      return;
+    }
+
+    const items = results.map(result => ({
+      sku: result.Content_SKU,
+      name: result.ProductName,
+      size: result.SizeUS,
+      quantity: result.TotalQuantity,
+      currlocation: result.location,
+    }));
+
+    res.json({ items });
+  });
+});
+app.get('/stocklocation', (req, res) => {
+  const sql = `SELECT InvoiceNumber, Content_SKU, SizeUS, ProductName, SUM(Quantity) as total_quantity, location
+  FROM yyitems_buy WHERE sold = 'no' 
+  GROUP BY InvoiceNumber, Content_SKU, ProductName, SizeUS, location
+  ORDER BY InvoiceNumber DESC`;
+  pool.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Error fetching stock locations');
+      return;
+    }
+
+    res.render('stocklocation', { items: result });
+  });
+});
+
+fs.rmSync
+
+//for shipped record page
+app.get('/singleshipped', requireLogin, function(req, res) {
   pool.query(`
     SELECT InvoiceNumber, Content_SKU, product_name, SizeUS, SUM(Quantity) AS totalQuantity
     FROM yyitems_sell
@@ -3829,17 +3933,21 @@ app.get('/singleshipped', requireLogin, function(req, res){
   });
 });
 app.get('/singleshippeds', requireLogin, (req, res) => {
+  const invoice = req.query.invoice;
   const sku = req.query.sku;
-  const query = 'SELECT ProductName, SizeUS FROM yyitems_buy WHERE Content_SKU = ? AND status = "pending"';
-  pool.query(query, [sku], (err, results) => {
+  const query = 'SELECT product_name, SizeUS FROM yyitems_sell WHERE InvoiceNumber = ? AND Content_SKU = ? AND ship = "pending"';
+  pool.query(query, [invoice, sku], (err, results) => {
     if (err) {
       console.error(err);
       res.status(500).send('Error retrieving product data');
     } else {
+      const sizes = results.map(result => result.SizeUS);
+      const uniqueSizes = [...new Set(sizes)]; // Remove duplicates using Set
       const data = {
-        name: results.length > 0 ? results[0].productname : '',
-        sizes: results.map(result => result.size)
+        productName: results.length > 0 ? results[0].product_name : '',
+        sizes: uniqueSizes
       };
+      console.log('Product Data:', data); // Log the product data
       res.send(data);
     }
   });
@@ -3881,6 +3989,7 @@ app.post('/singleshipped', upload.single('file'), urlencodedParser, function(req
     }
   });
 });
+
 //for shipped record page - bulk ship
 app.get('/bulkshipped', requireLogin, function(req, res){
   pool.query(`
@@ -3900,11 +4009,11 @@ app.get('/bulkshipped', requireLogin, function(req, res){
   });
 });
 app.post('/bulkshipped', upload.single('file'), urlencodedParser, function (req, res) {
-  const { trackingno, date, boxno, category, invoice = [], remarks, productname = [], field1 = [], field2 = [], field3 = [] } = req.body;
+  const { trackingno, date, boxno, invoice = [], remarks, productname = [], field1 = [], field2 = [], field3 = [] } = req.body;
 
   // Insert the main form data into MySQL
   for (let i = 0; i < invoice.length; i++) {
-    pool.query('INSERT INTO bulkship (TrackingNumber, Date, BoxNumber, Category, Remarks, invoice) VALUES (?, ?, ?, ?, ?, ?)', [trackingno, date, boxno, category, remarks, invoice[i]], (error, results, fields) => {
+    pool.query('INSERT INTO bulkship (TrackingNumber, Date, BoxNumber, Remarks, invoice) VALUES (?, ?, ?, ?, ?)', [trackingno, date, boxno, remarks, invoice[i]], (error, results, fields) => {
       if (error) {
         console.error(error);
         res.status(500).send('Error saving form data');
@@ -4638,17 +4747,17 @@ app.post('/topupbalance', upload.single('file'), urlencodedParser, function(req,
 //for sales - sell invoice
 app.get('/yysell_invoice', requireLogin, function(req, res){
   pool.query(`
-    SELECT InvoiceNumber, Content_SKU, product_name, CAST(SizeUS AS DECIMAL(10,2)) AS SizeUS, UnitPrice, SUM(Quantity) as Quantity, SUM(Amount) as Amount, gender, CostPrice
-    FROM yyitems_sell
-    WHERE Content_SKU IS NOT NULL AND Content_SKU <> ''
-    GROUP BY InvoiceNumber, Content_SKU, SizeUS, UnitPrice, product_name, gender, CostPrice
-    ORDER BY InvoiceNumber DESC, CAST(SizeUS AS DECIMAL(10,2)) ASC
+    SELECT i.InvoiceNumber, i.Content_SKU, i.product_name, CAST(i.SizeUS AS DECIMAL(10,2)) AS SizeUS, i.UnitPrice, SUM(i.Quantity) as Quantity, SUM(i.Amount) as Amount, i.gender, i.CostPrice, s.timestamp
+    FROM yyitems_sell i
+    JOIN yysell_invoice s ON i.InvoiceNumber = s.Invoice_number
+    WHERE i.Content_SKU IS NOT NULL AND i.Content_SKU <> ''
+    GROUP BY i.InvoiceNumber, i.Content_SKU, i.SizeUS, i.UnitPrice, i.product_name, i.gender, i.CostPrice, s.timestamp
+    ORDER BY i.InvoiceNumber DESC, CAST(i.SizeUS AS DECIMAL(10,2)) ASC
   `, function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
     } else {
-      // Add the formattedDate field to each row of data
       const data = results.map(row => ({ ...row }));
       res.render('yysell_invoice', { data });
     }
@@ -4783,8 +4892,9 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
                 const size = field3[index];
                 const qty = field5[index];
                 const unitPrice = field8[index];
+                const soldDate = moment().format('YYYY-MM-DD');
                 for (let i = 0; i < qty; i++) {
-                  pool.query('UPDATE yyitems_buy SET sold = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND UnitPrice = ? AND sold = ? AND status = ?', ['yes', unitPrice, sku, size, unitPrice, 'no', 'check'], (error, results, fields) => {
+                  pool.query('UPDATE yyitems_buy SET sold = ?, solddate = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND UnitPrice = ? AND sold = ? AND status = ?', ['yes', soldDate, unitPrice, sku, size, unitPrice, 'no', 'check'], (error, results, fields) => {
                     if (error) {
                       console.error(error);
                       res.status(500).send('Error updating yyitems_buy table');
@@ -4792,10 +4902,15 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
                   });
                 }
               });
-              pool.query('SELECT * FROM yyitems_sell ORDER BY InvoiceNumber DESC', function(error, results, fields) {
-                if (error) {
-                  console.error(error);
-                  res.status(500).send('Error fetching data');
+              pool.query(`
+                    SELECT i.*, s.timestamp 
+                    FROM yyitems_sell i
+                    LEFT JOIN yysell_invoice s ON i.InvoiceNumber = s.Invoice_number
+                    ORDER BY i.InvoiceNumber DESC
+                `, function(error, results, fields) {
+                    if (error) {
+                      console.error(error);
+                      res.status(500).send('Error fetching data');
                 } else {
                   console.log(req.body);
                   const data = results.map(row => ({ ...row }));
@@ -5036,11 +5151,12 @@ app.get('/yygenerate', requireLogin, (req, res) => {
 //for buy -- invoice
 app.get('/yybuy-payby', requireLogin, function(req, res){
   pool.query(`
-    SELECT InvoiceNumber, Content_SKU, ProductName, CAST(SizeUS AS DECIMAL(10,2)) as SizeUS, UnitPrice, SUM(Quantity) as Quantity, SUM(Amount) as Amount, gender
-    FROM yyitems_buy
-    WHERE Content_SKU IS NOT NULL AND Content_SKU <> ''
-    GROUP BY InvoiceNumber, Content_SKU, SizeUS, UnitPrice, ProductName, gender
-    ORDER BY InvoiceNumber DESC, CAST(SizeUS AS DECIMAL(10,2)) ASC
+    SELECT b.InvoiceNumber, b.Content_SKU, b.ProductName, CAST(b.SizeUS AS DECIMAL(10,2)) as SizeUS, b.UnitPrice, SUM(b.Quantity) as Quantity, SUM(b.Amount) as Amount, b.gender, r.timestamp
+    FROM yyitems_buy b
+    LEFT JOIN yybuy_record r ON b.InvoiceNumber = r.Invoice_number
+    WHERE b.Content_SKU IS NOT NULL AND b.Content_SKU <> ''
+    GROUP BY b.InvoiceNumber, b.Content_SKU, b.SizeUS, b.UnitPrice, b.ProductName, b.gender, r.timestamp
+    ORDER BY b.InvoiceNumber DESC, CAST(b.SizeUS AS DECIMAL(10,2)) ASC
     `, function(error, results, fields) {
     if (error) {
       console.error(error);
@@ -5104,7 +5220,12 @@ app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req,
               res.status(500).send('Error saving shipped items data');
             } else {
               // Fetch all items from yyitems_buy table and pass to view
-              pool.query('SELECT * FROM yyitems_buy ORDER BY InvoiceNumber DESC', (error, results, fields) => {
+              pool.query(`
+                SELECT yyitems_buy.*, yybuy_record.timestamp
+                FROM yyitems_buy
+                INNER JOIN yybuy_record ON yyitems_buy.InvoiceNumber = yybuy_record.Invoice_number
+                ORDER BY yyitems_buy.InvoiceNumber DESC
+              `, (error, results, fields) => {
                 if (error) {
                   console.error(error);
                   res.status(500).send('Error fetching data');
@@ -5457,29 +5578,48 @@ app.post('/yypersonal2company',upload.single('file'),  urlencodedParser, functio
 });
 //expenses yong yi
 app.get('/yyexpenses-record', requireLogin, function(req, res) {
-  pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Category, Bank, Name, Amount, Detail, File FROM yyexpensesrecord ORDER BY Date DESC', function(error, results, fields) {
+  let years = [];
+  pool.query('SELECT DISTINCT YEAR(Date) AS year FROM yyexpensesrecord ORDER BY year DESC', function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
     } else {
-      // Add the formattedDate field to each row of data
-      const data = results.map(row => ({ ...row, formattedDate: moment(row.formattedDate).format('YYYY-MM-DD') }));
+      years = results.map(row => row.year);
 
-      // Sum up the amounts for each category
-      const categoryData = data.reduce((acc, curr) => {
-        const existingRow = acc.find(row => row.Category === curr.Category);
-        if (existingRow) {
-          existingRow.Amount += curr.Amount;
+      const selectedYear = req.query.year;
+      let query = 'SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Category, Bank, Name, Amount, Detail, File FROM yyexpensesrecord';
+
+      if (selectedYear) {
+        query += ' WHERE YEAR(Date) = ?';
+      }
+
+      query += ' ORDER BY Date DESC';
+
+      pool.query(query, [selectedYear], function(error, results, fields) {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error fetching data');
         } else {
-          acc.push({ Category: curr.Category, Amount: curr.Amount });
+          // Add the formattedDate field to each row of data
+          const data = results.map(row => ({ ...row, formattedDate: moment(row.formattedDate).format('YYYY-MM-DD') }));
+
+          // Sum up the amounts for each category
+          const categoryData = data.reduce((acc, curr) => {
+            const existingRow = acc.find(row => row.Category === curr.Category);
+            if (existingRow) {
+              existingRow.Amount += curr.Amount;
+            } else {
+              acc.push({ Category: curr.Category, Amount: curr.Amount });
+            }
+            return acc;
+          }, []);
+
+          // Calculate the total amount for all categories
+          const totalAmount = categoryData.reduce((acc, curr) => acc + curr.Amount, 0);
+
+          res.render('yyexpenses-record', { data, categoryData, totalAmount, selectedYear, years });
         }
-        return acc;
-      }, []);
-
-      // Calculate the total amount for all categories
-      const totalAmount = categoryData.reduce((acc, curr) => acc + curr.Amount, 0);
-
-      res.render('yyexpenses-record', { data, categoryData, totalAmount });
+      });
     }
   });
 });
@@ -5502,8 +5642,50 @@ app.post('/yyexpenses-record', upload.single('file'), urlencodedParser, function
       console.error(error);
       res.status(500).send('Error saving form data');
     } else {
-      console.log(req.body);
-      res.render('yyexpenses-record');
+      // Fetch updated data after inserting the form data
+      pool.query('SELECT DISTINCT YEAR(Date) AS year FROM yyexpensesrecord ORDER BY year DESC', function(error, results, fields) {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error fetching data');
+        } else {
+          const years = results.map(row => row.year);
+
+          const selectedYear = req.query.year;
+          let query = 'SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Category, Bank, Name, Amount, Detail, File FROM yyexpensesrecord';
+
+          if (selectedYear) {
+            query += ' WHERE YEAR(Date) = ?';
+          }
+
+          query += ' ORDER BY Date DESC';
+
+          pool.query(query, [selectedYear], function(error, results, fields) {
+            if (error) {
+              console.error(error);
+              res.status(500).send('Error fetching data');
+            } else {
+              // Add the formattedDate field to each row of data
+              const data = results.map(row => ({ ...row, formattedDate: moment(row.formattedDate).format('YYYY-MM-DD') }));
+
+              // Sum up the amounts for each category
+              const categoryData = data.reduce((acc, curr) => {
+                const existingRow = acc.find(row => row.Category === curr.Category);
+                if (existingRow) {
+                  existingRow.Amount += curr.Amount;
+                } else {
+                  acc.push({ Category: curr.Category, Amount: curr.Amount });
+                }
+                return acc;
+              }, []);
+
+              // Calculate the total amount for all categories
+              const totalAmount = categoryData.reduce((acc, curr) => acc + curr.Amount, 0);
+
+              res.render('yyexpenses-record', { data, categoryData, totalAmount, selectedYear, years });
+            }
+          });
+        }
+      });
     }
   });
 });

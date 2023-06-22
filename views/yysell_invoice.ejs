@@ -143,6 +143,7 @@
                     </tr>
                     <tr>
                         <th>Invoice Number</th>
+                        <th>Date</th>
                         <th>Content SKU</th>
                         <th>Product Name</th>
                         <th>Size US</th>
@@ -157,6 +158,14 @@
                     <% data.forEach(row => { %>
                     <tr>
                         <td><%= row.InvoiceNumber %></td>
+                        <td><% 
+                            const dateObj = new Date(row.timestamp);
+                            const year = dateObj.getFullYear();
+                            const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+                            const date = ("0" + dateObj.getDate()).slice(-2);
+                            const formattedDate = `${year}-${month}-${date}`;
+                            %>
+                            <%= formattedDate %></td>
                         <td><%= row.Content_SKU %></td>
                         <td><%= row.product_name %></td>
                         <td><%= row.SizeUS %></td>

@@ -42,12 +42,6 @@
                         <input class="form_id" type="date" name="date" required><br>
                         <label class="form_name3" for="boxno">Box Number</label>
                         <input class="form_id" type="text" name="boxno" required><br>
-                        <label class="form_name3" for="category">Category</label>
-                        <select class="form_id" name="category" required>
-                            <option value="">Select a category</option>
-                            <option value="Yong&Yi">Yong & Yi</option>
-                            <option value="Y.kickzoneShop">Y.KickZone Shop</option>
-                        </select><br>
                         <label class="form_name3" for="remarks">Remarks</label><br>
                         <textarea class="form_detail2" type="text" name="remarks"></textarea><br><br>
                         <div class="button">
@@ -69,10 +63,10 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><input type="text" class="form-control" name="invoice[]"></td>
-                                    <td><input type="text" class="form-control" name="field1[]"></td>
-                                    <td><input type="text" class="form-control" name="productname[]"></td>
-                                    <td><input type="text" class="form-control" name="field2[]"></td>
+                                    <td><input type="text" id="invoiceInput" class="form-control" name="invoice[]"></td>
+                                    <td><input type="text" id="skuInput" class="form-control" name="field1[]"></td>
+                                    <td><input type="text" id="productNameInput" class="form-control" name="productname[]"></td>
+                                    <td><select type="text" class="form-control" name="field2[]" id="sizeDropdown"></select></td>
                                     <td><input type="number" class="form-control" name="field3[]"></td>
                                     <td>
                                         <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
@@ -133,6 +127,46 @@
                     });
                 });
             </script>
+            <script>
+                $(document).ready(function() {
+                  $('#invoiceInput').on('change', function() {
+                    const invoice = $(this).val();
+                    const sku = $('#skuInput').val();
+                    fetchProductData(invoice, sku);
+                  });
+        
+                  $('#skuInput').on('change', function() {
+                    const invoice = $('#invoiceInput').val();
+                    const sku = $(this).val();
+                    fetchProductData(invoice, sku);
+                  });
+        
+                  function fetchProductData(invoice, sku) {
+                    $.ajax({
+                      url: '/singleshippeds',
+                      method: 'GET',
+                      data: { invoice, sku },
+                      success: function(response) {
+                        $('#productNameInput').val(response.productName);
+                        updateSizeDropdown(response.sizes);
+                      },
+                      error: function() {
+                        console.error('Error retrieving product data');
+                      }
+                    });
+                  }
+        
+                  function updateSizeDropdown(sizes) {
+                    const sizeDropdown = $('#sizeDropdown');
+                    sizeDropdown.empty(); // Clear previous options
+        
+                    sizes.forEach(function(size) {
+                      const option = $('<option>').val(size).text(size);
+                      sizeDropdown.append(option);
+                    });
+                  }
+                });
+              </script>
         </main>
     </body>
 </html>

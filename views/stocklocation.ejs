@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <link href="style.css" type="text/css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Stock Location Submit</title>
+    <script>
+        if (window.history.replaceState) {
+          window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
+</head>
+<body class="main-contents">
+    <%- include('partials/nav');%>
+    <main class="main-content">
+        <h1>Stock Location Submit</h1>
+        <form id="stock-location-form" method="POST" action="/stock-location" enctype="application/x-www-form-urlencoded" style="display: flex;">
+            <div>
+                <label class="form_name6" for="invoice">Invoice Number:</label><br>
+                <input style="width: 280px;" type="text" name="invoice" id="invoice-input" required><br>
+                <label class="form_name6" for="location">Location:</label><br>
+                <textarea style="width: 280px;" id="location-input" name="location" required></textarea><br><br>
+                <input class="form_button" type="submit" value="Submit">
+                <input class="form_button" type="reset" value="Clear">
+            </div>
+            <div style="margin-left: 50px;">
+                <table class="table table-striped" id="stock-location-table" style="width: 90%;">
+                    <thead>
+                        <tr>
+                            <th style="width: 200px;">SKU</th>
+                            <th style="width: 400px;">Product Name</th>
+                            <th style="width: 100px;">Size</th>
+                            <th style="width: 100px;">Quantity</th>
+                            <th style="width: 100px;">Current Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+        <br><br>
+        <h2>Stock not Sold yet</h2>
+        <table class="table table-striped" style="width: 90%;">
+            <thead>
+              <tr>
+                <th>Invoice Number</th>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Size US</th>
+                <th>Quantity</th>
+                <th>Location</th> <!-- Add the new column for displaying location -->
+              </tr>
+            </thead>
+            <tbody>
+              <% for (let i = 0; i < items.length; i++) { %>
+                <tr>
+                  <td><%= items[i].InvoiceNumber %></td>
+                  <td><%= items[i].Content_SKU %></td>
+                  <td><%= items[i].ProductName %></td>
+                  <td><%= items[i].SizeUS %></td>
+                  <td><%= items[i].total_quantity %></td>
+                  <td><%= items[i].location %></td> <!-- Display the location for each item -->
+                </tr>
+              <% } %>
+            </tbody>
+          </table>          
+    </main>
+    <script>
+        const form = document.getElementById('stock-location-form');
+        const invoiceInput = document.getElementById('invoice-input');
+        const locationInput = document.getElementById('location-input');
+        const stockLocationTable = document.getElementById('stock-location-table');
+    
+        // Fetch items for the entered invoice number
+        const fetchInvoiceData = () => {
+            fetch('/stocklocationasd?ponum=' + invoiceInput.value)
+                .then(response => response.json())
+                .then(data => {
+                    // Empty the table
+                    const tableBody = stockLocationTable.tBodies[0];
+                    while (tableBody.firstChild) {
+                        tableBody.removeChild(tableBody.firstChild);
+                    }
+    
+                    data.items.forEach((item) => {
+                    const newRow = tableBody.insertRow();
+                    newRow.innerHTML = `
+                        <td><input type="text" class="form-control" name="sku[]" value="${item.sku}" readonly></td>
+                        <td><input type="text" class="form-control" name="name[]" value="${item.name}" readonly></td>
+                        <td><input type="text" class="form-control" name="size[]" value="${item.size}" readonly></td>
+                        <td><input type="text" class="form-control" name="quantity[]" value="${item.quantity}" readonly></td>
+                        <td><input type="text" class="form-control" name="currlocation[]" value="${item.currlocation}"></td>
+                        <td><button type="button" class="btn btn-danger btn-sm remove-row-btn">Remove</button></td>
+                    `;
+                    });
+                });
+        };
+    
+        // Fetch data when invoice input loses focus
+        invoiceInput.addEventListener('blur', fetchInvoiceData);
+    
+        // Submit the form programmatically
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            fetchInvoiceData();
+            form.submit();
+        });
+    </script>
+</body>
+</html>

@@ -6,7 +6,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <link href="style.css" type="text/css" rel="stylesheet">
-    <title>Stock Check-List</title>
+    <title>Stock Summarize-List</title>
     <script>
         if ( window.history.replaceState ) {
           window.history.replaceState( null, null, window.location.href );
@@ -24,9 +24,9 @@
       <div>
         <br><br>
         <div style="display: flex;width: 90%;justify-content: space-between;">
-          <h1 style="font-weight: bold;">Warehouse Stock Check<br>Yong & Yi Partnership Enterprise</h1>
+          <h1 style="font-weight: bold;">Warehouse Stock Summarize<br>Yong & Yi Partnership Enterprise</h1>
           <div style="margin-top: 50px;">
-            <form action="/stock-check" method="get" style="display: flex;">
+            <form action="/stock-summarize" method="get" style="display: flex;">
               <div>
                 <label for="search-term">Search:</label>
                 <input class="form-control" type="text" id="search-term" name="search-term">
@@ -45,7 +45,6 @@
         <table style="margin-top: 20px;width: 90%;" class="table table-striped">
           <thead>
             <tr>
-              <th>Check-in Date</th>
               <th style="width: 50px;">SKU</th>
               <th>Product Name</th>
               <th>Size</th>
@@ -55,11 +54,10 @@
           <tbody>
             <% data.forEach(item => { %>
               <tr>
-                <td><%= item.checkindate.getFullYear() %>-<%= String(item.checkindate.getMonth() + 1).padStart(2, '0') %>-<%= String(item.checkindate.getDate()).padStart(2, '0') %></td>
                 <td><%= item.Content_SKU %></td>
                 <td><%= item.ProductName %></td>
                 <td><%= item.SizeNumber %></td>
-                <td><%= item.totalQuantity %></td>
+                <td><%= item.quantity_difference %></td>
               </tr>
             <% }); %>
           </tbody>

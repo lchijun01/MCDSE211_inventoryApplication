@@ -41,19 +41,30 @@
               <th>Size US</th>
               <th>Total Quantity</th>
               <th>Cost Price</th>
+              <th>Status</th>
+              <th>Total Amount</th>
             </tr>
           </thead>
           <tbody>
             <% data.forEach(function(item) { %>
-                <tr>
-                  <td><%= item.Content_SKU %></td>
-                  <td style="width: 300px;"><%= item.ProductName %></td>
-                  <td><%= item.SizeUS %></td>
-                  <td><%= item.total_quantity %></td>
-                  <td><%= Number(item.Amount).toFixed(2) %></td>
-                </tr>
-              <% }) %>
-          </tbody>
+              <% let rowTotal = item.total_quantity * item.Amount; %>
+              <tr>
+                <td><%= item.Content_SKU %></td>
+                <td style="width: 300px;"><%= item.ProductName %></td>
+                <td><%= item.SizeUS %></td>
+                <td><%= item.total_quantity %></td>
+                <td><%= Number(item.Amount).toFixed(2) %></td>
+                <td>
+                  <% if (item.status === 'check') { %>
+                    In Stock
+                  <% } else if (item.status === 'intransit') { %>
+                    In Transit
+                  <% } %>
+                </td>
+                <td><%= rowTotal.toFixed(2) %></td>
+              </tr>
+            <% }) %>
+          </tbody>         
         </table>
       </div>
     </main>
