@@ -56,6 +56,13 @@
               <td style="text-align: end;"><%= (totalTopup + bonus2 - totalgdex).toFixed(2) %></td>
               <td></td>
             </tr>
+            <% Object.entries(creditNoteBalances).forEach(([courier, balance]) => { %>
+              <tr>
+                <td>CASH IN OTDER ACC. - <%= courier %> Credit Note Balance</td>
+                <td style="text-align: end;"><%= balance.toFixed(2) %></td>
+                <td></td>
+              </tr>
+            <% }) %>
             <tr>
               <td>DEPOSIT</td>
               <td style="text-align: end;"><%= (totaldeposit && totaldeposit !== 0 ? totaldeposit : 0).toFixed(2) %></td>
@@ -155,6 +162,11 @@
                 <td></td>
               </tr>
             <% } %>
+            <tr>
+              <td>Credit Note</td>
+              <td></td>
+              <td style="text-align: end;"><%= totalCreditNote.toFixed(2) %></td>
+            </tr>
           </tbody>
           <tfoot>
             <tr>

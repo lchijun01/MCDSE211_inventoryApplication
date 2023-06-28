@@ -188,7 +188,10 @@
                     <th style="width: 130px;text-align: right;">Paid Amount</th>
                     <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalpaid %></td>
                   </tr>
-                  <% if (balance < 0) { %>
+                  <% if (balance < 0 && balance.toFixed(2) !== '0.00') { %>
+                    <tr>
+                    </tr>
+                  <% } else if (balance < 0) { %>
                   <tr>
                     <th style="width: 130px;text-align: right;">Over Paid</th>
                     <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= Math.abs(balance).toFixed(2) %></td>

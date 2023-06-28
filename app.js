@@ -78,7 +78,7 @@ app.post('/login', urlencodedParser, async (req, res) => {
 
 
 
-app.get('/', (req, res) => {
+app.get('/', requireLogin, (req, res) => {
   let startDate = req.query.startDate;
   let endDate = req.query.endDate;
 
@@ -591,11 +591,38 @@ app.get('/', (req, res) => {
                                                                                                                                                                                                   equitys.push(equity);
                                                                                                                                                                                                   netProfits.push(netProfit);
                                                                                                                                                                                                   totalAssetss.push(totalassets);
+
+                                                                                                                                                                                                  pool.query(
+                                                                                                                                                                                                    `SELECT
+                                                                                                                                                                                                      yyitems_buy.Content_SKU AS sku,
+                                                                                                                                                                                                      yyitems_buy.ProductName AS product_name,
+                                                                                                                                                                                                      AVG(DATEDIFF(yysell_invoice.timestamp, yybuy_record.timestamp)) AS average_days_to_sold
+                                                                                                                                                                                                    FROM
+                                                                                                                                                                                                      yyitems_buy
+                                                                                                                                                                                                      INNER JOIN yybuy_record ON yyitems_buy.InvoiceNumber = yybuy_record.Invoice_number
+                                                                                                                                                                                                      INNER JOIN yyitems_sell ON yyitems_buy.Content_SKU = yyitems_sell.Content_SKU
+                                                                                                                                                                                                      INNER JOIN yysell_invoice ON yyitems_sell.InvoiceNumber = yysell_invoice.Invoice_number
+                                                                                                                                                                                                    WHERE
+                                                                                                                                                                                                      yysell_invoice.timestamp >= ? AND yysell_invoice.timestamp <= ? AND yyitems_sell.Content_SKU != ""
+                                                                                                                                                                                                    GROUP BY
+                                                                                                                                                                                                      yyitems_buy.Content_SKU,
+                                                                                                                                                                                                      yyitems_buy.ProductName
+                                                                                                                                                                                                    ORDER BY
+                                                                                                                                                                                                      AVG(DATEDIFF(yysell_invoice.timestamp, yybuy_record.timestamp)) DESC;`,
+                                                                                                                                                                                                    [startDate, endDate],
+                                                                                                                                                                                                    (err, results) => {
+                                                                                                                                                                                                      if (err) throw err;
+                                                                                                                                                                                                      const firstResult = results[0] || {};
+                                                                                                                                                                                                      const sku = firstResult.sku || "";
+                                                                                                                                                                                                      const product_name = firstResult.product_name || "";
+                                                                                                                                                                                                      const average_days_to_sold = firstResult.average_days_to_sold || 0;
                                                                                                                                                                           
                                                                                                                                                                                                   // Check if all years have been processed
                                                                                                                                                                                                   if (netProfits.length === ayears.length && totalAssetss.length === ayears.length) {
                                                                                                                                                                                                     
                                                                                                                                                                                                     res.render('index', {
+                                                                                                                                                                                                      data: results,
+                                                                                                                                                                                                      sku,product_name,average_days_to_sold,
                                                                                                                                                                                                       equitys,
                                                                                                                                                                                                       totalAssetss,
                                                                                                                                                                                                       netProfits, 
@@ -658,6 +685,7 @@ app.get('/', (req, res) => {
                                                                                                                                                                                                     assetsData
                                                                                                                                                                                                   });
                                                                                                                                                                                                 };
+                                                                                                                                                                                              });
                                                                                                                                                                                               });
                                                                                                                                                                                             });
                                                                                                                                                                                           });
@@ -754,7 +782,7 @@ app.get('/', (req, res) => {
     });
   });
 });
-app.get('/bankledger', (req, res) => {
+app.get('/bankledger', requireLogin, (req, res) => {
   pool.query('SELECT * FROM yysales_paymentbreakdown', (error, salesResults) => {
     if (error) {
       console.error(error);
@@ -1047,46 +1075,52 @@ app.get('/profitlossstate', requireLogin, (req, res) => {
                                                                     if (err) throw err;
                                                                     const bftotalSalesno = results[0].bftotal_salesno;
 
-                                                                    // render the EJS template with the fetched data
-                                                                    res.render('profitlossstate', { 
-                                                                      total_buydiscount,
-                                                                      totalSales, 
-                                                                      totalSalesno,
-                                                                      totalCost,
-                                                                      totalPurchases, 
-                                                                      totalExpenses: totalExpensesByCategory, 
-                                                                      categories,
-                                                                      totalStockValue,
-                                                                      totalship,
-                                                                      totalPurchasesno,
-                                                                      totalc2p,
-                                                                      totalp2c,
-                                                                      supRefunds,
-                                                                      refundsales,
-                                                                      years,
-                                                                      selectedYear,
-                                                                      total_purchasesWOnosku,
-                                                                      totalbuy,
-                                                                      totalPurchasesLastyear,
-                                                                      totalCostLastyear,
-                                                                      bonus,
-                                                                      bftotalSales,
-                                                                      bftotalPurchasesno,
-                                                                      bftotal_purchasesWOnosku,
-                                                                      bftotalship,
-                                                                      bftotalc2p,
-                                                                      bftotalp2c,
-                                                                      bfsupRefunds,
-                                                                      bfrefundsales,
-                                                                      bfbonus,
-                                                                      bftotalPurchasesLastyear,
-                                                                      bftotalCostLastyear,
-                                                                      bftotalPurchasesno,
-                                                                      bftotal_purchasesWOnosku,
-                                                                      bftotalCost,
-                                                                      bftotalPurchases,
-                                                                      bftotalExpenses: bftotalExpensesByCategory,
-                                                                      bftotalSalesno
+                                                                    pool.query('SELECT courier, SUM(amount) AS total_sales FROM creditnote WHERE YEAR(`date`) = ? GROUP BY courier', [selectedYear], (err, results) => {
+                                                                      if (err) throw err;
+                                                                      const creditNoteTotals = results;
+
+                                                                      // render the EJS template with the fetched data
+                                                                      res.render('profitlossstate', { 
+                                                                        creditNoteTotals,
+                                                                        total_buydiscount,
+                                                                        totalSales, 
+                                                                        totalSalesno,
+                                                                        totalCost,
+                                                                        totalPurchases, 
+                                                                        totalExpenses: totalExpensesByCategory, 
+                                                                        categories,
+                                                                        totalStockValue,
+                                                                        totalship,
+                                                                        totalPurchasesno,
+                                                                        totalc2p,
+                                                                        totalp2c,
+                                                                        supRefunds,
+                                                                        refundsales,
+                                                                        years,
+                                                                        selectedYear,
+                                                                        total_purchasesWOnosku,
+                                                                        totalbuy,
+                                                                        totalPurchasesLastyear,
+                                                                        totalCostLastyear,
+                                                                        bonus,
+                                                                        bftotalSales,
+                                                                        bftotalPurchasesno,
+                                                                        bftotal_purchasesWOnosku,
+                                                                        bftotalship,
+                                                                        bftotalc2p,
+                                                                        bftotalp2c,
+                                                                        bfsupRefunds,
+                                                                        bfrefundsales,
+                                                                        bfbonus,
+                                                                        bftotalPurchasesLastyear,
+                                                                        bftotalCostLastyear,
+                                                                        bftotalPurchasesno,
+                                                                        bftotal_purchasesWOnosku,
+                                                                        bftotalCost,
+                                                                        bftotalPurchases,
+                                                                        bftotalExpenses: bftotalExpensesByCategory,
+                                                                        bftotalSalesno
+                                                                      });
                                                                     });
                                                                   });
                                                                 });
@@ -1816,9 +1850,46 @@ app.get('/trialbalance', requireLogin, (req, res) => {
     
                                                                                                                               const bankledger = (Atotalsalespay-Atotalbuypay-Atotalexpenses-Atotaltopup-AtotalExpensesPaymentbreakdown-Arefund2buyer+AfromSupplier-Adeposit+Acapital+Acreditor-Acreditorpayment+Adebtorpayment-Adebtor+Acompanyfund2personal);
                                                                                                                              
+                                                                                                                              pool.query('SELECT SUM(amount) AS totalamount, courier FROM creditnote WHERE YEAR(date) <= ? GROUP BY courier', [selectedYear], (error, amountResults) => {
+                                                                                                                                if (error) {
+                                                                                                                                  console.error(error);
+                                                                                                                                  res.status(500).send('Error fetching creditnote data');
+                                                                                                                                } else {
+                                                                                                                                  pool.query('SELECT SUM(used) AS totalused, courier FROM creditnote WHERE YEAR(useddate) <= ? GROUP BY courier', [selectedYear], (error, usedResults) => {
+                                                                                                                                    if (error) {
+                                                                                                                                      console.error(error);
+                                                                                                                                      res.status(500).send('Error fetching creditnote data');
+                                                                                                                                    } else {
+                                                                                                                                      // Combine the amount and used results based on the courier
+                                                                                                                                      const creditNoteBalances = {};
+                                                                                                                              
+                                                                                                                                      amountResults.forEach((amountRow) => {
+                                                                                                                                        const courier = amountRow.courier;
+                                                                                                                                        const totalAmount = amountRow.totalamount;
+                                                                                                                                        const usedRow = usedResults.find((usedRow) => usedRow.courier === courier);
+                                                                                                                              
+                                                                                                                                        if (usedRow) {
+                                                                                                                                          const totalUsed = usedRow.totalused;
+                                                                                                                                          const balance = totalAmount - totalUsed;
+                                                                                                                                          creditNoteBalances[courier] = balance;
+                                                                                                                                        } else {
+                                                                                                                                          // If used result is not available for the courier, use total amount as the balance
+                                                                                                                                          creditNoteBalances[courier] = totalAmount;
+                                                                                                                                        }
+                                                                                                                                      });
+
+                                                                                                                                  pool.query('SELECT SUM(amount) AS totalCreditNote FROM creditnote', (error, results) => {
+                                                                                                                                    if (error) {
+                                                                                                                                      console.error(error);
+                                                                                                                                      res.status(500).send('Error fetching credit note data');
+                                                                                                                                    } else {
+                                                                                                                                      const totalCreditNote = results[0].totalCreditNote || 0;
+                                                                                                                                  
 
                                                                                                                               // render the EJS template with the fetched data
-                                                                                                                              res.render('trialbalance', { 
+                                                                                                                              res.render('trialbalance', {
+                                                                                                                                totalCreditNote, 
+                                                                                                                                creditNoteBalances,
                                                                                                                                 bankledger,
                                                                                                                                 total_selldiscount,
                                                                                                                                 total_buydiscount,
@@ -1873,7 +1944,10 @@ app.get('/trialbalance', requireLogin, (req, res) => {
                                                                                                                                 totalaccrued,
                                                                                                                                 categoriesss 
                                                                                                                                 });
-                                                                                                                              });
+                                                                                                                              }})
+                                                                                                                          }});
+                                                                                                                        }});
+                                                                                                                        });
                                                                                                                             });
                                                                                                                           });
                                                                                                                         });
@@ -2047,6 +2121,43 @@ app.post('/yycurrentassets', upload.array(), function (req, res) {
     }
   });
 });
+
+
+
+app.get('/creditnote', requireLogin, function(req, res){
+  pool.query(`SELECT *, DATE_FORMAT(date, "%Y-%m-%d") as formattedDate, DATE_FORMAT(useddate, "%Y-%m-%d") as formattedusedDate FROM creditnote`, function(error, results, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    } else {
+      // Add the formattedDate field to each row of data
+      const data = results.map(row => ({ ...row }));
+      res.render('creditnote', { data });
+    }
+  });
+});
+app.post('/creditnote',upload.single('file'), function (req, res) {
+  const { invoice, date, courier, amount, remarks } = req.body;
+  // Insert the assets into the MySQL database
+  pool.query('INSERT INTO creditnote (invoice, date, courier, amount, remarks) VALUES (?, ?, ?, ?, ?)', [invoice, date, courier, amount, remarks], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving assets data');
+    } else {
+      // Fetch all assets from yycurrent_assets table and pass to view
+      pool.query('SELECT * FROM creditnote', (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error fetching data');
+        } else {
+          const data = results.map(row => ({ ...row }));
+          res.render('creditnote', { successMessage: 'Form submitted successfully', data });
+        }
+      });
+    }
+  });
+});
+
 app.post('/logout', (req, res) => {
   // Destroy the user's session
   req.session.destroy();
@@ -2506,7 +2617,7 @@ app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/yyexportsell_csv', function(req, res) {
+app.get('/yyexportsell_csv', requireLogin, function(req, res) {
   const sql = `SELECT yysell_invoice.Invoice_number, yysell_invoice.Name, yysell_invoice.Remarks, yysell_invoice.Phone, yysell_invoice.timestamp As date, yysell_invoice.Address1, yysell_invoice.Address2, yysell_invoice.Address3, yysell_invoice.PostCode, yysell_invoice.City, yysell_invoice.State, yysell_invoice.Country, yyitems_sell.Content_SKU, yyitems_sell.product_name, yyitems_sell.SizeUS, yyitems_sell.Quantity, yyitems_sell.UnitPrice, yyitems_sell.Amount, yyitems_sell.gender, yyitems_sell.CostPrice, yyitems_sell.ship
                 FROM yysell_invoice
                 LEFT JOIN yyitems_sell ON yysell_invoice.Invoice_number = yyitems_sell.InvoiceNumber
@@ -2520,7 +2631,7 @@ app.get('/yyexportsell_csv', function(req, res) {
 
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
 
       // If this row has a different invoice number than the previous one, start a new row in the CSV
       if (row.Invoice_number !== currentInvoiceNo) {
@@ -2609,7 +2720,7 @@ app.post('/yyimportspay_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/yyexportspay_csv', function(req, res) {
+app.get('/yyexportspay_csv', requireLogin, function(req, res) {
   const sql = `SELECT yysales_paymentbreakdown.Invoice_No, yysales_paymentbreakdown.Date as date, yysales_paymentbreakdown.Bank, yysales_paymentbreakdown.Amount, yysales_paymentbreakdown.Remarks
                FROM yysales_paymentbreakdown
                ORDER BY yysales_paymentbreakdown.Invoice_No`;
@@ -2620,7 +2731,7 @@ app.get('/yyexportspay_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           InvoiceNumber: row.Invoice_No,
           Date: formattedDate,
@@ -2694,7 +2805,7 @@ app.post('/yyimportbuy_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/yyexportbuy_csv', function(req, res) {
+app.get('/yyexportbuy_csv', requireLogin, function(req, res) {
   const sql = `SELECT yybuy_record.Invoice_number, yybuy_record.Name, yybuy_record.Remarks, yybuy_record.BankName, yybuy_record.Bank, yybuy_record.Bankaccount, yybuy_record.timestamp As date, yyitems_buy.Content_SKU, yyitems_buy.ProductName, yyitems_buy.SizeUS, yyitems_buy.Quantity, yyitems_buy.UnitPrice, yyitems_buy.Amount, yyitems_buy.gender, yyitems_buy.sold, yyitems_buy.status, yyitems_buy.solddate, yyitems_buy.checkindate
                 FROM yybuy_record
                 LEFT JOIN yyitems_buy ON yybuy_record.Invoice_number = yyitems_buy.InvoiceNumber
@@ -2708,9 +2819,9 @@ app.get('/yyexportbuy_csv', function(req, res) {
 
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
-      const formattedsoldDate = moment(row.solddate).format('YYYY-MM-DD');
-      const formattedcheckDate = moment(row.checkindate).format('YYYY-MM-DD');
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string if it exists, otherwise set it as empty
+      const formattedsoldDate = row.solddate ? moment(row.solddate).format('YYYY-MM-DD') : '';
+      const formattedcheckDate = row.checkindate ? moment(row.checkindate).format('YYYY-MM-DD') : '';
 
 
       // If this row has a different invoice number than the previous one, start a new row in the CSV
@@ -2795,7 +2906,7 @@ app.post('/yyimportbpay_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/yyexportbpay_csv', function(req, res) {
+app.get('/yyexportbpay_csv', requireLogin, function(req, res) {
   const sql = `SELECT yypurchase_paymentbreakdown.Invoice_No, yypurchase_paymentbreakdown.Date as date, yypurchase_paymentbreakdown.Bank, yypurchase_paymentbreakdown.Amount, yypurchase_paymentbreakdown.Remarks, yypurchase_paymentbreakdown.BankRefs
                FROM yypurchase_paymentbreakdown
                ORDER BY yypurchase_paymentbreakdown.Invoice_No`;
@@ -2806,7 +2917,7 @@ app.get('/yyexportbpay_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           PONo: row.Invoice_No,
           Date: formattedDate,
@@ -2852,7 +2963,7 @@ app.post('/yyimportexpenses_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/yyexportexpenses_csv', function(req, res) {
+app.get('/yyexportexpenses_csv', requireLogin, function(req, res) {
   const sql = `SELECT yyexpensesrecord.Invoice_No, yyexpensesrecord.Date as date, yyexpensesrecord.Bank, yyexpensesrecord.Amount, yyexpensesrecord.Name, yyexpensesrecord.Category, yyexpensesrecord.Detail
                FROM yyexpensesrecord
                ORDER BY yyexpensesrecord.Invoice_No`;
@@ -2863,7 +2974,7 @@ app.get('/yyexportexpenses_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           InvoiceNumber: row.Invoice_No,
           Date: formattedDate,
@@ -2908,7 +3019,7 @@ app.post('/importcheckin_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportcheckin_csv', function(req, res) {
+app.get('/exportcheckin_csv', requireLogin, function(req, res) {
   const sql = `SELECT stock_checkin.pono, stock_checkin.date as date, stock_checkin.sku, stock_checkin.productname, stock_checkin.size, stock_checkin.quantity,stock_checkin.seller, stock_checkin.bank, stock_checkin.bankname, stock_checkin.bankacc, stock_checkin.remarks
                FROM stock_checkin
                ORDER BY stock_checkin.pono`;
@@ -2919,7 +3030,7 @@ app.get('/exportcheckin_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           pono: row.pono,
           date: formattedDate,
@@ -2968,7 +3079,7 @@ app.post('/importdistributer2owner_csv', upload.single('file'), function (req, r
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportdistributer2owner_csv', function(req, res) {
+app.get('/exportdistributer2owner_csv', requireLogin, function(req, res) {
   const sql = `SELECT Date, Invoice_No, Category, Bank, Name, Amount, Detail, banknum, File
                FROM yycompanyfund2personal
                ORDER BY yycompanyfund2personal.Date`;
@@ -2979,7 +3090,7 @@ app.get('/exportdistributer2owner_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.Date ? moment(row.Date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           Date: formattedDate,
           Invoice_No: row.Invoice_No,
@@ -3026,7 +3137,7 @@ app.post('/importyyothercreditor_csv', upload.single('file'), function (req, res
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportyyothercreditor_csv', function(req, res) {
+app.get('/exportyyothercreditor_csv', requireLogin, function(req, res) {
   const sql = `SELECT Date, Invoice_No, Bank, Name, Amount, Detail, File, settle
                FROM yyothercreditor
                ORDER BY Date`;
@@ -3037,7 +3148,7 @@ app.get('/exportyyothercreditor_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.Date ? moment(row.Date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           Date: formattedDate,
           Invoice_No: row.Invoice_No,
@@ -3083,7 +3194,7 @@ app.post('/importyyothercreditorpaymentbreak_csv', upload.single('file'), functi
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportyyothercreditorpaymentbreak_csv', function(req, res) {
+app.get('/exportyyothercreditorpaymentbreak_csv', requireLogin, function(req, res) {
   const sql = `SELECT date, invoiceNo, name, amount, detail, file
                FROM yyothercreditor_paymentbreakdown
                ORDER BY date`;
@@ -3094,7 +3205,7 @@ app.get('/exportyyothercreditorpaymentbreak_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           date: formattedDate,
           invoiceNo: row.invoiceNo,
@@ -3138,7 +3249,7 @@ app.post('/importyyotherdebtor_csv', upload.single('file'), function (req, res) 
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportyyotherdebtor_csv', function(req, res) {
+app.get('/exportyyotherdebtor_csv', requireLogin, function(req, res) {
   const sql = `SELECT Date, Invoice_No, Category, Bank, Name, Amount, Detail, File, settle
                FROM yyotherdebtor
                ORDER BY Date`;
@@ -3149,7 +3260,7 @@ app.get('/exportyyotherdebtor_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.Date ? moment(row.Date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           Date: formattedDate,
           Invoice_No: row.Invoice_No,
@@ -3196,7 +3307,7 @@ app.post('/importyyotherdebtorpaymentbreak_csv', upload.single('file'), function
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportyyotherdebtorpaymentbreak_csv', function(req, res) {
+app.get('/exportyyotherdebtorpaymentbreak_csv', requireLogin, function(req, res) {
   const sql = `SELECT date, invoiceNo, name, amount, detail, file
                FROM yyotherdebtor_paymentbreakdown
                ORDER BY date`;
@@ -3207,7 +3318,7 @@ app.get('/exportyyotherdebtorpaymentbreak_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           date: formattedDate,
           invoiceNo: row.invoiceNo,
@@ -3251,7 +3362,7 @@ app.post('/yyimportyyaccrualpaymentbreak_csv', upload.single('file'), function (
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/yyexportyyaccrualpaymentbreak_csv', function(req, res) {
+app.get('/yyexportyyaccrualpaymentbreak_csv', requireLogin, function(req, res) {
   const sql = `SELECT Date, Invoice_No, Bank, Name, Amount, Detail, File
                FROM yyaccruals
                ORDER BY Date`;
@@ -3262,7 +3373,7 @@ app.get('/yyexportyyaccrualpaymentbreak_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.Date ? moment(row.Date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           Date: formattedDate,
           Invoice_No: row.Invoice_No,
@@ -3308,7 +3419,7 @@ app.post('/importyydeposit_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportyydeposit_csv', function(req, res) {
+app.get('/exportyydeposit_csv', requireLogin, function(req, res) {
   const sql = `SELECT date, amount, \`for\`, details
                FROM yydeposit
                ORDER BY date`;
@@ -3319,7 +3430,7 @@ app.get('/exportyydeposit_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           date: formattedDate,
           amount: row.amount,
@@ -3361,7 +3472,7 @@ app.post('/importyyequity_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportyyequity_csv', function(req, res) {0
+app.get('/exportyyequity_csv', requireLogin, function(req, res) {0
   const sql = `SELECT date, amount, account
                FROM yyequity
                ORDER BY date`;
@@ -3372,7 +3483,7 @@ app.get('/exportyyequity_csv', function(req, res) {0
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           date: formattedDate,
           amount: row.amount,
@@ -3399,7 +3510,7 @@ app.post('/importbulkshipdata_csv', upload.single('file'), function(req, res) {
     .pipe(csv())
     .on('data', (data) => {
       // Extract the relevant data from the CSV row
-      const { TrackingNumber, Date, BoxNumber, Category, invoice, Remarks, Content_SKU, productname, SizeUS, Quantity, BulkShipBoxNumber } = data;
+      const { TrackingNumber, Date, BoxNumber, invoice, Remarks, Content_SKU, productname, SizeUS, Quantity, BulkShipBoxNumber } = data;
 
       // Create a unique key using Date and BoxNumber
       const key = `${Date}-${BoxNumber}`;
@@ -3415,7 +3526,7 @@ app.post('/importbulkshipdata_csv', upload.single('file'), function(req, res) {
           } else {
             if (results.length === 0) {
               // If no row exists with the same Date and BoxNumber, insert the row into the bulkship table
-              pool.query('INSERT INTO bulkship (TrackingNumber, Date, BoxNumber, Category, invoice, Remarks) VALUES (?, ?, ?, ?, ?, ?)', [TrackingNumber, Date, BoxNumber, Category, invoice, Remarks], (error, results) => {
+              pool.query('INSERT INTO bulkship (TrackingNumber, Date, BoxNumber, invoice, Remarks) VALUES (?, ?, ?, ?, ?)', [TrackingNumber, Date, BoxNumber, invoice, Remarks], (error, results) => {
                 if (error) {
                   console.error(error);
                 } else {
@@ -3443,9 +3554,9 @@ app.post('/importbulkshipdata_csv', upload.single('file'), function(req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportbulkshipdata_csv', function(req, res) {
+app.get('/exportbulkshipdata_csv', requireLogin, function(req, res) {
   const sql = `SELECT si.BulkShipBoxNumber, si.Content_SKU, si.productname, si.SizeUS, si.Quantity, si.invoice, 
-               bs.TrackingNumber, bs.Date, bs.BoxNumber, bs.Category, bs.invoice AS bulkship_invoice, bs.Remarks
+               bs.TrackingNumber, bs.Date, bs.BoxNumber, bs.invoice AS bulkship_invoice, bs.Remarks
                FROM shipped_items si
                JOIN bulkship bs ON si.invoice = bs.invoice AND si.BulkShipBoxNumber = bs.BoxNumber`;
 
@@ -3455,7 +3566,7 @@ app.get('/exportbulkshipdata_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.Date).format('YYYY-MM-DD');
+      const formattedDate = row.Date ? moment(row.Date).format('YYYY-MM-DD') : '';
       csvData.push({
         BulkShipBoxNumber: row.BulkShipBoxNumber,
         Content_SKU: row.Content_SKU,
@@ -3466,7 +3577,6 @@ app.get('/exportbulkshipdata_csv', function(req, res) {
         TrackingNumber: row.TrackingNumber,
         Date: formattedDate,
         BoxNumber: row.BoxNumber,
-        Category: row.Category,
         bulkship_invoice: row.bulkship_invoice,
         Remarks: row.Remarks
       });
@@ -3507,7 +3617,7 @@ app.post('/importsinggleship_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportsinggleship_csv', function(req, res) {
+app.get('/exportsinggleship_csv', requireLogin, function(req, res) {
   const sql = `SELECT TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity, remarks
                FROM singleship
                ORDER BY Date`;
@@ -3518,7 +3628,7 @@ app.get('/exportsinggleship_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.Date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.Date ? moment(row.Date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           TrackingNumber: row.TrackingNumber,
           Date: formattedDate,
@@ -3564,7 +3674,7 @@ app.post('/importrefunds_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exportrefunds_csv', function(req, res) {
+app.get('/exportrefunds_csv', requireLogin, function(req, res) {
   const sql = `SELECT invoice, amount, remarks, refund2buyer, fromSupplier, date
                FROM refund
                ORDER BY date`;
@@ -3575,7 +3685,7 @@ app.get('/exportrefunds_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           invoice: row.invoice,
           amount: row.amount,
@@ -3619,7 +3729,7 @@ app.post('/importtopup_csv', upload.single('file'), function (req, res) {
       res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
     });
 });
-app.get('/exporttopup_csv', function(req, res) {
+app.get('/exporttopup_csv', requireLogin, function(req, res) {
   const sql = `SELECT wallet, amount, lastbalance, date, bonuscredit
                FROM yytopupbalance
                ORDER BY date`;
@@ -3630,7 +3740,7 @@ app.get('/exporttopup_csv', function(req, res) {
     const csvData = [];
     // Iterate through the SQL query results and build the CSV data
     results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
         csvData.push({
           wallet: row.wallet,
           amount: row.amount,
@@ -3679,7 +3789,7 @@ app.post('/expenses-record',upload.single('file'),  urlencodedParser, function(r
 app.get('/stockaudit', requireLogin, function(req, res) {
   pool.query(`
   SELECT Content_SKU, SizeUS, ProductName, Amount, SUM(Quantity) as total_quantity, status
-  FROM yyitems_buy WHERE sold = 'no' AND Content_SKU != ""
+  FROM yyitems_buy WHERE sold = 'no' AND Content_SKU != "" AND Content_SKU IS NOT NULL
   GROUP BY Content_SKU, ProductName, SizeUS, Amount, status
   ORDER BY Content_SKU ASC, CAST(SizeUS AS SIGNED) ASC;
   `, function(error, results, fields) {
@@ -3869,7 +3979,7 @@ app.post('/stock-location', (req, res) => {
   
   res.redirect('/stocklocation');
 });
-app.get('/stocklocationasd', (req, res) => {
+app.get('/stocklocationasd', requireLogin, (req, res) => {
   const ponum = req.query.ponum;
   const query = `
     SELECT yyitems_buy.ProductName, yyitems_buy.Content_SKU, yyitems_buy.SizeUS, SUM(yyitems_buy.Quantity) as TotalQuantity, yyitems_buy.location
@@ -3896,11 +4006,11 @@ app.get('/stocklocationasd', (req, res) => {
     res.json({ items });
   });
 });
-app.get('/stocklocation', (req, res) => {
+app.get('/stocklocation', requireLogin, (req, res) => {
   const sql = `SELECT InvoiceNumber, Content_SKU, SizeUS, ProductName, SUM(Quantity) as total_quantity, location
-  FROM yyitems_buy WHERE sold = 'no' 
+  FROM yyitems_buy WHERE sold = 'no' AND status != 'intransit'
   GROUP BY InvoiceNumber, Content_SKU, ProductName, SizeUS, location
-  ORDER BY InvoiceNumber DESC`;
+  ORDER BY location ASC, InvoiceNumber ASC`;
   pool.query(sql, (err, result) => {
     if (err) {
       console.error(err);
@@ -3911,9 +4021,10 @@ app.get('/stocklocation', (req, res) => {
     res.render('stocklocation', { items: result });
   });
 });
-
 fs.rmSync
-
+app.get('/shippedrecord', requireLogin, (req, res) => {
+  res.render('shippedrecord');
+});
 //for shipped record page
 app.get('/singleshipped', requireLogin, function(req, res) {
   pool.query(`
@@ -4072,10 +4183,10 @@ app.get('/inout', requireLogin, function(req, res){
 //-------below is for Y Kick Zone Shop----------------------------------------------------------------------------------
 //------------------Sales--------------------------------------------------------------------------
 //for sales - sell invoice
-app.get('/sell_invoice', function(req, res){
+app.get('/sell_invoice', requireLogin, function(req, res){
   res.render('sell_invoice');
 });
-app.get('/sellproduct-name', (req, res) => {
+app.get('/sellproduct-name', requireLogin, (req, res) => {
   const sku = req.query.sku;
   const query = 'SELECT DISTINCT ProductName FROM items_sell WHERE Content_SKU LIKE ? LIMIT 1';
   pool.query(query, ['%' + sku + '%'], (err, results) => {
@@ -4121,7 +4232,7 @@ app.post('/sell_invoice', upload.single('file'), urlencodedParser, function (req
   });
 });
 //for sales-payment break
-app.get('/sales-paymentbreak',function(req, res){
+app.get('/sales-paymentbreak', requireLogin, function(req, res){
   res.render('sales-paymentbreak');
 });
 app.post('/sales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
@@ -4141,7 +4252,7 @@ app.post('/sales-paymentbreak',upload.single('file'), urlencodedParser, function
   });
 });
 //for sales - balance check
-app.get('/sales-balancecheck', (req, res) => {
+app.get('/sales-balancecheck', requireLogin, (req, res) => {
   const invoice_number = req.query.invoice_number || '';
   const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
   const invoice_number_params = invoice_number ? [invoice_number] : [];
@@ -4259,10 +4370,10 @@ app.get('/search', (req, res) => {
   });
 });
 // for sales invoice generate
-app.get('/invoice_generate', function(req, res) {
+app.get('/invoice_generate', requireLogin, function(req, res) {
   res.render('invoice_generate');
 });
-app.get('/generate', (req, res) => {
+app.get('/generate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -4325,10 +4436,10 @@ app.get('/generate', (req, res) => {
 });
 //--------------------Purchase----------------------------------------------------------------------
 //for sales - sell invoice
-app.get('/buy-payby', function(req, res){
+app.get('/buy-payby', requireLogin, function(req, res){
   res.render('buy-payby');
 });
-app.get('/buyproduct-name', (req, res) => {
+app.get('/buyproduct-name', requireLogin, (req, res) => {
   const sku = req.query.sku;
   const query = 'SELECT DISTINCT ProductName FROM items_buy WHERE Content_SKU LIKE ? LIMIT 1';
   pool.query(query, ['%' + sku + '%'], (err, results) => {
@@ -4374,7 +4485,7 @@ app.post('/buy-payby', upload.single('file'), urlencodedParser, function (req, r
   });
 });
 //for buy-payment break
-app.get('/buy-paymentbreak', function(req, res){
+app.get('/buy-paymentbreak', requireLogin, function(req, res){
   res.render('buy-paymentbreak');
 });
 app.post('/buy-paymentbreak',upload.single('file'),  urlencodedParser, function(req, res){
@@ -4395,7 +4506,7 @@ app.post('/buy-paymentbreak',upload.single('file'),  urlencodedParser, function(
     });
 });
 //for buy-balance check
-app.get('/buy-balancecheck', (req, res) => {
+app.get('/buy-balancecheck', requireLogin, (req, res) => {
   const invoice_number = req.query.invoice_number || '';
   const invoice_number_query = invoice_number ? ' = ?' : 'IS NOT NULL';
   const invoice_number_params = invoice_number ? [invoice_number] : [];
@@ -4458,7 +4569,7 @@ app.get('/buy-balancecheck', (req, res) => {
   });
 });
 // Set up the searchs route
-app.get('/searchs', (req, res) => {
+app.get('/searchs', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the buy_record table
@@ -4514,10 +4625,10 @@ app.get('/searchs', (req, res) => {
   });
 });
 // for purchase order generate
-app.get('/order_generate', function(req, res) {
+app.get('/order_generate', requireLogin, function(req, res) {
   res.render('order_generate');
 });
-app.get('/ordergenerate', (req, res) => {
+app.get('/ordergenerate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the sell_invoice table
@@ -4579,7 +4690,7 @@ app.get('/ordergenerate', (req, res) => {
 });
 //-------------------Drawing------------------------------------------------------------------------
 //for company fund 2 personal 
-app.get('/company2personal', function(req, res){
+app.get('/company2personal', requireLogin, function(req, res){
   res.render('company2personal');
 });
 app.post('/company2personal',upload.single('file'),  urlencodedParser, function(req, res){
@@ -4745,15 +4856,27 @@ app.post('/topupbalance', upload.single('file'), urlencodedParser, function(req,
 //-------below is for Yong & Yi  Partnership Enterprise-----------------------------------------------------------------------------
 //-------------------Sales-----------------------------------------------------------------------------
 //for sales - sell invoice
-app.get('/yysell_invoice', requireLogin, function(req, res){
-  pool.query(`
+app.get('/yysell_invoice', requireLogin, function(req, res) {
+  const startDate = req.query.start_date;
+  const endDate = req.query.end_date;
+
+  let query = `
     SELECT i.InvoiceNumber, i.Content_SKU, i.product_name, CAST(i.SizeUS AS DECIMAL(10,2)) AS SizeUS, i.UnitPrice, SUM(i.Quantity) as Quantity, SUM(i.Amount) as Amount, i.gender, i.CostPrice, s.timestamp
     FROM yyitems_sell i
     JOIN yysell_invoice s ON i.InvoiceNumber = s.Invoice_number
     WHERE i.Content_SKU IS NOT NULL AND i.Content_SKU <> ''
+  `;
+
+  if (startDate && endDate) {
+    query += ` AND s.timestamp BETWEEN '${startDate}' AND '${endDate}'`;
+  }
+
+  query += `
     GROUP BY i.InvoiceNumber, i.Content_SKU, i.SizeUS, i.UnitPrice, i.product_name, i.gender, i.CostPrice, s.timestamp
     ORDER BY i.InvoiceNumber DESC, CAST(i.SizeUS AS DECIMAL(10,2)) ASC
-  `, function(error, results, fields) {
+  `;
+
+  pool.query(query, function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
@@ -4763,6 +4886,7 @@ app.get('/yysell_invoice', requireLogin, function(req, res){
     }
   });
 });
+
 app.get('/yyproduct-details', requireLogin, (req, res) => {
   const sku = req.query.sku;
   const size = req.query.size;
@@ -4849,7 +4973,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
   pool.query('SELECT MAX(Invoice_number) as maxInvoiceNumber FROM yysell_invoice', (error, results, fields) => {
     if (error) {
       console.error(error);
-      res.status(500).send('Error fetching max Invoice_number');
+      return res.status(500).send('Error fetching max Invoice_number');
     } else {
       const maxInvoiceNumber = results[0].maxInvoiceNumber;
       const invoice_number = (maxInvoiceNumber ? parseInt(maxInvoiceNumber) : 0) + 1;
@@ -4857,7 +4981,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
       pool.query('INSERT INTO yysell_invoice (Invoice_number, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [invoice_number, name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks], (error, results, fields) => {
         if (error) {
           console.error(error);
-          res.status(500).send('Error saving form data');
+          return res.status(500).send('Error saving form data');
         } else {
           const sellItems = [];
           field1.forEach((item, index) => {
@@ -4875,7 +4999,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
                 pool.query('INSERT INTO singgleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)', [trackingNumber, currentDate, content_SKU, productName, sizeUS, invoice_number, 1], (error, results, fields) => {
                   if (error) {
                     console.error(error);
-                    res.status(500).send('Error saving data to singgleship table');
+                    return res.status(500).send('Error saving data to singgleship table');
                   }
                 });
               }
@@ -4885,7 +5009,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
           pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, UnitPrice, Quantity, Amount, gender, CostPrice, ship) VALUES ?', [sellItems], (error, results, fields) => {
             if (error) {
               console.error(error);
-              res.status(500).send('Error saving shipped items data');
+              return res.status(500).send('Error saving shipped items data');
             } else {
               field1.forEach((item, index) => {
                 const sku = item;
@@ -4894,10 +5018,10 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
                 const unitPrice = field8[index];
                 const soldDate = moment().format('YYYY-MM-DD');
                 for (let i = 0; i < qty; i++) {
-                  pool.query('UPDATE yyitems_buy SET sold = ?, solddate = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND UnitPrice = ? AND sold = ? AND status = ?', ['yes', soldDate, unitPrice, sku, size, unitPrice, 'no', 'check'], (error, results, fields) => {
+                  pool.query('UPDATE yyitems_buy SET sold = ?, solddate = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND sold = ? AND status = ? LIMIT ?', ['yes', soldDate, unitPrice, sku, size, 'no', 'check', parseInt(qty)], (error, results, fields) => {
                     if (error) {
                       console.error(error);
-                      res.status(500).send('Error updating yyitems_buy table');
+                      return res.status(500).send('Error updating yyitems_buy table');
                     }
                   });
                 }
@@ -4910,12 +5034,12 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
                 `, function(error, results, fields) {
                     if (error) {
                       console.error(error);
-                      res.status(500).send('Error fetching data');
-                } else {
-                  console.log(req.body);
-                  const data = results.map(row => ({ ...row }));
-                  res.render('yysell_invoice', { successMessage: 'Form submitted successfully' , data });
-                }
+                      return res.status(500).send('Error fetching data');
+                    } else {
+                      console.log(req.body);
+                      const data = results.map(row => ({ ...row }));
+                      res.render('yysell_invoice', { successMessage: 'Form submitted successfully', data });
+                    }
               });
             }
           });
@@ -4926,7 +5050,18 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
 });
 //for sales-payment break
 app.get('/yysales-paymentbreak', requireLogin, function(req, res) {
-  pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Amount, Remarks, File FROM yysales_paymentbreakdown ORDER BY Invoice_No DESC', function(error, results, fields) {
+  const startDate = req.query.start_date;
+  const endDate = req.query.end_date;
+
+  let query = 'SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Amount, Remarks, File FROM yysales_paymentbreakdown';
+
+  if (startDate && endDate) {
+    query += ` WHERE Date BETWEEN '${startDate}' AND '${endDate}'`;
+  }
+
+  query += ' ORDER BY Invoice_No DESC';
+
+  pool.query(query, function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
@@ -4996,6 +5131,7 @@ app.get('/yysales-paymentbreak', requireLogin, function(req, res) {
     }
   });
 });
+
 app.post('/yysales-paymentbreak',upload.single('file'), urlencodedParser, function(req, res){
   const { date, invoice_no, amount, remarks } = req.body;
   // Get the filename from the request
@@ -5149,21 +5285,38 @@ app.get('/yygenerate', requireLogin, (req, res) => {
 });
 //---------------------Purchase-------------------------------------------------------------------------
 //for buy -- invoice
-app.get('/yybuy-payby', requireLogin, function(req, res){
-  pool.query(`
+app.get('/yybuy-payby', requireLogin, function(req, res) {
+  const startDate = req.query.start_date;
+  const endDate = req.query.end_date;
+
+  let query = `
     SELECT b.InvoiceNumber, b.Content_SKU, b.ProductName, CAST(b.SizeUS AS DECIMAL(10,2)) as SizeUS, b.UnitPrice, SUM(b.Quantity) as Quantity, SUM(b.Amount) as Amount, b.gender, r.timestamp
     FROM yyitems_buy b
     LEFT JOIN yybuy_record r ON b.InvoiceNumber = r.Invoice_number
     WHERE b.Content_SKU IS NOT NULL AND b.Content_SKU <> ''
+  `;
+
+  if (startDate && endDate) {
+    query += ` AND r.timestamp BETWEEN '${startDate}' AND '${endDate}'`;
+  }
+
+  query += `
     GROUP BY b.InvoiceNumber, b.Content_SKU, b.SizeUS, b.UnitPrice, b.ProductName, b.gender, r.timestamp
     ORDER BY b.InvoiceNumber DESC, CAST(b.SizeUS AS DECIMAL(10,2)) ASC
-    `, function(error, results, fields) {
+  `;
+
+  pool.query(query, function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
     } else {
       // Add the formattedDate field to each row of data
-      const data = results.map(row => ({ ...row }));
+      const data = results.map(row => {
+        const date = new Date(row.timestamp);
+        const formattedDate = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+        return { ...row, formattedDate };
+      });
+
       res.render('yybuy-payby', { data });
     }
   });
@@ -5189,7 +5342,7 @@ app.get('/yybuyproduct-name', requireLogin, (req, res) => {
   });
 });
 app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req, res) {
-  const { name, bankname, bank, bankacc, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [] } = req.body;
+  const { name, bankname, bank, bankacc, remarks, discount, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [] } = req.body;
 
   // Fetch the last inserted Invoice_number value from buy_record table
   pool.query('SELECT MAX(ID) as maxInvoiceNumber FROM yybuy_record', (error, results, fields) => {
@@ -5212,7 +5365,13 @@ app.post('/yybuy-payby', upload.single('file'), urlencodedParser, function (req,
               buyItems.push([invoice_number, field1[i], field2[i], field3[i], field4[i], 1, field4[i], field7[i], 'no', 'intransit']);
             }
           }
-
+          if (discount && parseFloat(discount) > 0) {
+            discountAmount = -Math.abs(parseFloat(discount));
+          }
+          // Add discount item if a discount is submitted
+          if (discount) {
+            buyItems.push([invoice_number, '', 'Discount', '', discountAmount, 1, discountAmount, '', '', '']);
+          }
           // Insert the shipped items data into MySQL
           pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, UnitPrice, Quantity, Amount, gender, sold, status) VALUES ?', [buyItems], (error, results, fields) => {
             if (error) {
@@ -5457,34 +5616,36 @@ app.get('/yyorder_generate', requireLogin, function(req, res) {
 app.get('/yyordergenerate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
-  // Query the sell_invoice table
+  // Query the buy_record table
   const buyRecordQuery = `SELECT * FROM yybuy_record WHERE Invoice_number = '${invoiceNumber}'`;
   pool.query(buyRecordQuery, (error, buyRecordResults) => {
     if (error) throw error;
 
     if (!buyRecordResults.length) {
-      // Render the sales-details.ejs view with no buyRecordResults
+      // Render the yyorder_template view with no buyRecordResults
       res.render('yyorder_template', {
         buyRecordResults: buyRecordResults,
         invoiceNumber: invoiceNumber,
         buyRecordResults: null
       });
     } else {
-      // Query the items_buy table with grouping by SKU, SizeUS, and UnitPrice
-      const itemsBuyQuery = `SELECT Content_SKU, ProductName, SizeUS, UnitPrice, SUM(Quantity) as TotalQuantity
-      FROM yyitems_buy
-      WHERE InvoiceNumber = '${invoiceNumber}'
-      GROUP BY Content_SKU, ProductName, SizeUS, UnitPrice`;
+      // Query the items_buy table with grouping by ProductName, SizeUS, and UnitPrice
+      const itemsBuyQuery = `SELECT ProductName, SizeUS, UnitPrice, SUM(Quantity) AS TotalQuantity
+        FROM yyitems_buy
+        WHERE InvoiceNumber = '${invoiceNumber}' AND Content_SKU IS NOT NULL AND Content_SKU != ""
+        GROUP BY ProductName, SizeUS, UnitPrice`;
+
       pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
         if (error) throw error;
 
         // Calculate the total amount
         let totalAmount = 0;
+        let totalAmounts = 0;
         for (let i = 0; i < itemsBuyResults.length; i++) {
-          totalAmount += (itemsBuyResults[i].UnitPrice * itemsBuyResults[i].TotalQuantity);
+          totalAmount += itemsBuyResults[i].UnitPrice * itemsBuyResults[i].TotalQuantity;
         }
 
-        // Query the sales_paymentbreakdown table
+        // Query the purchase_paymentbreakdown table
         const purchasePaymentQuery = `SELECT * FROM yypurchase_paymentbreakdown WHERE Invoice_No = '${invoiceNumber}'`;
         pool.query(purchasePaymentQuery, (error, purchasePaymentResults) => {
           if (error) throw error;
@@ -5494,29 +5655,39 @@ app.get('/yyordergenerate', requireLogin, (req, res) => {
           for (let i = 0; i < purchasePaymentResults.length; i++) {
             totalAmountPaid += parseFloat(purchasePaymentResults[i].Amount);
           }
-           // Set the bank variable based on the purchasePaymentResults
-          let bank = 'N/A';
-          if (purchasePaymentResults.length > 0) {
-           bank = purchasePaymentResults[0].Bank;
-          }
-          // Calculate the balance
-          const balance = totalAmount - totalAmountPaid;
-          res.render('yyorder_template', {
-            invoiceNumber: invoiceNumber,
-            buyRecordResults: buyRecordResults,
-            itemsBuyResults: itemsBuyResults,
-            name: buyRecordResults[0].Name,
-            totalAmount: totalAmount,
-            transactions: purchasePaymentResults,
-            balance: balance,
-            bank: bank,
-            totalpaid: totalAmountPaid,
+
+          // Query the discount item amount separately
+          const discountQuery = `SELECT SUM(UnitPrice) AS DiscountAmount FROM yyitems_buy WHERE InvoiceNumber = '${invoiceNumber}' AND ProductName = 'Discount'`;
+          pool.query(discountQuery, (error, discountResult) => {
+            if (error) throw error;
+
+            const discountAmount = discountResult[0].DiscountAmount || 0;
+            totalAmounts = totalAmount + discountAmount; // Deduct the discount amount from the total
+
+            // Calculate the balance
+            const balance = totalAmounts - totalAmountPaid;
+            const discountApplied = itemsBuyResults.length >= 5;
+
+            res.render('yyorder_template', {
+              invoiceNumber: invoiceNumber,
+              buyRecordResults: buyRecordResults,
+              itemsBuyResults: itemsBuyResults,
+              name: buyRecordResults[0].Name,
+              totalAmounts: totalAmounts,
+              totalAmount: totalAmount,
+              transactions: purchasePaymentResults,
+              balance: balance,
+              totalpaid: totalAmountPaid,
+              discountApplied: discountApplied,
+              discountAmount: discountAmount,
+            });
           });
         });
       });
     }
   });
 });
+
 //=-----------------------Drawing-------------------------------------------------------------------------
 //for company fund 2 personal 
 app.get('/yycompany2personal', requireLogin, function(req, res) {
@@ -5917,7 +6088,7 @@ app.post('/yyother-creditor',upload.single('file'),  urlencodedParser, function(
   const filename = req.file ? req.file.filename : 'N/A';
 
   // Insert the form data into MySQL
-  pool.query('INSERT INTO yyothercreditor (Date, Invoice_No, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoice_no, bank, name, amount, detail, filename], (error, results, fields) => {
+  pool.query('INSERT INTO yyothercreditor (Date, Invoice_No, Bank, Name, Amount, Detail, File, settle) VALUES (?, ?, ?, ?, ?, ?, ifnull(?, "N/A"), ?)', [date, invoice_no, bank, name, amount, detail, filename, 'no'], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
@@ -6049,7 +6220,7 @@ app.get('/yyaccruals', requireLogin, function(req, res) {
   });
 });
 app.post('/yyaccruals', upload.single('file'), urlencodedParser, function(req, res){
-  const { id, date, invoice_no, bank, name, amount, detail } = req.body;
+  const { id, date, invoice_no, bank, name, creditN, amount, detail } = req.body;
 
   // Get the filename from the request
   const filename = req.file ? req.file.filename : 'N/A';
@@ -6068,12 +6239,65 @@ app.post('/yyaccruals', upload.single('file'), urlencodedParser, function(req, r
           console.error(error);
           res.status(500).send('Error updating data');
         } else {
-          res.render('yyaccruals');
+          if (creditN && creditN > 0) {
+            // Get the creditnote rows for the courier
+            pool.query('SELECT id, amount, used FROM creditnote WHERE courier = ? AND used < amount ORDER BY id', [name], function(error, creditNoteResults, fields) {
+              if (error) {
+                console.error(error);
+                res.status(500).send('Error fetching creditnote data');
+              } else {
+                let remainingCreditN = creditN;
+                let redirectPerformed = false;
+
+                // Update the creditnote rows based on available creditN amount
+                creditNoteResults.forEach((row) => {
+                  if (remainingCreditN <= 0) {
+                    return; // Exit the loop if creditN is fully used
+                  }
+
+                  const availableAmount = row.amount - row.used;
+                  const usedAmount = Math.min(availableAmount, remainingCreditN);
+                  remainingCreditN -= usedAmount;
+
+                  const usedDate = now.toISOString();
+
+                  pool.query('UPDATE creditnote SET used = ?, useddate = ? WHERE id = ?', [row.used + usedAmount, usedDate, row.id], function(error, results, fields) {
+                    if (error) {
+                      console.error(error);
+                      res.status(500).send('Error updating creditnote');
+                    } else {
+                      if (remainingCreditN === 0 && !redirectPerformed) {
+                        // All creditN amount has been used and redirect has not been performed yet
+                        redirectPerformed = true;
+                        res.redirect('/yyaccruals');
+                      }
+                    }
+                  });
+                });
+
+                if (remainingCreditN > 0 && !redirectPerformed) {
+                  // If there is remaining creditN amount and redirect has not been performed yet,
+                  // insert a new row in the creditnote table
+                  pool.query('INSERT INTO creditnote (courier, amount, used, useddate) VALUES (?, ?, ?, ?)', [name, creditN, remainingCreditN, usedDate], function(error, results, fields) {
+                    if (error) {
+                      console.error(error);
+                      res.status(500).send('Error inserting creditnote data');
+                    } else {
+                      res.redirect('/yyaccruals');
+                    }
+                  });
+                }
+              }
+            });
+          } else {
+            res.redirect('/yyaccruals');
+          }
         }
       });
     }
   });
 });
+
 //----------------------Ending--------------------------------------------------------------------------------
 app.get('/profile/:name', requireLogin, function(req, res){
     res.render('profile', {person: req.params.name});

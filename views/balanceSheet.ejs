@@ -251,7 +251,7 @@
               <tbody>
                 <tr>
                   <th>Liabilities</th>
-                  <td style="text-align: end;"><%= (totalPurchasesno2 - totalBuypaid + (totalotcredit && totalotcredit !== 0 ? totalotcredit : 0)).toFixed(2) %></td>
+                  <td style="text-align: end;"><%= (totalPurchasesno2 - totalBuypaid + (totalotcredit && totalotcredit !== 0 ? totalotcredit : 0) + (totalaccrued && totalaccrued !== 0 ? totalaccrued : 0)).toFixed(2) %></td>
                 </tr>
                 <tr>
                   <th>Equity</th>

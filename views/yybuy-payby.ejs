@@ -49,7 +49,9 @@
                     <label  class="form_name" for="bank">Bank Acc</label>
                     <input class="form_id" style="margin-bottom: 3px;" type="text" name="bankacc" placeholder=" Bank Acc"><br>
                     <label  class="form_name" for="remarks">Remarks</label><br>
-                    <textarea class="form_detail" type="text" name="remarks"></textarea><br><br>
+                    <textarea class="form_detail" type="text" name="remarks"></textarea><br>
+                    <label class="form_name" style="margin-bottom: 3px;" for="discount">Discount</label>
+                    <input class="form_id" style="margin-bottom: 3px;" type="number" name="discount" placeholder="how much!"><br><br>
                     <div class="button">
                         <button class="form_button" type="submit">Submit</button>
                         <button class="form_button" type="reset">Clear</button>
@@ -137,6 +139,15 @@
                     </div>
                 </div>
                 </form><br>
+                <form action="/yybuy-payby" method="GET">
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date" required>
+                  
+                    <label for="end_date">End Date:</label>
+                    <input type="date" id="end_date" name="end_date" required>
+                  
+                    <input type="submit" value="Search">
+                  </form>                  
                 <% let total = data.reduce((acc, row) => acc + row.Amount, 0); %>
                 <table class="table table-striped" style="width: 90%;">
                     <thead>

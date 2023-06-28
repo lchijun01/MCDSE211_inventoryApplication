@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <link href="style.css" type="text/css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Submit Y&Y Credit note</title>
+    <script>
+      if ( window.history.replaceState ) {
+        window.history.replaceState( null, null, window.location.href );
+      }form
+  </script>
+  </head>
+    <body class="main-contents">
+      <%- include('partials/nav');%>
+      <main class="main-content">
+        <h1>Submit Credit note</h1>
+        <form id="creditnote-form" method="POST" action="/creditnote" enctype="multipart/form-data">
+          <div>
+              <label style="margin-bottom: 3px;">Invoice</label>
+              <input type="text" name="invoice" id="invoice"><br>
+              <label class="form_name" for="date">Date</label>
+              <input type="date" name="date"><br>
+              <label class="form_name" for="courier">Courier</label>
+              <select name="courier" id="courier">
+                <option value="">Choose a Courier</option>
+                <option value="ADS">ADS</option>
+                <option value="Gdex">Gdex</option>
+              </select><br>
+              <label for="amount" class="form_name">Amount</label>
+              <input type="number" name="amount"><br>
+              <label class="form_name" for="remarks">Remarks</label>
+              <textarea name="remarks"></textarea><br>
+              <label class="formfile_name" for="file">File</label>
+              <input class="form_file" id="file-input" type="file" name="file" accept="image/*"><br><br>
+          </div>
+          <div class="button">
+            <br><button class="form_button" type="submit">Submit</button>
+            <button class="form_button" type="reset">Clear</button>
+          </div>
+        </form>
+        <br><br>
+        <table class="table table-striped" style="width: 90%;">
+          <thead>
+            <tr>
+              <th>Invoice</th>
+              <th>Courier</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Remarks</th>
+              <th>Used Amount</th>
+              <th>Used Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% data.forEach(function(row){ %>
+            <tr>
+              <td><%= row.invoice %></td>
+              <td><%= row.courier %></td>
+              <td><%= row.amount.toFixed(2)  %></td>
+              <td><%= row.formattedDate %></td>
+              <td><%= row.remarks %></td>
+              <td><%= (row.used || 0).toFixed(2) %></td>
+              <td><%= row.formattedusedDate %></td>
+            </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </main>
+      <script>
+        document.getElementById('creditnote-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+    
+      const form = document.getElementById('creditnote-form');
+      const formData = new FormData(form);
+    
+      const fileInput = document.getElementById('file-input');
+      const file = fileInput.files[0];
+    
+      if (!file) {
+        alert('Please select a file to upload');
+        return;
+      }
+    
+      try {
+        // Send form data to your server-side code
+        await fetch('/creditnote', {
+          method: 'POST',
+          body: formData,
+        });
+    
+        // Get the invoice number from the form
+        const invoiceNumber = document.getElementById('invoice').value;
+    
+        // Send the image file to Discord
+        const discordFormData = new FormData();
+        discordFormData.append('file', file, file.name);
+        discordFormData.append('payload_json', JSON.stringify({
+          content: `Invoice Number: ${invoiceNumber}`,
+        }));
+    
+        await fetch('https://discord.com/api/webhooks/1123185001593311294/sCYz3p4-p-ngyRGqyMr1jBQY-JmFj5U_abj_-QsazcjfKwlYQ8RGQQoS2NJcjmKySXT4', {
+          method: 'POST',
+          body: discordFormData,
+        });
+    
+        alert('Data saved and file sent to Discord');
+        location.reload();
+      } catch (error) {
+        console.error(error);
+        alert('An error occurred');
+      }
+    });
+      </script>
+    </body>  
+</html>

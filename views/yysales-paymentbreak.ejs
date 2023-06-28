@@ -65,6 +65,16 @@
           <button class="form_button" type="reset">Clear</button>
         </div>
       </form>
+      <br>
+      <form action="/yysales-paymentbreak" method="GET">
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" required>
+      
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" required>
+      
+        <input type="submit" value="Search">
+      </form>
       <table class="table table-striped" style="width: 90%;">
         <thead>
           <tr>

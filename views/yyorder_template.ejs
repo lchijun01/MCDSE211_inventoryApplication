@@ -93,16 +93,18 @@
                 <% let total = 0 %>
                 <% let counter = 1; %>
                 <% for (let i = 0; i < itemsBuyResults.length; i++) { %>
+                <% if (itemsBuyResults[i].ProductName !== 'Discount') { %>
                 <tr>
-                <td style="font-weight: bold;padding-left: 10px;"><%= counter %>.</td>
-                <td style="font-weight: bold;"><%= itemsBuyResults[i].Content_SKU %><span style="margin-left:15px;font-size: 14px;"><%= itemsBuyResults[i].ProductName %></span></td>
-                <td style="text-align: center;"><%= itemsBuyResults[i].SizeUS %></td>
-                <td style="text-align: center;"><%= itemsBuyResults[i].TotalQuantity %></td>
-                <td style="text-align: center;"><%= itemsBuyResults[i].UnitPrice.toFixed(2) %></td>
-                <% total =  itemsBuyResults[i].TotalQuantity *itemsBuyResults[i].UnitPrice %>
-                <td style="text-align: center;"><%= total.toFixed(2) %></td>
+                  <td style="font-weight: bold;padding-left: 10px;"><%= counter %>.</td>
+                  <td style="font-weight: bold;"><%= itemsBuyResults[i].Content_SKU %><span style="margin-left:15px;font-size: 14px;"><%= itemsBuyResults[i].ProductName %></span></td>
+                  <td style="text-align: center;"><%= itemsBuyResults[i].SizeUS %></td>
+                  <td style="text-align: center;"><%= itemsBuyResults[i].TotalQuantity %></td>
+                  <td style="text-align: center;"><%= itemsBuyResults[i].UnitPrice.toFixed(2) %></td>
+                  <% total = itemsBuyResults[i].TotalQuantity * itemsBuyResults[i].UnitPrice %>
+                  <td style="text-align: center;"><%= total.toFixed(2) %></td>
                 </tr>
                 <% counter++ %>
+                <% } %>
                 <% } %>
               </tbody>
             </table>
@@ -122,21 +124,24 @@
                     <td style="text-align: right;font-weight: bold;padding-right: 10px;">-</td>
                   </tr>
                   <tr>
-                    <th style="width: 130px;text-align: right;font-weight: 500;">VAT</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">-</td>
+                    <th style="width: 130px;text-align: right;font-weight: 500;">Discount</th>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">-RM <%= Math.abs(discountAmount).toFixed(2) %></td>
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;font-weight: 500;">Total</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount.toFixed(2) %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmounts.toFixed(2) %></td>
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;">Amount Paid</th>
                     <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalpaid %></td>
                   </tr>
-                  <% if (balance < 0) { %>
+                  <% if (balance < 0 && balance.toFixed(2) !== '0.00') { %>
+                    <tr>
+                    </tr>
+                  <% } else if (balance < 0) { %>
                   <tr>
                     <th style="width: 130px;text-align: right;">Over Paid</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= Math.abs(balance) %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= Math.abs(balance).toFixed(2) %></td>
                   </tr>
                   <% } else { %>
                     <tr>

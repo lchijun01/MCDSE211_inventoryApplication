@@ -51,7 +51,7 @@
               </tr>
               <tr>
                 <td>Sales Discounts(-)</td>
-                <td style="text-align: end;"><%= (refundsales && refundsales !== 0 ? refundsales : 0).toFixed(2) %></td>
+                <td style="text-align: end;">0.00</td>
               </tr>
             </tbody>
             <tfoot>
@@ -88,6 +88,19 @@
                 <td style="text-align: end;"><%= totalship.toFixed(2) %></td>
               </tr>
               <tr>
+                <th>Credit Note(-)</th>
+                <td style="text-align: end;"></td>
+              </tr>
+              <% let creditNoteTotalSum = 0; %>
+              <% for (let i = 0; i < creditNoteTotals.length; i++) { %>
+                <% let creditNoteTotal = creditNoteTotals[i].total_sales; %>
+                <% creditNoteTotalSum += creditNoteTotal; %>
+                <tr>
+                  <td style="padding-left: 50px;"><%= creditNoteTotals[i].courier %></td>
+                  <td style="text-align: end;"><%= creditNoteTotal.toFixed(2) %></td>
+                </tr>
+              <% } %>
+              <tr>
                 <td>Closing Stock(-)</td>
                 <td style="text-align: end;"><%= (totalPurchases - totalCost).toFixed(2) %></td>
               </tr>
@@ -109,10 +122,11 @@
                 <th style="text-align: end;">Total:</th>
                 <th style="text-align: end;">RM <%= 
                   ((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
-                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount))).toFixed(2) %></th>
+                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount)) - creditNoteTotalSum).toFixed(2) %>
+                </th>
               </tr>
             </tfoot>
-          </table>
+          </table>          
         </div>
         <br>
         <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div>
@@ -134,14 +148,14 @@
               <tr>
                 <td>Cost of Goods Sold(-)</td>
                 <td style="text-align: end;"><%= ((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
-                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount))).toFixed(2) %></td>
+                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount)) - creditNoteTotalSum).toFixed(2) %></td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
                 <th style="text-align: end;">Total:</th>
                 <th style="text-align: end;">RM <%= (((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0))-((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
-                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount)))).toFixed(2) %></th>
+                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount)) - creditNoteTotalSum)).toFixed(2) %></th>
               </tr>
             </tfoot>
           </table>
@@ -190,7 +204,7 @@
               <tr>
                 <td>Gross Profit</td>
                 <td style="text-align: end;"><%= (((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0))-((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
-                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount)))).toFixed(2) %></td>
+                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount)) - creditNoteTotalSum)).toFixed(2) %></td>
               </tr>
               <tr>
                 <td>Expenditure(-)</td>
@@ -201,7 +215,7 @@
               <tr>
                 <th style="text-align: end;">Total Nett Profit:</th>
                 <th style="text-align: end;">RM <%= ((((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0))-((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
-                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount))))-totalExpenses).toFixed(2) %></th>
+                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount)) - creditNoteTotalSum))-totalExpenses).toFixed(2) %></th>
               </tr>
             </tfoot>
           </table>
@@ -222,7 +236,7 @@
               <tr>
                 <td>Nett Profit</td>
                 <td style="text-align: end;"><%= ((((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0))-((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
-                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount))))-totalExpenses).toFixed(2) %></td>
+                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount)) - creditNoteTotalSum))-totalExpenses).toFixed(2) %></td>
               </tr>
               <tr>
                 <td>Retained Profit B/F</td>
@@ -244,7 +258,7 @@
               <tr>
                 <th style="text-align: end;">Total:</th>
                 <th style="text-align: end;">RM <%= (((((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0))-((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - 
-                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount))))-totalExpenses)+(((((((bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bftotalSalesno && bftotalSalesno !== 0 ? bftotalSalesno : 0)
+                  (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno - total_purchasesWOnosku) - (Math.abs(total_buydiscount)) - creditNoteTotalSum))-totalExpenses)+(((((((bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bftotalSalesno && bftotalSalesno !== 0 ? bftotalSalesno : 0)
                   - (bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bfbonus && bfbonus !== 0 ? bfbonus : 0)) - (bfrefundsales && bfrefundsales !== 0 ? bfrefundsales : 0)) - 
                   (((bftotalPurchasesLastyear && bftotalPurchasesLastyear !== 0 ? bftotalPurchasesLastyear : 0) - (bftotalCostLastyear && bftotalCostLastyear !== 0 ? bftotalCostLastyear : 0))
                   + (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0) + (bftotalship && bftotalship !== 0 ? bftotalship : 0) - 
