@@ -3763,6 +3763,67 @@ app.get('/exporttopup_csv', requireLogin, function(req, res) {
   });
 });
 
+app.post('/importcreditNote_csv', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+  
+  // Parse the CSV file and insert the data into MySQL tables
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+      // Extract the relevant data from the CSV row
+      const { invoice, amount, courier, remarks, date, used, useddate } = data;
+
+      pool.query('INSERT INTO yytopupbalance ( invoice, amount, courier, remarks, date, used, useddate ) VALUES (?, ?, ?, ?, ?, ?, ?)', [invoice, amount, courier, remarks, date, used, useddate], (error, results) => {
+          if (error) {
+            console.error(error);
+            res.send('An error occurred while processing the CSV file.');
+          } else {
+            console.log(`Data successfully inserted for Date: ${date}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
+    });
+});
+app.get('/exportcreditNote_csv', requireLogin, function(req, res) {
+  const sql = `SELECT invoice, amount, courier, remarks, date, used, useddate
+               FROM creditnote
+               ORDER BY date`;
+
+  pool.query(sql, function(error, results) {
+    if (error) throw error;
+
+    const csvData = [];
+    // Iterate through the SQL query results and build the CSV data
+    results.forEach((row) => {
+      const formattedDate = row.date ? moment(row.date).format('YYYY-MM-DD') : '';
+      const formattedusedDate = row.useddate ? moment(row.useddate).format('YYYY-MM-DD') : ''; // Use moment.js to format the date string
+        csvData.push({
+          invoice: row.invoice,
+          amount: row.amount,
+          courier: row.courier,
+          remarks: row.remarks,
+          date: formattedDate,
+          used: row.used,
+          useddate: formattedusedDate,
+        });
+    });
+
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD');
+    const fileName = `${timestamp}_CreditNote.csv`;
+
+    // Set the response headers with the updated file name
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+
+    // Use fast-csv to stream the CSV data to the HTTP response
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+
 //-------------------------------------Bank statement---------------------------------------------------
 app.get('/expenses-record', requireLogin, function(req, res){
     res.render('expenses-record');
