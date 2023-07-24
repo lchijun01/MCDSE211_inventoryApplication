@@ -4947,7 +4947,6 @@ app.get('/yysell_invoice', requireLogin, function(req, res) {
     }
   });
 });
-
 app.get('/yyproduct-details', requireLogin, (req, res) => {
   const sku = req.query.sku;
   const size = req.query.size;
@@ -5748,9 +5747,6 @@ app.get('/yyordergenerate', requireLogin, (req, res) => {
     }
   });
 });
-
-//=-----------------------Drawing-------------------------------------------------------------------------
-//for company fund 2 personal 
 app.get('/yycompany2personal', requireLogin, function(req, res) {
   pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Category, Bank, Name, Amount, Detail, File, banknum FROM yycompanyfund2personal', function(error, results, fields) {
     if (error) {
@@ -5779,7 +5775,6 @@ app.post('/yycompany2personal',upload.single('file'),  urlencodedParser, functio
     }
   });
 });
-//for personal 2 company
 app.get('/yypersonal2company', requireLogin, function(req, res) {
   pool.query('SELECT DATE_FORMAT(Date, "%Y-%m-%d") as formattedDate, Invoice_No, Category, Bank, Name, Amount, Detail, File FROM yypersonalfund2company', function(error, results, fields) {
     if (error) {
@@ -5808,7 +5803,6 @@ app.post('/yypersonal2company',upload.single('file'),  urlencodedParser, functio
           }
         });
 });
-//expenses yong yi
 app.get('/yyexpenses-record', requireLogin, function(req, res) {
   let years = [];
   pool.query('SELECT DISTINCT YEAR(Date) AS year FROM yyexpensesrecord ORDER BY year DESC', function(error, results, fields) {
@@ -5921,7 +5915,6 @@ app.post('/yyexpenses-record', upload.single('file'), urlencodedParser, function
     }
   });
 });
-//for ykickzone top up and check balance left
 app.get('/yytopupbalance', requireLogin, (req, res) => {
   pool.query(
     `SELECT ID, wallet, amount, lastbalance, DATE_FORMAT(date, "%Y-%m-%d") as date, bonuscredit FROM yytopupbalance WHERE wallet = 'Gdex' ORDER BY ID DESC `,
@@ -6358,6 +6351,574 @@ app.post('/yyaccruals', upload.single('file'), urlencodedParser, function(req, r
     }
   });
 });
+
+//for procurement buy
+app.get('/procurementbuy', function(req, res) {
+  // Query the database to retrieve all rows with summed quantity
+  const sql = `
+  SELECT buyinvoice, sku, productname, size, costprice, SUM(buyquantity) as quantity
+  FROM procurementdatabase
+  GROUP BY sku, size, costprice, productname, buyinvoice`;
+
+  // Execute the SQL query
+  pool.query(sql, (err, result) => {
+    if (err) {
+      console.error('Error fetching data from the database:', err);
+      res.render('error'); // Render an error page or handle the error accordingly
+    } else {
+      const data = result; // Assuming the result contains the data from the database
+
+      // Pass the data to the EJS template for rendering
+      res.render('procurementbuy', { data: data });
+    }
+  });
+});
+app.get('/procurementbuyproduct-name', (req, res) => {
+  const sku = req.query.sku;
+  const query = `
+    SELECT DISTINCT productname
+    FROM procurementdatabase
+    WHERE sku LIKE ? LIMIT 1
+  `;
+  pool.query(query, ['%' + sku + '%'], (err, results) => {
+    if (err) throw err;
+
+    const productNames = new Set();
+
+    results.forEach(result => {
+      productNames.add(result.productname);
+    });
+    res.json({
+      productNames: Array.from(productNames)
+    });
+  });
+});
+app.post('/procurementbuy', upload.single('file'), urlencodedParser, (req, res) => {
+  const {
+    field1,
+    field2,
+    field3,
+    field7,
+    name,
+    bank,
+    bankname,
+    bankacc,
+    remarks,
+    field4,
+    field5,
+    discount
+  } = req.body;
+  console.log(req.body);
+
+  const buydate = new Date();
+
+  // Fetch the maximum buyinvoice value from the database
+  pool.query('SELECT MAX(buyinvoice) AS maxBuyInvoice FROM procurementdatabase', (err, result) => {
+    if (err) {
+      console.error('Error fetching maximum buyinvoice:', err);
+      return;
+    }
+
+    // Extract the maximum buyinvoice from the result
+    const maxBuyInvoice = result[0].maxBuyInvoice;
+    let invoiceCounter = 1;
+
+    if (maxBuyInvoice) {
+      // Extract the numeric part of the maximum buyinvoice and increment it
+      invoiceCounter = parseInt(maxBuyInvoice.replace('PO', ''), 10) + 1;
+    }
+
+    // Generate the buyinvoice value using the counter
+    const buyinvoice = `PO${invoiceCounter.toString().padStart(5, '0')}`; // Format the invoice number as "PO00001"
+
+    // Prepare the SQL query
+    const sql = 'INSERT INTO procurementdatabase (sku, productname, size, gender, buydate, buyinvoice, name, bank, bankname, bankacc, buyremarks, costprice, buyquantity) VALUES ?';
+
+    // Prepare the values for multiple rows
+    const values = [];
+
+    // Iterate over the submitted data and generate the values array for multiple rows
+    for (let i = 0; i < field1.length; i++) {
+      const quantity = parseInt(field5[i]);
+
+      for (let j = 0; j < quantity; j++) {
+        values.push([
+          field1[i],
+          field2[i],
+          field3[i],
+          field7[i],
+          buydate,
+          buyinvoice,
+          name,
+          bank,
+          bankname,
+          bankacc,
+          remarks,
+          parseFloat(field4[i]), // Use the original cost price without any changes
+          1, // Set buyquantity to 1 for each row
+        ]);
+      }
+    }
+
+    // If there is a discount, add a separate entry for the discount
+    if (parseFloat(discount) > 0) {
+      values.push([
+        null, // Set SKU as null for the discount entry
+        'Discount',
+        null,
+        null,
+        buydate,
+        buyinvoice,
+        name,
+        bank,
+        bankname,
+        bankacc,
+        remarks,
+        -parseFloat(discount), // Use negative discount as cost price for the discount entry
+        1,
+      ]);
+    }
+
+    // Execute the SQL query with the values array
+    pool.query(sql, [values], (err, result) => {
+      if (err) {
+        console.error('Error inserting data:', err);
+      } else {
+        console.log('Data inserted successfully');
+      }
+    });
+
+    // Fetch the data from the database
+    const selectSql = `
+      SELECT buyinvoice, sku, productname, size, costprice, SUM(buyquantity) as quantity
+      FROM procurementdatabase
+      GROUP BY sku, size, costprice, productname, buyinvoice`;
+
+    // Execute the SQL query to fetch data
+    pool.query(selectSql, (err, result) => {
+      if (err) {
+        console.error('Error fetching data from the database:', err);
+        res.render('error'); // Render an error page or handle the error accordingly
+      } else {
+        const data = result; // Assuming the result contains the data from the database
+
+        // Pass the data to the EJS template for rendering
+        res.render('procurementbuy', { data: data });
+      }
+    });
+  });
+});
+app.get('/procurementbuy-payment', function(req, res) {
+  const invoiceQuery = `
+    SELECT DATE_FORMAT(p.buydate, "%Y-%m-%d") AS formattedbuyDate, p.buyinvoice, SUM(p.costprice) AS totalAmount, IFNULL(b.totalPaid, 0) AS totalPaid,
+    CASE
+      WHEN SUM(p.costprice) - IFNULL(b.totalPaid, 0) < 0 THEN 'Overpaid'
+      WHEN SUM(p.costprice) - IFNULL(b.totalPaid, 0) > 0 THEN 'Need to Pay'
+      ELSE ''
+    END AS status
+    FROM procurementdatabase AS p
+    LEFT JOIN (
+      SELECT buyinvoice, SUM(amount) AS totalPaid
+      FROM procurementbuypaymentbreakdown
+      GROUP BY buyinvoice
+    ) AS b ON p.buyinvoice = b.buyinvoice
+    GROUP BY p.buyinvoice, b.totalPaid, p.buydate
+  `;
+
+  const paymentBreakdownQuery = `
+    SELECT *, DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate
+    FROM procurementbuypaymentbreakdown
+  `;
+
+  pool.query(invoiceQuery, function(error, invoiceResults, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error retrieving invoice data');
+      return;
+    }
+
+    pool.query(paymentBreakdownQuery, function(error, paymentBreakdownResults, fields) {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error retrieving payment breakdown data');
+        return;
+      }
+
+      const filteredInvoices = invoiceResults.filter((invoice) => {
+        return invoice.status === 'Overpaid' || invoice.status === 'Need to Pay';
+      });
+
+      res.render('procurementbuy-payment', {
+        invoiceData: filteredInvoices,
+        paymentBreakdownData: paymentBreakdownResults
+      });
+    });
+  });
+});
+app.post('/procurementbuy-payment', upload.single('file'), urlencodedParser, function(req, res) {
+  const { date, invoice_no, amount, remarks, bankref } = req.body;
+
+  // Get the filename from the request
+  const filename = req.file ? req.file.filename : 'N/A';
+
+  // Insert the form data into MySQL
+  pool.query('INSERT INTO procurementbuypaymentbreakdown (date, buyinvoice, amount, remarks, file, bankrefs) VALUES (?, ?, ?, ?, ifnull(?, "N/A"), ?)', [date, invoice_no, amount, remarks, filename, bankref], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+    } else {
+      // Retrieve data from MySQL
+      pool.query('SELECT *,  DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate FROM procurementbuypaymentbreakdown', function(error, selectResults, fields) {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error retrieving data');
+        } else {
+          console.log(req.body);
+          res.render('procurementbuy-payment', { successMessage: 'Form submitted successfully', data: selectResults });
+        }
+      });
+    }
+  });
+});
+app.get('/procurementBuypayment_search', function(req, res) {
+  const invoiceNumber = req.query.invoice_number;
+
+  const invoiceQuery = `
+    SELECT p.name, p.buyinvoice, SUM(p.costprice) AS totalAmount, IFNULL(b.totalPaid, 0) AS totalPaid,
+    CASE
+      WHEN SUM(p.costprice) - IFNULL(b.totalPaid, 0) < 0 THEN 'Overpaid'
+      WHEN SUM(p.costprice) - IFNULL(b.totalPaid, 0) > 0 THEN 'Need to Pay'
+      ELSE ''
+    END AS status
+    FROM procurementdatabase AS p
+    LEFT JOIN (
+      SELECT buyinvoice, SUM(amount) AS totalPaid
+      FROM procurementbuypaymentbreakdown
+      GROUP BY buyinvoice
+    ) AS b ON p.buyinvoice = b.buyinvoice
+    WHERE p.buyinvoice = ?
+    GROUP BY p.buyinvoice, p.costprice, b.totalPaid, p.name
+  `;
+
+  const paymentBreakdownQuery = `
+    SELECT *, DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate
+    FROM procurementbuypaymentbreakdown
+    WHERE buyinvoice = ?
+  `;
+
+  pool.query(invoiceQuery, [invoiceNumber], function(error, invoiceResults, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error retrieving invoice data');
+      return;
+    }
+
+    pool.query(paymentBreakdownQuery, [invoiceNumber], function(error, paymentBreakdownResults, fields) {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error retrieving payment breakdown data');
+        return;
+      }
+
+      // Fetch the discount data
+      const discountQuery = `
+        SELECT SUM(costprice) AS totalDiscount
+        FROM procurementdatabase
+        WHERE buyinvoice = ?
+          AND productname = 'Discount'
+      `;
+
+      pool.query(discountQuery, [invoiceNumber], function(error, discountResult, fields) {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error retrieving discount data');
+          return;
+        }
+
+        const totalAmount = (invoiceResults.length > 0 ? invoiceResults[0].totalAmount : 0) + (discountResult.length > 0 ? discountResult[0].totalDiscount : 0);
+        const totalPaid = invoiceResults.length > 0 ? invoiceResults[0].totalPaid : 0;
+        const totalDiscount = discountResult.length > 0 ? discountResult[0].totalDiscount : 0;
+        const balance = totalAmount - totalPaid;
+
+        res.render('procurementbuypayment-details', {
+          invoiceNumber: invoiceNumber,
+          buyrecordResults: invoiceResults,
+          paymentBreakdownData: paymentBreakdownResults,
+          totalAmount: totalAmount,
+          totalPaid: totalPaid,
+          totalDiscount: totalDiscount,
+          balance: balance
+        });
+      });
+    });
+  });
+});
+app.get('/procurementbuy-generate', function(req, res) {
+  res.render('procurementbuy-generate');
+});
+app.get('/procurementbuygenerate', (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the buy_record table
+  const buyRecordQuery = `SELECT * FROM procurementdatabase WHERE buyinvoice = '${invoiceNumber}'`;
+  pool.query(buyRecordQuery, (error, buyRecordResults) => {
+    if (error) throw error;
+
+    if (!buyRecordResults.length) {
+      // Render the procurementbuy_template view with no buyRecordResults
+      res.render('procurementbuy_template', {
+        buyRecordResults: null,
+        invoiceNumber: invoiceNumber
+      });
+    } else {
+      // Query the items_buy table with grouping by ProductName, SizeUS, and UnitPrice
+      const itemsBuyQuery = `SELECT sku, productname, size, costprice, SUM(buyquantity) AS TotalQuantity
+        FROM procurementdatabase
+        WHERE buyinvoice = '${invoiceNumber}' AND sku IS NOT NULL AND sku != ""
+        GROUP BY sku, productname, size, costprice`;
+
+      pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemsBuyResults.length; i++) {
+          totalAmount += itemsBuyResults[i].costprice * itemsBuyResults[i].TotalQuantity;
+        }
+
+        // Query the purchase_paymentbreakdown table
+        const purchasePaymentQuery = `SELECT * FROM procurementbuypaymentbreakdown WHERE buyinvoice = '${invoiceNumber}'`;
+        pool.query(purchasePaymentQuery, (error, purchasePaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < purchasePaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(purchasePaymentResults[i].amount);
+          }
+
+          const discountQuery = `SELECT SUM(costprice) AS DiscountAmount FROM procurementdatabase WHERE buyinvoice = '${invoiceNumber}' AND productname = 'Discount'`;
+          pool.query(discountQuery, (error, discountResult) => {
+            if (error) throw error;
+
+            const discountAmount = discountResult[0].DiscountAmount || 0;
+            const totalAmounts = totalAmount + discountAmount; // Deduct the discount amount from the total
+
+            // Calculate the balance
+            const balance = totalAmounts - totalAmountPaid;
+            const discountApplied = itemsBuyResults.length >= 5;
+
+            res.render('procurementbuy_template', {
+              discountResult: discountResult,
+              invoiceNumber: invoiceNumber,
+              buyRecordResults: buyRecordResults,
+              itemsBuyResults: itemsBuyResults,
+              totalAmounts: totalAmounts,
+              totalAmount: totalAmount,
+              transactions: purchasePaymentResults,
+              balance: balance,
+              totalpaid: totalAmountPaid,
+              discountApplied: discountApplied,
+              discountAmount: discountAmount,
+            });
+          });
+        });
+      });
+    }
+  });
+});
+
+
+app.get('/procurementsales', function(req, res) {
+  const startDate = req.query.start_date;
+  const endDate = req.query.end_date;
+
+  let query = `
+    SELECT salesinvoice, sku, size, sellprice, productname, gender, costprice, salesdate FROM procurementdatabase WHERE sku IS NOT NULL AND sku <> ''
+  `;
+
+  if (startDate && endDate) {
+    query += ` AND salesdate BETWEEN '${startDate}' AND '${endDate}'`;
+  }
+
+  query += `
+    GROUP BY salesinvoice, sku, size, sellprice, productname, gender, costprice, salesdate
+    ORDER BY salesinvoice DESC, CAST(size AS DECIMAL(10,2)) ASC
+  `;
+
+  pool.query(query, function(error, results, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    } else {
+      const data = results.map(row => ({ ...row }));
+      res.render('procurementsales', { data });
+    }
+  });
+});
+app.get('/procurement-productname', (req, res) => {
+  const sku = req.query.sku;
+  const query = `
+    SELECT DISTINCT productname
+    FROM procurementdatabase
+    WHERE sku LIKE ?
+  `;
+  pool.query(query, ['%' + sku + '%'], (err, results) => {
+    if (err) throw err;
+
+    const productnames = new Set();
+
+    results.forEach(result => {
+      productnames.add(result.productname);
+    });
+
+    res.json({
+      productnames: Array.from(productnames)
+    });
+  });
+});
+app.get('/procurementQuantityAndCostPrice', (req, res) => {
+  // Retrieve SKU and Size from the query parameters
+  const sku = req.query.sku;
+  const size = req.query.size;
+
+  // Perform the necessary database query to retrieve the quantity and distinct unit prices
+  const query = `SELECT SUM(buyquantity) AS quantity, costprice 
+                 FROM procurementdatabase 
+                 WHERE sku = '${sku}' AND size = '${size}' AND (salesinvoice = '' OR salesinvoice IS NULL)
+                 GROUP BY costprice`;
+
+  // Execute the query and retrieve the results using the database connection pool
+  pool.query(query, (err, result) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+
+    // Check if the query result contains any rows
+    if (result.length === 0) {
+      res.status(404).json({ error: 'No data found' });
+      return;
+    }
+
+    // Prepare the response data as an array of objects
+    const responseData = result.map(row => {
+      return {
+        Quantity: row.quantity,
+        Costprice: row.costprice
+      };
+    });
+
+    // Send the response data as JSON response
+    res.json(responseData);
+  });
+});
+app.get('/procurementCostPrices', (req, res) => {
+  const sku = req.query.sku;
+  const size = req.query.size;
+
+  const query = `
+    SELECT DISTINCT costprice
+    FROM procurementdatabase
+    WHERE sku = '${sku}' AND size = '${size}' AND (salesinvoice IS NULL OR salesinvoice = '')
+  `;
+
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+
+    const costprices = results.map(result => result.costprice);
+    res.json(costprices);
+  });
+});
+app.post('/procurementsales', upload.single('file'), urlencodedParser, function (req, res) {
+  const { name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [], field8 = []} = req.body;
+
+  pool.query('SELECT MAX(Invoice_number) as maxInvoiceNumber FROM yysell_invoice', (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Error fetching max Invoice_number');
+    } else {
+      const maxInvoiceNumber = results[0].maxInvoiceNumber;
+      const invoice_number = (maxInvoiceNumber ? parseInt(maxInvoiceNumber) : 0) + 1;
+
+      pool.query('INSERT INTO yysell_invoice (Invoice_number, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [invoice_number, name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks], (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          return res.status(500).send('Error saving form data');
+        } else {
+          const sellItems = [];
+          field1.forEach((item, index) => {
+            for (let i = 0; i < field5[index]; i++) {
+              let shipStatus = 'pending';
+              if (name.toLowerCase() === 'goat') {
+                shipStatus = 'shipped';
+                // Insert into singgleship table
+                const trackingNumber = 'goat';
+                const currentDate = new Date().toISOString();
+                const content_SKU = item;
+                const productName = field2[index];
+                const sizeUS = field3[index];
+
+                pool.query('INSERT INTO singgleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)', [trackingNumber, currentDate, content_SKU, productName, sizeUS, invoice_number, 1], (error, results, fields) => {
+                  if (error) {
+                    console.error(error);
+                    return res.status(500).send('Error saving data to singgleship table');
+                  }
+                });
+              }
+              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index], 1 , field4[index], field7[index], field8[index], shipStatus]);
+            }
+          });
+          pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, UnitPrice, Quantity, Amount, gender, CostPrice, ship) VALUES ?', [sellItems], (error, results, fields) => {
+            if (error) {
+              console.error(error);
+              return res.status(500).send('Error saving shipped items data');
+            } else {
+              field1.forEach((item, index) => {
+                const sku = item;
+                const size = field3[index];
+                const qty = field5[index];
+                const unitPrice = field8[index];
+                const soldDate = moment().format('YYYY-MM-DD');
+                for (let i = 0; i < qty; i++) {
+                  pool.query('UPDATE yyitems_buy SET sold = ?, solddate = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND sold = ? AND status = ? LIMIT ?', ['yes', soldDate, unitPrice, sku, size, 'no', 'check', parseInt(qty)], (error, results, fields) => {
+                    if (error) {
+                      console.error(error);
+                      return res.status(500).send('Error updating yyitems_buy table');
+                    }
+                  });
+                }
+              });
+              pool.query(`
+                    SELECT i.*, s.timestamp 
+                    FROM yyitems_sell i
+                    LEFT JOIN yysell_invoice s ON i.InvoiceNumber = s.Invoice_number
+                    ORDER BY i.InvoiceNumber DESC
+                `, function(error, results, fields) {
+                    if (error) {
+                      console.error(error);
+                      return res.status(500).send('Error fetching data');
+                    } else {
+                      console.log(req.body);
+                      const data = results.map(row => ({ ...row }));
+                      res.render('yysell_invoice', { successMessage: 'Form submitted successfully', data });
+                    }
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+});
+
+
+
 
 //----------------------Ending--------------------------------------------------------------------------------
 app.get('/profile/:name', requireLogin, function(req, res){

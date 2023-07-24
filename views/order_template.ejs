@@ -14,15 +14,15 @@
     </script>
 </head>
 <body class="main-contents" style="background-color: black;">
-    <%
-const timestamp = buyRecordResults[0].timestamp;
-const newTimestamp = new Date(timestamp);
-newTimestamp.setDate(newTimestamp.getDate() + 30);
-const day = newTimestamp.getDate().toString().padStart(2, '0');
-const month = (newTimestamp.getMonth() + 1).toString().padStart(2, '0');
-const year = newTimestamp.getFullYear().toString().slice(-2);
-const formattedNewTimestamp = `${day}/${month}/${year}`;
-%>
+  <%
+  const timestamp = buyRecordResults[0].timestamp;
+  const newTimestamp = new Date(timestamp);
+  newTimestamp.setDate(newTimestamp.getDate() + 30);
+  const day = newTimestamp.getDate().toString().padStart(2, '0');
+  const month = (newTimestamp.getMonth() + 1).toString().padStart(2, '0');
+  const year = newTimestamp.getFullYear().toString().slice(-2);
+  const formattedNewTimestamp = `${day}/${month}/${year}`;
+  %>
     <%- include('partials/nav');%>
     <main class="main-content" style="display: flex;">
       <div id="printable-content" style="width:22.5cm ;height: 35.7cm;background-color: white;padding: 1.016cm;">
