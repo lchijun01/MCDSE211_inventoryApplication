@@ -6836,85 +6836,13 @@ app.get('/procurementCostPrices', (req, res) => {
   });
 });
 app.post('/procurementsales', upload.single('file'), urlencodedParser, function (req, res) {
-  const { name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [], field8 = []} = req.body;
-
-  pool.query('SELECT MAX(Invoice_number) as maxInvoiceNumber FROM yysell_invoice', (error, results, fields) => {
+  const { name, phone, adr1, adr2, adr3, postcode, city, state, country, runnerfee, shipfee, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [], field8 = []} = req.body;
+ 
+  pool.query('INSERT INTO procurementdatabase (sellto, phone, adres1, adres2, adres3, postcode, city, state, country, salesremarks, runnerfee, shippingfee) VALUES (?,?,?,?,?,?,?,?,?,?)', [name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, runnerfee, shipfee], (error, results, fields) => {
     if (error) {
       console.error(error);
-      return res.status(500).send('Error fetching max Invoice_number');
-    } else {
-      const maxInvoiceNumber = results[0].maxInvoiceNumber;
-      const invoice_number = (maxInvoiceNumber ? parseInt(maxInvoiceNumber) : 0) + 1;
-
-      pool.query('INSERT INTO yysell_invoice (Invoice_number, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [invoice_number, name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks], (error, results, fields) => {
-        if (error) {
-          console.error(error);
-          return res.status(500).send('Error saving form data');
-        } else {
-          const sellItems = [];
-          field1.forEach((item, index) => {
-            for (let i = 0; i < field5[index]; i++) {
-              let shipStatus = 'pending';
-              if (name.toLowerCase() === 'goat') {
-                shipStatus = 'shipped';
-                // Insert into singgleship table
-                const trackingNumber = 'goat';
-                const currentDate = new Date().toISOString();
-                const content_SKU = item;
-                const productName = field2[index];
-                const sizeUS = field3[index];
-
-                pool.query('INSERT INTO singgleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)', [trackingNumber, currentDate, content_SKU, productName, sizeUS, invoice_number, 1], (error, results, fields) => {
-                  if (error) {
-                    console.error(error);
-                    return res.status(500).send('Error saving data to singgleship table');
-                  }
-                });
-              }
-              sellItems.push([invoice_number, item, field2[index], field3[index], field4[index], 1 , field4[index], field7[index], field8[index], shipStatus]);
-            }
-          });
-          pool.query('INSERT INTO yyitems_sell (InvoiceNumber, Content_SKU, product_name, SizeUS, UnitPrice, Quantity, Amount, gender, CostPrice, ship) VALUES ?', [sellItems], (error, results, fields) => {
-            if (error) {
-              console.error(error);
-              return res.status(500).send('Error saving shipped items data');
-            } else {
-              field1.forEach((item, index) => {
-                const sku = item;
-                const size = field3[index];
-                const qty = field5[index];
-                const unitPrice = field8[index];
-                const soldDate = moment().format('YYYY-MM-DD');
-                for (let i = 0; i < qty; i++) {
-                  pool.query('UPDATE yyitems_buy SET sold = ?, solddate = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND sold = ? AND status = ? LIMIT ?', ['yes', soldDate, unitPrice, sku, size, 'no', 'check', parseInt(qty)], (error, results, fields) => {
-                    if (error) {
-                      console.error(error);
-                      return res.status(500).send('Error updating yyitems_buy table');
-                    }
-                  });
-                }
-              });
-              pool.query(`
-                    SELECT i.*, s.timestamp 
-                    FROM yyitems_sell i
-                    LEFT JOIN yysell_invoice s ON i.InvoiceNumber = s.Invoice_number
-                    ORDER BY i.InvoiceNumber DESC
-                `, function(error, results, fields) {
-                    if (error) {
-                      console.error(error);
-                      return res.status(500).send('Error fetching data');
-                    } else {
-                      console.log(req.body);
-                      const data = results.map(row => ({ ...row }));
-                      res.render('yysell_invoice', { successMessage: 'Form submitted successfully', data });
-                    }
-              });
-            }
-          });
-        }
-      });
-    }
-  });
+      return res.status(500).send('Error saving form data');
+  }});
 });
 
 
