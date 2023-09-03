@@ -797,7 +797,7 @@ app.get('/bankledger', requireLogin, (req, res) => {
         } else {
           const totalPurchasePaymentbreakdown = purchaseResults;
 
-          pool.query('SELECT * FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL AND Name != "Gdex"', (error, expensesResults) => {
+          pool.query('SELECT * FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL OR accrued = "no" AND Name != "Gdex"', (error, expensesResults) => {
             if (error) {
               console.error(error);
               res.status(500).send('An error occurred');
@@ -5056,7 +5056,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
                 const productName = field2[index];
                 const sizeUS = field3[index];
 
-                pool.query('INSERT INTO singgleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)', [trackingNumber, currentDate, content_SKU, productName, sizeUS, invoice_number, 1], (error, results, fields) => {
+                pool.query('INSERT INTO singleship (TrackingNumber, Date, Content_SKU, Productname, SizeUS, invoice, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)', [trackingNumber, currentDate, content_SKU, productName, sizeUS, invoice_number, 1], (error, results, fields) => {
                   if (error) {
                     console.error(error);
                     return res.status(500).send('Error saving data to singgleship table');
