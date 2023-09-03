@@ -62,8 +62,8 @@ app.post('/login', urlencodedParser, async (req, res) => {
 
   // You can replace this with a database query to fetch the user's details
   const user = {
-    username: 'yongyi',
-    password: await bcrypt.hash('Copcop21@', 10)
+    username: ' ',
+    password: await bcrypt.hash(' ', 10)
   };
 
   if (username === user.username && await bcrypt.compare(password, user.password)) {
