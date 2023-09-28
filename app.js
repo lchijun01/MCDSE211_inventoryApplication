@@ -5051,7 +5051,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
                 shipStatus = 'shipped';
                 // Insert into singgleship table
                 const trackingNumber = 'goat';
-                const currentDate = new Date().toISOString();
+                const currentDate = new Date().toISOString().split('T')[0];
                 const content_SKU = item;
                 const productName = field2[index];
                 const sizeUS = field3[index];
@@ -6556,13 +6556,13 @@ app.get('/procurementbuy-payment', function(req, res) {
   });
 });
 app.post('/procurementbuy-payment', upload.single('file'), urlencodedParser, function(req, res) {
-  const { date, invoice_no, amount, remarks, bankref } = req.body;
+  const { date, invoice_no, name, amount, remarks, bankref } = req.body;
 
   // Get the filename from the request
   const filename = req.file ? req.file.filename : 'N/A';
 
   // Insert the form data into MySQL
-  pool.query('INSERT INTO procurementbuypaymentbreakdown (date, buyinvoice, amount, remarks, file, bankrefs) VALUES (?, ?, ?, ?, ifnull(?, "N/A"), ?)', [date, invoice_no, amount, remarks, filename, bankref], (error, results, fields) => {
+  pool.query('INSERT INTO procurementbuypaymentbreakdown (date, buyinvoice, name, amount, remarks, file, bankrefs) VALUES (?, ?, ?, ?, ifnull(?, "N/A"), ?)', [date, invoice_no, name, amount, remarks, filename, bankref], (error, results, fields) => {
     if (error) {
       console.error(error);
       res.status(500).send('Error saving form data');
