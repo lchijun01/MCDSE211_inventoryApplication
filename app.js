@@ -6844,6 +6844,23 @@ app.post('/procurementsales', upload.single('file'), urlencodedParser, function 
       return res.status(500).send('Error saving form data');
   }});
 });
+app.get('/suggestions', (req, res) => {
+  const query = req.query.query;
+  pool.query(
+    'SELECT DISTINCT buyinvoice FROM procurementdatabase WHERE buyinvoice LIKE ? ORDER BY buyinvoice ASC LIMIT 10',
+    [`%${query}%`],
+    (err, results, fields) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Server error');
+      }
+      // Now, results should already contain unique buyinvoice values, so we can map over them directly
+      const suggestions = results.map(row => row.buyinvoice);
+      res.json(suggestions);
+    }
+  );
+});
+
 
 
 
