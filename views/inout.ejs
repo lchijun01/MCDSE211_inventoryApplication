@@ -255,6 +255,17 @@
               <button class="btn btn-success" type="submit">Import CSV</button>
             </form>
             <a href="/exportcreditNote_csv" class="btn btn-primary">Export CSV</a>
+        </div>
+        <br>
+        <br>
+        <div>
+          <h4>Procurementdatabase csv</h4>
+          <div style="display: flex;">
+            <form style="width: 500px;" action="/procurementdataImport" method="post" enctype="multipart/form-data">
+              <input type="file" name="file">
+              <button class="btn btn-success" type="submit">Import CSV</button>
+            </form>
+            <a href="/procurementdataExport" class="btn btn-primary">Export CSV</a>
           </div>
         </div>
       </div>

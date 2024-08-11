@@ -30,32 +30,14 @@
         .suggestion-item:hover {
           background-color: #d3d3d3;
         }
-        .tooltip-container {
-            position: relative;
-            display: inline-block;
-        }
 
-        .tooltip-icon {
-            cursor: pointer;
-            text-decoration: underline;
-            color: blue;
-        }
-
-        .tooltip-content {
-            display: none;
-            position: absolute;
-            background-color: white;
-            border: 1px solid #ccc;
+        .box {
             padding: 10px;
-            z-index: 1;
-            width: 200px; /* Adjust the width as needed */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+            width: 100%;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        .tooltip-container:hover .tooltip-content {
-            display: block;
-        }
-
     </style>
     <title>Sales-Invoice</title>
     <script>
@@ -67,370 +49,310 @@
 <body class="main-contents">
     <%- include('partials/nav'); %>
     <main class="main-content">
-        <h1>Sales - Invoice</h1>
-        <form style="display:flex;" id="procurementsales-form" method="POST" action="/procurementsales" enctype="multipart/form-data">
-            <div>
-                <div style="display:flex;">
-                    <div>
-                        <label class="form_name5">Name</label>
-                        <input style="margin-bottom: 3px;" type="text" name="name" required placeholder="Buyer Name"><br>
-                        <label class="form_name5">Phone</label>
-                        <input style="margin-bottom: 3px;" type="number" name="phone" placeholder="Phone"><br>
-                        <label class="form_name5">Address</label>
-                        <input style="margin-bottom: 3px;" type="text" name="adr1" placeholder="Address 1"><br>
-                        <label class="form_name5"></label>
-                        <input style="margin-bottom: 3px;" type="text" name="adr2" placeholder="Address 2"><br>
-                        <label class="form_name5"></label>
-                        <input style="margin-bottom: 3px;" type="text" name="adr3" placeholder="Address 3"><br>
-                        <label class="form_name5">Postcode</label>
-                        <input style="margin-bottom: 3px;" type="number" step="1" name="postcode" placeholder="Postcode"><br>
-                        <label class="form_name5">City</label>
-                        <input style="margin-bottom: 3px;" type="text" name="city" placeholder="City"><br>
-                        <label class="form_name5">State</label>
-                        <input style="margin-bottom: 3px;" type="text" name="state" placeholder="State"><br>
-                        <label class="form_name5">Country</label>
-                        <input style="margin-bottom: 3px;" type="text" name="country" placeholder="Country"><br>
-                        <label class="form_name5">Runner Fees*</label>
-                        <input style="margin-bottom: 3px;" type="number" name="runnerfee"><br>
-                        <label class="form_name5">Shipping Fees*</label>
-                        <input style="margin-bottom: 3px;" type="number" name="shipfee"><br>
-                        <label class="form_name3" for="remarks">Remarks</label><br>
-                        <textarea class="form_detail2" type="text" name="remarks"></textarea><br><br>
-                        <div class="button">
-                            <button class="form_button" type="submit">Submit</button>
-                            <button class="form_button" type="reset">Clear</button>
+        <form action="/procurementsales" method="GET">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date">
+            
+            <label for="end_date">End Date:</label>
+            <input type="date" id="end_date" name="end_date">
+            
+            <button type="submit">Send Dates</button>
+        </form>
+        <div id="salesDataTable"></div>
+        <div style="margin-bottom: 2%; border-bottom: black 1px solid;">
+            <div style="border-bottom: black 1px solid; padding: 2% 0;">
+                <h2>Add buyer</h2>
+                <form method="POST" action="/addbuyer" style="display: flex;" enctype="application/x-www-form-urlencoded">
+                        <div style="padding: 0 5%;">
+                            <label class="form_name5">Name</label>
+                            <input style="margin-bottom: 3px;" type="text" name="name" required placeholder="Buyer Name"><br>
+                            <label class="form_name5">Phone</label>
+                            <input style="margin-bottom: 3px;" type="number" name="phone" placeholder="Phone"><br>
+                            <label class="form_name5">Address</label>
+                            <input style="margin-bottom: 3px;" type="text" name="adr1" placeholder="Address 1"><br>
+                            <label class="form_name5"></label>
+                            <input style="margin-bottom: 3px;" type="text" name="adr2" placeholder="Address 2"><br>
+                            <label class="form_name5"></label>
+                            <input style="margin-bottom: 3px;" type="text" name="adr3" placeholder="Address 3"><br>
                         </div>
-                    </div>
-                    <div style="padding-left: 30px;">
-                        <div class="tooltip-container">
-                            <span class="tooltip-icon">? hover me to show the salesinvoice you got already in database</span>
-                            <div class="tooltip-content">
-                                <!-- Display sales invoices here -->
+                        <div>
+                            <label class="form_name5">Postcode</label>
+                            <input style="margin-bottom: 3px;" type="text" name="postcode" placeholder="Postcode"><br>
+                            <label class="form_name5">City</label>
+                            <input style="margin-bottom: 3px;" type="text" name="city" placeholder="City"><br>
+                            <label class="form_name5">State</label>
+                            <input style="margin-bottom: 3px;" type="text" name="state" placeholder="State"><br>
+                            <label class="form_name5">Country</label>
+                            <input style="margin-bottom: 3px;" type="text" name="country" placeholder="Country"><br>
+                            
+                            <div class="button" style="margin-top: 5%;">
+                                <button class="form_button" type="submit">Submit</button>
+                                <button class="form_button" type="reset">Clear</button>
                             </div>
                         </div>
-                        <div style="padding-bottom: 30px;">
-                            <h3 style="color: red;">First step</h3>
-                            <input type="text" name="POnumber" id="POnumber" placeholder="PO number" class="form-control" style="width: 400px;">
-                            <div id="suggestions" style="position: absolute; width: 400px;"></div>
-                        </div>
-                        <button class="btn btn-primary" id="createBoxButton" type="button">Create Box</button>
-                        <table class="table" id="inputTable">
-                            <thead>
-                                <tr>
-                                    <th>SKU</th>
-                                    <th>Product Name</th>
-                                    <th>Size US</th>
-                                    <th>Unit Price</th>
-                                    <th>Quantity</th>
-                                    <th>Amount</th>
-                                    <th>gender</th>
-                                    <th><input type="checkbox" class="form-check-input" id="checkAll"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td style="font-weight: bold;">Total:</td>
-                                    <td style="font-weight: bold;"><span id="totalAmount"></span></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-                <div style="padding-top: 50px;" id="boxesContainer"></div>
+                </form>
             </div>
+            <div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Buyer ID</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>Postcode</th>
+                            <th>City</th>
+                            <th>State</th>
+                            <th>Country</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% buyers.forEach(function(buyer) { %>
+                            <tr>
+                                <td><%= buyer.id %></td>
+                                <td><%= buyer.name %></td>
+                                <td><%= buyer.phone %></td>
+                                <td><%= buyer.adr1 %>, <%= buyer.adr2 %>, <%= buyer.adr3 %></td>
+                                <td><%= buyer.postcode %></td>
+                                <td><%= buyer.city %></td>
+                                <td><%= buyer.state %></td>
+                                <td><%= buyer.country %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <h1>Sales - Invoice</h1>
+            <div style="width: 90%;">
+                <div>
+                    <input type="text" id="buyInvoiceInput" placeholder="Enter BuyInvoice numbers, comma-separated">
+                    <button onclick="fetchItems()">Fetch Items</button>
+                    <button onclick="createBox()">Create New Box</button>
+                </div>
+                <form action="/procurementsales" enctype="multipart/form-data" method="POST" id="procurementsales">
+                    <button type="submit" class="btn btn-success">Submit</button>
+                    <div style="display: flex;justify-content: space-between;width: 80%;margin: 1% 0;">
+                        <div>
+                            <label for="buyerid">Buyer ID : </label>
+                            <input type="number" style="width: 200px;" name="buyerid" placeholder="INPUT BUYER ID" required>
+                        </div>
+                        <div>
+                            <label for="shippingfee">Shipping Fee : </label>
+                            <input type="text" name="shippingfee" placeholder=" SHIPPING FEE" required>
+                        </div>
+                        <div>
+                            <label for="runnerfee">Runner Fee : </label>
+                            <input type="text" name="runnerfee" placeholder=" RUNNER FEE" required>
+                        </div>
+                        <div>
+                            <label for="remarks">Remarks : </label>
+                            <input type="text" name="remarks" placeholder=" REMARKS">
+                        </div>
+                        <div>
+                            <label for="salesdate">Sales Date : </label>
+                            <input type="date" name="salesdate" required>
+                        </div>
+                    </div>
+                    <div id="defaultBoxContainer" class="box">Default items</div>
+                    <div id="boxesContainer"></div>
+                </form>
+            </div>
+            <table class="table table-striped" style="width: 90%;">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Invoice</th>
+                    <th>Runnerfee</th>
+                    <th>Shippingfee</th>
+                    <th>SKU</th>
+                    <th>Product Name</th>
+                    <th>Size</th>
+                    <th>Sell Price</th>
+                    <th>BoxName</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% salesData.forEach(item => { %>
+                    <tr>
+                        <td><%= item.formattedDate %></td>
+                        <td><%= item.salesinvoice %></td>
+                        <td><%= item.runnerfee %></td>
+                        <td><%= item.shippingfee %></td>
+                        <td><%= item.sku %></td>
+                        <td><%= item.productname %></td>
+                        <td><%= item.size %></td>
+                        <td><%= item.sellprice %></td>
+                        <td><%= item.tracknum %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+            </table>
+
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                
-                    document.getElementById('POnumber').addEventListener('input', async function(event) {
-                        const query = this.value;
-                        try {
-                            const response = await fetch(`/suggestions?query=${query}`);
-                            const suggestions = await response.json();
-                            displaySuggestions(suggestions);
-                        } catch (err) {
-                            console.error(err);
-                        }
-                        event.stopPropagation(); // Prevent this event from propagating up to the document
-                    });
+                let boxCounter = 0; // Start counting from the default box
+            
+                function createBox() {
+                    boxCounter++;
+                    const boxDiv = $(`
+                        <div class="box" id="box${boxCounter}">
+                            <h3>Box ${boxCounter}</h3>
+                            <input type="text" class="form-control box-name-input" placeholder="Enter custom box name" name="boxNames[box${boxCounter}]">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Product Name</th> <!-- Updated from Item to Product Name -->
+                                        <th>SKU</th>
+                                        <th>Size</th>
+                                        <th>Buy Invoice</th>
+                                        <th>Quantity</th>
+                                        <th>Cost Price</th> <!-- Added Cost Price column -->
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    `);
 
-                    function displaySuggestions(suggestions) {
-                        const suggestionsDiv = document.getElementById('suggestions');
-                        suggestionsDiv.innerHTML = '';
-                        suggestionsDiv.style.display = 'block'; // Show suggestions box
-                        suggestions.forEach(suggestion => {
-                            const div = document.createElement('div');
-                            div.textContent = suggestion;
-                            div.className = 'suggestion-item'; // Apply the style to each suggestion item
-                            div.addEventListener('click', function(event) {
-                                handleSuggestionClick(suggestion);
-                                event.stopPropagation(); // Prevent this event from propagating up to the document
-                            });
-                            suggestionsDiv.appendChild(div);
-                        });
-                    }
+                    // Make the new box a drop zone
+                    boxDiv.on('dragover', allowDragOver);
+                    boxDiv.on('drop', handleDrop);
 
-                    function handleSuggestionClick(suggestion) {
-                        document.getElementById('POnumber').value = suggestion;
-                        document.getElementById('suggestions').style.display = 'none'; // Hide suggestions box upon selection
-                        fetchRecordsForPOnumber(suggestion);
-                    }
-
-                    // New event listener on the document to handle clicks outside the suggestions box and input field
-                    document.addEventListener('click', function(event) {
-                        const suggestionsDiv = document.getElementById('suggestions');
-                        const inputField = document.getElementById('POnumber');
-                
-                        // Check if click was outside both the suggestions box and the input field
-                        if (!suggestionsDiv.contains(event.target) && !inputField.contains(event.target)) {
-                            suggestionsDiv.style.display = 'none'; // Hide suggestions box
-                        }
-                    });
-
-                    async function fetchRecordsForPOnumber(invoiceNumber) {
-                        try {
-                            const response = await fetch(`/get-invoice-data?invoice=${invoiceNumber}`);
-                            const records = await response.json();
-                            populateTable(records);
-                        } catch (err) {
-                            console.error(err);
-                        }
-                    }
-                    
-                    // Function to update the "Check All" checkbox based on individual checkboxes
-                    function updateCheckAll() {
-                        const allCheckboxes = document.querySelectorAll('#inputTable tbody .select-box');
-                        const checkAllCheckbox = document.getElementById('checkAll');
-                        const allChecked = Array.from(allCheckboxes).every(checkbox => checkbox.checked);
-                        const anyChecked = Array.from(allCheckboxes).some(checkbox => checkbox.checked);
-                        checkAllCheckbox.checked = allChecked;
-                        checkAllCheckbox.indeterminate = !allChecked && anyChecked;
-                    }
-                    
-                    document.getElementById('checkAll').addEventListener('change', function() {
-                        const checkboxes = document.querySelectorAll('#inputTable tbody .select-box');
-                        checkboxes.forEach(checkbox => {
-                            checkbox.checked = this.checked;
-                        });
-                        this.indeterminate = false;
-                    });
-
-                    let boxCounter = 0;
-
-                    function createBoxes() {
-                        const selectedItems = document.querySelectorAll('#inputTable tbody .select-box:checked');
-                        if (selectedItems.length === 0) {
-                            alert('No items selected.');
-                            return; // Exit if no items are selected
-                        }
-
-                        boxCounter++;
-
-                        // Create the box title as h1
-                        const boxTitle = document.createElement('h1');
-                        boxTitle.innerText = `Box ${boxCounter}`;
-
-                        // Create a new table for the box
-                        const boxTable = document.createElement('table');
-                        boxTable.classList.add('table', 'box-table');
-                        boxTable.innerHTML = `
-                            <thead>
-                                <tr>
-                                    <th>SKU</th>
-                                    <th>Product Name</th>
-                                    <th>Size US</th>
-                                    <th>Unit Price</th>
-                                    <th>Quantity</th>
-                                    <th>Amount</th>
-                                    <th>Gender</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="5" style="text-align: right;">Sales Invoice:</td>
-                                    <td><input type="text" name="salesinvoice" placeholder="Enter sales Invoice"></td>
-                                    <td colspan="6" style="text-align: right;">Tracking Number:</td>
-                                    <td><input type="text" name="trackingNumber" placeholder="Enter tracking number"></td>
-                                </tr>
-                            </tfoot>
-                        `;
-
-                        // Append each selected item's row to the new table's body and adjust quantities
-                        const tbody = boxTable.querySelector('tbody');
-                        selectedItems.forEach(item => {
-                            const parentRow = item.closest('tr');
-                            const cloneRow = parentRow.cloneNode(true); // Clone the row for the new box
-                            
-                            const selectedQuantity = parseInt(parentRow.querySelector('.quantity-select').value);
-                            const buyQuantitySpan = cloneRow.querySelector('.buyquantity');
-                            const buyQuantity = parseInt(buyQuantitySpan.textContent);
-
-                            // If selected quantity is less than the buy quantity, adjust the quantities
-                            if (selectedQuantity < buyQuantity) {
-                                buyQuantitySpan.textContent = selectedQuantity.toString(); // Set the selected quantity for the new box
-                                parentRow.querySelector('.buyquantity').textContent = (buyQuantity - selectedQuantity).toString(); // Subtract selected quantity from the original row
-                            } else {
-                                parentRow.remove(); // If all quantity is selected, remove the original row
-                            }
-
-                            // Calculate and set the new amount
-                            const unitPrice = parseFloat(cloneRow.querySelector('.sellprice').value);
-                            cloneRow.querySelector('.amount').textContent = (unitPrice * selectedQuantity).toFixed(2);
-
-                            tbody.appendChild(cloneRow); // Append the clone row to the new box's tbody
-                            const checkboxInClone = cloneRow.querySelector('.select-box');
-                            if (checkboxInClone) {
-                                checkboxInClone.checked = false;
-                            }
-                        });
-
-                        // Insert the box title and new table into the DOM
-                        const boxesContainer = document.getElementById('boxesContainer');
-                        boxesContainer.appendChild(boxTitle);
-                        boxesContainer.appendChild(boxTable);
-
-                        document.querySelectorAll('#inputTable .select-box').forEach(checkbox => {
-                            checkbox.checked = false;
-                        });
-
-                        // Check if there are any rows left in the original table's body
-                        const originalTableBody = document.querySelector('#inputTable tbody');
-                        if (originalTableBody && originalTableBody.rows.length === 0) {
-                            // If no rows left, hide the original table's header
-                            const originalTableHeader = document.querySelector('#inputTable thead');
-                            originalTableHeader.style.display = 'none';
-                            
-                            // Also hide or clear the footer
-                            const originalTableFooter = document.querySelector('#inputTable tfoot');
-                            originalTableFooter.style.display = 'none';
-                        }
-                    }
-                    
-                    document.getElementById('createBoxButton').addEventListener('click', createBoxes);
-
-                    function populateTable(records) {
-                        // Group the records by SKU, Size, and Unit Price
-                        const groupedRecords = records.reduce((acc, record) => {
-                            const key = `${record.sku}-${record.size}-${record.sellprice}`;
-                            if (!acc[key]) {
-                                acc[key] = { ...record, buyquantity: 0 };
-                            }
-                            acc[key].buyquantity += record.buyquantity;
-                            return acc;
-                        }, {});
-
-                        // Convert the grouped records object back into an array
-                        const groupedRecordsArray = Object.values(groupedRecords);
-
-                        const tableBody = document.querySelector('#inputTable tbody');
-                        tableBody.innerHTML = '';
-
-                        groupedRecordsArray.forEach((record, index) => {
-                            const row = tableBody.insertRow();
-                            row.innerHTML = `
-                                <td><span class="form-control-plaintext sku" name="field1[]" style="width: 140px;">${record.sku || ''}</span></td>
-                                <td><span class="form-control-plaintext productName" name="field2[]" style="width: 280px;">${record.productname || ''}</span></td>
-                                <td><span class="form-control-plaintext size" name="field3[]" style="width: auto;">${record.size || ''}</span></td>
-                                <td><input type="text" class="form-control sellprice" style="width: 100px;" name="field4[]" value="${record.sellprice || ''}"></td>
-                                <td><span class="form-control-plaintext buyquantity" name="field5[]" style="width: 100px;">${record.buyquantity || ''}</span></td>
-                                <td><span class="form-control-plaintext amount" name="field6[]" style="width: 100px;">${(record.sellprice || 0) * (record.buyquantity || 0)}</span></td>
-                                <td><span class="form-control-plaintext gender" name="field7[]" style="width: auto;">${record.gender || ''}</span></td>
-                                <td><input type="checkbox" class="form-check-input select-box" name="selectedItem" value="${index}"></td>
-                                <td>
-                                    <select class="form-control quantity-select" name="selectedQuantity[]">
-                                        ${Array(record.buyquantity).fill().map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
-                                    </select>
-                                </td>
-                            `;
-                            const checkbox = row.querySelector('.select-box');
-                            checkbox.addEventListener('change', updateCheckAll);
-                        });
-                    }
-                });
-
-
-
-
-                // Function to collect and serialize box data before form submission
-                function collectAndSerializeBoxData() {
-                    const boxes = document.querySelectorAll('.box-table');
-
-                    const boxData = [];
-
-                    boxes.forEach((box, index) => {
-                        const rows = box.querySelectorAll('tbody tr');
-                        
-                        const salesinvoice = box.querySelector('input[name="salesinvoice"]').value;
-                        const trackingNumber = box.querySelector('input[name="trackingNumber"]').value;
-
-                        const boxItems = [];
-
-                        rows.forEach(row => {
-                            const sku = row.querySelector('span.sku').textContent;
-                            const productName = row.querySelector('span.productName').textContent;
-                            const size = row.querySelector('span.size').textContent;
-                            const unitPrice = row.querySelector('input.sellprice').value;
-                            const quantity = row.querySelector('span.buyquantity').textContent;
-
-                            boxItems.push({ sku, productName, size, unitPrice, quantity });
-                        });
-
-                        boxData.push({ boxNumber: index + 1, trackingNumber, salesinvoice, items: boxItems });
-                    });
-
-                    return JSON.stringify(boxData);
+                    $('#boxesContainer').append(boxDiv);
                 }
 
-                // Add an event listener to the form submission
-                document.getElementById('procurementsales-form').addEventListener('submit', function(event) {
-                    // Serialize the box data and add it as a hidden input field in the form
-                    const boxData = collectAndSerializeBoxData();
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.name = 'boxData';
-                    hiddenInput.value = boxData;
-                    this.appendChild(hiddenInput);
-                });
+                function allowDragOver(e) {
+                    e.preventDefault(); // Necessary to allow dropping
+                }
 
-               // Add an event listener for the tooltip container
-                document.querySelector('.tooltip-container').addEventListener('mouseenter', async () => {
-                    // Fetch sales invoices from the server (replace with your endpoint)
-                    try {
-                        const response = await fetch('/get-sales-invoices');
-                        if (response.ok) {
-                            const invoices = await response.json();
-                            const tooltipContent = document.querySelector('.tooltip-content');
+                function handleDrop(e) {
+                    e.preventDefault();
+                    const itemId = e.originalEvent.dataTransfer.getData("text/plain");
+                    const item = $('#' + itemId); // Use jQuery to get the item by ID
 
-                            // Clear previous content
-                            tooltipContent.innerHTML = '';
-
-                            // Display sales invoices in the tooltip
-                            invoices.forEach((invoice) => {
-                                const invoiceElement = document.createElement('div');
-                                invoiceElement.textContent = invoice;
-                                tooltipContent.appendChild(invoiceElement);
-                            });
+                    const quantity = parseInt(item.find('.quantity').text(), 10);
+                    if (quantity > 1) {
+                        const quantityToMove = parseInt(prompt('Enter quantity to move:', '1'), 10) || 0;
+                        if (quantityToMove > 0 && quantityToMove <= quantity) {
+                            // Move a portion of the quantity to a new item row
+                            moveItem(item, quantityToMove, $(e.target).closest('.box'));
                         } else {
-                            console.error('Failed to fetch sales invoices');
+                            alert('Invalid quantity');
                         }
-                    } catch (error) {
-                        console.error(error);
+                    } else {
+                        // Move the entire item to the new box
+                        moveItem(item, quantity, $(e.target).closest('.box'));
                     }
-                });
+
+                    // Reapply the draggable setup to ensure new items are draggable
+                    makeItemsDraggable();
+                }
+
+                function moveItem(item, quantity, targetBox) {
+                    const newItem = item.clone();
+                    newItem.find('.quantity').text(quantity);
+                    newItem.appendTo(targetBox.find('tbody'));
+
+                    // Ensure original item's quantity is updated or the item is removed if necessary
+                    const originalQuantity = parseInt(item.find('.quantity').text(), 10);
+                    if (quantity < originalQuantity) {
+                        item.find('.quantity').text(originalQuantity - quantity);
+                    } else {
+                        item.remove();
+                    }
+
+                    // Call the function to add hidden inputs for the new item
+                    addHiddenInputsForItem(newItem, targetBox.attr('id'));
+                }
+
+                function addHiddenInputsForItem(item, boxId) {
+                    const form = $('#procurementsales');
+                    const boxNameInput = $(`#${boxId} .box-name-input`).val() || `Box ${boxId}`; // Use the custom name or default to Box ID
+                    const itemId = item.attr('data-productname');
+                    const buyInvoice = item.data('buyinvoice');
+                    const sku = item.data('sku');
+                    const size = item.data('size');
+                    const quantity = item.find('.quantity').text();
+                    const costprice = item.data('costprice');
+
+                    // Append a hidden input for the box name if it doesn't already exist
+                    if (!$(`input[name='boxNames[${boxId}]']`).length) {
+                        form.append(`<input type="hidden" name="boxNames[${boxId}]" value="${boxNameInput}">`);
+                    }
+
+                    // Create hidden inputs for each item attribute
+                    form.append(`<input type="hidden" name="boxItems[${boxId}][productname][]" value="${itemId}">`);
+                    form.append(`<input type="hidden" name="boxItems[${boxId}][buyInvoice][]" value="${buyInvoice}">`);
+                    form.append(`<input type="hidden" name="boxItems[${boxId}][sku][]" value="${sku}">`);
+                    form.append(`<input type="hidden" name="boxItems[${boxId}][size][]" value="${size}">`);
+                    form.append(`<input type="hidden" name="boxItems[${boxId}][quantities][]" value="${quantity}">`);
+                    form.append(`<input type="hidden" name="boxItems[${boxId}][costprice][]" value="${costprice}">`);
+                }
+
+                function fetchItems() {
+                    const buyInvoices = $('#buyInvoiceInput').val();
+                    if (!buyInvoices) {
+                        alert('Please enter BuyInvoice numbers, comma-separated.');
+                        return;
+                    }
+
+                    $.ajax({
+                        url: `/fetch-items?buyinvoices=${encodeURIComponent(buyInvoices)}`,
+                        type: 'GET',
+                        success: function(items) {
+                            displayItemsInDefaultBox(items);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Failed to fetch items: ", error);
+                            alert("Failed to fetch items. Please check console for more details.");
+                        }
+                    });
+                }
+
+                function displayItemsInDefaultBox(items) {
+                    const defaultBox = $('#defaultBoxContainer');
+                    defaultBox.empty(); // Clear existing items
+
+                    const table = $('<table class="table"></table>');
+                    const thead = $('<thead><tr><th>Product Name</th><th>SKU</th><th>Size</th><th>Buy Invoice</th><th>Quantity</th><th>Cost Price</th><th>Actions</th></tr></thead>');
+                    table.append(thead);
+
+                    const tbody = $('<tbody></tbody>');
+                    items.forEach((item, index) => {
+                        const row = $(`<tr id="item-${item.sku}-${index}" class="draggable" draggable="true" 
+                                        data-productname="${item.productname}" data-buyinvoice="${item.buyinvoice}" 
+                                        data-sku="${item.sku}" data-size="${item.size}" data-costprice="${item.costprice}"></tr>`);
+                        row.append(`<td>${item.productname}</td>`);
+                        row.append(`<td>${item.sku}</td>`);
+                        row.append(`<td>${item.size}</td>`);
+                        row.append(`<td>${item.buyinvoice}</td>`);
+                        row.append(`<td class="quantity">${item.total_quantity}</td>`);
+                        row.append(`<td>${item.costprice}</td>`); // Display cost price
+                        row.append('<td><button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)">Delete</button></td>');
+                        tbody.append(row);
+                    });
+
+                    table.append(tbody);
+                    defaultBox.append(table);
+
+                    makeItemsDraggable(); // Make new items draggable
+                }
+
+                function deleteRow(button) {
+                    $(button).closest('tr').remove();
+                }
+            
+                function makeItemsDraggable() {
+                    // This selects all items marked as draggable in the DOM, including new ones
+                    $('.draggable').attr('draggable', true).off('dragstart').on('dragstart', function(e) {
+                        e.originalEvent.dataTransfer.setData('text/plain', e.target.getAttribute('id'));
+                    });
+                }
             </script>
-        </form>
+        </div>
     </main>
 </body>
 </html>

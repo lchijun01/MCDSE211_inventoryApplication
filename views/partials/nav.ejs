@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
     <link href="https://getbootstrap.com/docs/5.3/assets/css/docs.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/4299264dfd.js" crossorigin="anonymous"></script>
     <link href="nav.css" type="text/css" rel="stylesheet">
    </head>
 <body>
@@ -101,6 +102,25 @@
       <li>
         <div class="iocn-link">
           <a href="#">
+            <i class="fa-sharp fa-light fa-p"></i>
+            <span class="link_name">Procurement</span>
+          </a>
+          <i class='bx bxs-chevron-down arrow' ></i>
+        </div>
+        <ul class="sub-menu">
+          <li><a class="link_name" href="">Procurement</a></li>
+          <li><a href="/procurementbuy">Submit buy</a></li>
+          <li><a href="/procurementbuy-payment">Buy<br>Paymentbreakdown</a></li>
+          <li><a href="/procurementsales">Submit sales</a></li>
+          <li><a href="/procurementsales-payment">Sales<br>Paymentbreakdown</a></li>
+          <li><a href="/procurementrefund">Refund</a></li>
+          <li><a href="/procurementbuy-generate">ProBuy Generator</a></li>
+          <li><a href="/procurementsale-generate">ProSales Generator</a></li>
+        </ul>
+      </li>
+      <li>
+        <div class="iocn-link">
+          <a href="#">
             <i class="bi bi-bar-chart"></i>
             <span class="link_name">Sales</span>
           </a>
@@ -136,8 +156,8 @@
         </div>
         <ul class="sub-menu">
           <li><a class="link_name" href="#">Invoice Generator</a></li>
-          <li><a href="/yyinvoice_generate">Sales Invoice Generator</a></li>
-          <li><a href="/yyorder_generate">Buy Order Generator</a></li>
+          <li><a href="/yyinvoice_generate">Sales Invoice<br>Generator</a></li>
+          <li><a href="/yyorder_generate">Buy Order<br>Generator</a></li>
         </ul>
       </li>
       <li>
@@ -162,7 +182,8 @@
           <i class='bx bxs-chevron-down arrow' style="color: #d9c8ff;"></i>
         </div>
         <ul class="sub-menu">
-          <li><a class="link_name" href="/yyexpenses-record">Expenses Record</a></li>
+          <li><a class="link_name" href="">Expenses & Credit Note</a></li>
+          <li><a href="/yyexpenses-record">Expenses Record</a></li>
           <li><a href="/creditnote">Credit Note</a></li>
         </ul>
       </li>
@@ -185,11 +206,11 @@
         </div>
         <ul class="sub-menu">
           <li><a class="link_name" href="#">Yong&Yi-Others</a></li>
-          <li><a href="/yyother-creditor">Other Creditor</a></li>
-          <li><a href="/yyothercreditor_paymentbreakdown">Other Creditor-paymentbreakdown</a></li>
-          <li><a href="/yydebtor">Other Debtor</a></li>
-          <li><a href="/yyotherdebtor_paymentbreakdown">Other Debtor-paymentbreakdown</a></li>
-          <li><a href="/yyaccruals">Accruals-Paymentbreakdown</a></li>
+          <li><a href="/yyother-creditor">Other Creditor (OC) </a></li>
+          <li><a href="/yyothercreditor_paymentbreakdown">OC-paybreakdown</a></li>
+          <li><a href="/yydebtor">Other Debtor (OD) </a></li>
+          <li><a href="/yyotherdebtor_paymentbreakdown">OD-paybreakdown</a></li>
+          <li><a href="/yyaccruals">Accruals<br>paymentbreakdown</a></li>
           <li><a href="/refund">Refund</a></li>
         </ul>
       </li>
@@ -222,22 +243,6 @@
           <li><a class="link_name" href="/inout">Import&Export</a></li>
         </ul>
       </li>
-      <li>
-        <div class="iocn-link">
-          <a href="#">
-            <i class="bi bi-box-seam"></i>
-            <span class="link_name">Procurement</span>
-          </a>
-          <i class='bx bxs-chevron-down arrow' ></i>
-        </div>
-        <ul class="sub-menu">
-          <li><a class="link_name" href="">Procurement</a></li>
-          <li><a href="/procurementbuy">Submit buy</a></li>
-          <li><a href="/procurementbuy-payment">Buy paymentbreakdown</a></li>
-          <li><a href="/procurementsales">Submit sales</a></li>
-          <li><a href="/procurementsales-payment">Sales paymentbreakdown</a></li>
-        </ul>
-      </li>
       <div style="text-align: center;min-width: 78px;margin-top: 30px;">
         <form method="POST" action="/logout">
           <button type="submit" style="background-color: transparent;color:white;font-family: Arial, Helvetica, sans-serif;border: 0;font-weight: bold;">
@@ -246,7 +251,7 @@
         </form>
       </div>
       <a id="bottom">
-        <span class="bottom">Develop by --</span>
+        <span class="bottom">powered by lchijun</span>
       </a>
 </ul>
   </div>

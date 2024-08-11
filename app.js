@@ -16,8 +16,8 @@ const session = require('express-session');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const Chart = require('chart.js');
 
-// Use a reverse proxy to forward requests to the Node.js server running on port 5000
-app.use('/api', createProxyMiddleware({ target: 'http://192.168.0.100:5000', changeOrigin: true }));
+// Use a reverse proxy to forward requests to the Node.js server running on port 2000
+app.use('/api', createProxyMiddleware({ target: 'http://192.168.0.136:2000', changeOrigin: true }));
 
 const pool = mysql.createPool({
     poolLimit: 10,
@@ -47,10 +47,7 @@ function requireLogin(req, res, next) {
     res.redirect('/login');
   }
 }
-app.use((req, res, next) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  next();
-});
+
 
 
 // Set up body-parser middleware
@@ -62,19 +59,27 @@ app.post('/login', urlencodedParser, async (req, res) => {
 
   // You can replace this with a database query to fetch the user's details
   const user = {
-    username: ' ',
-    password: await bcrypt.hash(' ', 10)
+    username: 'yongkhaw',
+    password: await bcrypt.hash('abc123', 10)
   };
 
   if (username === user.username && await bcrypt.compare(password, user.password)) {
     req.session.user = username;
-    res.redirect('/');
+    console.log('Sending response from <specific part of your code>');
+    return res.redirect('/');
   } else {
-    res.render('login', { error: 'Invalid username or password' });
+      return res.render('login', { error: 'Invalid username or password' });
   }
 });
-
-
+app.post('/logout', (req, res) => {
+  // Destroy the user's session
+  req.session.destroy();
+  // Redirect to the login page
+  res.redirect('/login');
+});
+app.get('/login', (req, res) => {
+  res.render('login');
+});
 
 
 
@@ -782,1234 +787,1196 @@ app.get('/', requireLogin, (req, res) => {
     });
   });
 });
-app.get('/bankledger', requireLogin, (req, res) => {
-  pool.query('SELECT * FROM yysales_paymentbreakdown', (error, salesResults) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send('An error occurred');
-    } else {
-      const totalSalesPaymentbreakdown = salesResults;
+app.get('/bankledger', async (req, res) => {
+  try {
+    const salesResults = await queryDatabase('SELECT * FROM yysales_paymentbreakdown');
+    const purchaseResults = await queryDatabase('SELECT * FROM yypurchase_paymentbreakdown');
+    const expensesResults = await queryDatabase('SELECT * FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL OR accrued = "no" AND Name != "Gdex"');
+    const accrualsResults = await queryDatabase('SELECT * FROM yyaccruals WHERE detail != "creditnote"');
+    const topupResults = await queryDatabase('SELECT * FROM yytopupbalance WHERE wallet = "Gdex" ORDER BY ID DESC');
+    const refundResults = await queryDatabase('SELECT amount, refund2buyer, fromSupplier, date FROM refund');
+    const drawingResults = await queryDatabase('SELECT * FROM yycompanyfund2personal');
+    const depositResults = await queryDatabase('SELECT * FROM yydeposit');
+    const creditorResults = await queryDatabase('SELECT * FROM yyothercreditor');
+    const capitalResults = await queryDatabase('SELECT * FROM yyequity');
+    const capitalpayResults = await queryDatabase('SELECT * FROM yyothercreditor_paymentbreakdown');
+    const debtorResults = await queryDatabase('SELECT * FROM yyotherdebtor');
+    const debtorpayResults = await queryDatabase('SELECT * FROM yyotherdebtor_paymentbreakdown');
+    const propayResults = await queryDatabase('SELECT * FROM procurementbuypaymentbreakdown');
+    const prosellpayResults = await queryDatabase('SELECT * FROM procurementsellpaymentbreakdown');
+    const prorefundResults = await queryDatabase('SELECT amount, refund2buyer, fromsupplier, date FROM procurementrefund');
 
-      pool.query('SELECT * FROM yypurchase_paymentbreakdown', (error, purchaseResults) => {
-        if (error) {
-          console.error(error);
-          res.status(500).send('An error occurred');
-        } else {
-          const totalPurchasePaymentbreakdown = purchaseResults;
+    res.render('bankledger', { 
+      totalSalesPaymentbreakdown: salesResults,
+      totalPurchasePaymentbreakdown: purchaseResults,
+      totalExpenses: expensesResults,
+      totalExpensesPaymentbreakdown: accrualsResults,
+      topupBalance: topupResults,
+      refund: refundResults,
+      totalDrawing: drawingResults,
+      totalDeposit: depositResults,
+      totalCapital: capitalResults,
+      totalCreditor: creditorResults,
+      totalCreditorpaymentbreak: capitalpayResults,
+      totalDebtor: debtorResults,
+      totalDebtorpaymentbreak: debtorpayResults,
+      procurementbuypaymentbreakdown: propayResults,
+      procurementsellpaymentbreakdown: prosellpayResults,
+      prorefund: prorefundResults
+    });
 
-          pool.query('SELECT * FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL OR accrued = "no" AND Name != "Gdex"', (error, expensesResults) => {
-            if (error) {
-              console.error(error);
-              res.status(500).send('An error occurred');
-            } else {
-              const totalExpenses = expensesResults;
-    
-              pool.query('SELECT * FROM yyaccruals', (error, accrualsResults) => {
-                if (error) {
-                  console.error(error);
-                  res.status(500).send('An error occurred');
-                } else {
-                  const totalExpensesPaymentbreakdown = accrualsResults;
-        
-                  pool.query('SELECT * FROM yytopupbalance WHERE wallet = "Gdex" ORDER BY ID DESC', (error, TopupResults) => {
-                    if (error) {
-                      console.error(error);
-                      res.status(500).send('An error occurred');
-                    } else {
-                      const topupBalance = TopupResults;
-            
-                      pool.query('SELECT amount, refund2buyer, fromSupplier, date FROM refund', (error, refundResults) => {
-                        if (error) {
-                          console.error(error);
-                          res.status(500).send('An error occurred');
-                        } else {
-                          const refund = refundResults;
-
-                          pool.query('SELECT * FROM yycompanyfund2personal', (error, drawingResults) => {
-                            if (error) {
-                              console.error(error);
-                              res.status(500).send('An error occurred');
-                            } else {
-                              const totalDrawing = drawingResults;
-                    
-                              pool.query('SELECT * FROM yydeposit', (error, depositResults) => {
-                                if (error) {
-                                  console.error(error);
-                                  res.status(500).send('An error occurred');
-                                } else {
-                                  const totalDeposit = depositResults;
-
-                                  pool.query('SELECT * FROM yyothercreditor', (error, creditorResults) => {
-                                    if (error) {
-                                      console.error(error);
-                                      res.status(500).send('An error occurred');
-                                    } else {
-                                      const totalCreditor = creditorResults;
-                        
-                                    pool.query('SELECT * FROM yyequity', (error, capitalResults) => {
-                                      if (error) {
-                                        console.error(error);
-                                        res.status(500).send('An error occurred');
-                                      } else {
-                                        const totalCapital = capitalResults;
-
-                                        pool.query('SELECT * FROM yyothercreditor_paymentbreakdown', (error, capitalpayResults) => {
-                                          if (error) {
-                                            console.error(error);
-                                            res.status(500).send('An error occurred');
-                                          } else {
-                                            const totalCreditorpaymentbreak = capitalpayResults;
-
-                                            pool.query('SELECT * FROM yyotherdebtor', (error, debtorResults) => {
-                                              if (error) {
-                                                console.error(error);
-                                                res.status(500).send('An error occurred');
-                                              } else {
-                                                const totalDebtor = debtorResults;
-
-                                                pool.query('SELECT * FROM yyotherdebtor_paymentbreakdown', (error, debtorpayResults) => {
-                                                  if (error) {
-                                                    console.error(error);
-                                                    res.status(500).send('An error occurred');
-                                                  } else {
-                                                    const totalDebtorpaymentbreak = debtorpayResults;
-                              
-                                                    res.render('bankledger', { 
-                                                      totalDebtorpaymentbreak,
-                                                      totalDebtor,
-                                                      totalCreditorpaymentbreak,
-                                                      totalSalesPaymentbreakdown, 
-                                                      totalPurchasePaymentbreakdown,
-                                                      totalExpenses ,
-                                                      totalExpensesPaymentbreakdown,
-                                                      topupBalance,
-                                                      refund,
-                                                      totalDrawing,
-                                                      totalDeposit,
-                                                      totalCapital,
-                                                      totalCreditor
-                                                    });
-                                                  }
-                                                });
-                                              }
-                                            });
-                                          }
-                                        });
-                                      }
-                                    });
-                                  }
-                                });
-                                }
-                              });
-                            }
-                          });
-                        }
-                      });
-                    }
-                  });
-                }
-              });
-            }
-          });
-        }
-      });
-    }
-  });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred');
+  }
 });
-app.get('/profitlossstate', requireLogin, (req, res) => {
+async function queryDatabase(query) {
+  return new Promise((resolve, reject) => {
+    pool.query(query, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+app.get('/profitlossstate', (req, res) => { 
   const currentYear = new Date().getFullYear(); // get current year
+  let selectedYear = req.query.year ? parseInt(req.query.year) : currentYear;
 
-  // fetch distinct years from yyitems_sell table
-  pool.query('SELECT DISTINCT YEAR(timestamp) AS year FROM yysell_invoice ORDER BY year DESC', (err, results) => {
+  const profitLossQuery = `
+  SELECT
+    
+    (SELECT SUM(costprice) FROM procurementdatabase WHERE name != 'return' AND YEAR(buydate) <= ?) AS lastYBuypro,
+
+    (SELECT SUM(sellprice) FROM procurementdatabase WHERE YEAR(salesdate) <= ?) AS lastYSalespro,
+
+    (SELECT SUM(CostPrice) FROM yyitems_sell
+      WHERE InvoiceNumber IN
+        (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)) AS lastYSales,
+
+    (SELECT SUM(UnitPrice) FROM yyitems_buy
+      WHERE (Content_SKU IS NOT NULL AND Content_SKU != '') AND status != 'return'
+      AND InvoiceNumber IN
+        (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) <= ?)) AS lastYBuy,
+
+    (SELECT SUM(UnitPrice) FROM yyitems_sell
+      WHERE InvoiceNumber IN
+        (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) = ?)) AS totalSales,
+
+    (SELECT SUM(sellprice) FROM procurementdatabase WHERE name != "return" AND YEAR(salesdate) = ?) AS proSales,
+
+    (SELECT SUM(amount) FROM refund 
+      WHERE (refund2buyer = "yes") AND YEAR(date) = ?) AS refundOutwards,
+
+    (SELECT SUM(Amount) FROM yyitems_buy
+      WHERE Productname != "Discount" AND InvoiceNumber IN
+        (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) = ?)) AS totalPurchase,
+
+    (SELECT SUM(Amount) FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?) AS PostageCourier,
+
+    (SELECT GROUP_CONCAT(courier, ':', amount) FROM (SELECT courier, SUM(amount) AS amount FROM creditnote WHERE YEAR(Date) = ? GROUP BY courier) AS subquery) AS courierData,
+
+    (SELECT 
+      SUM(UnitPrice)
+      FROM 
+        yyitems_buy
+      WHERE 
+        (Content_SKU IS NOT NULL AND Content_SKU != '') AND status != 'return'
+        AND InvoiceNumber IN (
+          SELECT Invoice_number 
+          FROM yybuy_record 
+          WHERE YEAR(timestamp) <= ?)
+    ) AS allPurchase,
+
+    (SELECT SUM(CostPrice) FROM yyitems_sell
+      WHERE InvoiceNumber IN
+        (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)) AS allSales,
+
+    (SELECT SUM(amount) FROM refund 
+      WHERE (fromSupplier = "yes") AND YEAR(date) = ?) AS refundInwards,
+      
+    (SELECT SUM(MaxFee) AS totalShippingFee
+    FROM (
+        SELECT MAX(shippingfee) AS MaxFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) = ?
+        GROUP BY salesinvoice
+    ) AS Subquery) AS otherIncomePro,
+
+    (SELECT SUM(MaxRunnerFee) AS totalRunnerFee
+    FROM (
+        SELECT MAX(runnerfee) AS MaxRunnerFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) = ?
+        GROUP BY salesinvoice
+    ) AS SubRunnerFees) AS totalRunnerFee,
+
+    (SELECT SUM(costprice) FROM procurementdatabase WHERE YEAR(buydate) = ?) AS totalPurchasepro,
+
+    (SELECT SUM(costprice) FROM procurementdatabase WHERE name != 'return' AND YEAR(buydate) <= ?) AS totalallPurchasepro,
+
+    (SELECT SUM(costprice) FROM procurementdatabase WHERE YEAR(salesdate) <= ?) AS totalallSalespro,
+
+    (SELECT SUM(costprice) FROM procurementdatabase WHERE productname = "Discount" AND YEAR(salesdate) = ?) AS Discountpro,
+
+    (SELECT SUM(UnitPrice) FROM yyitems_buy
+      WHERE ProductName = "Discount" AND InvoiceNumber IN
+        (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) = ?)) AS Discount,
+    (SELECT GROUP_CONCAT(category, ':', amount) FROM (SELECT Category, SUM(Amount) AS amount FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ? GROUP BY Category) AS subquery) AS categoryData,
+    (SELECT SUM(amount) AS amount FROM creditnote WHERE YEAR(Date) = ?) AS totalCourier,
+    (SELECT SUM(Amount) AS amount FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ?) AS totalotherExpenses,
+    (SELECT SUM(Amount) AS amount FROM yycompanyfund2personal WHERE YEAR(Date) = ?) AS distribution2Owners,
+    (SELECT SUM(amount) AS amount FROM procurementrefund WHERE fromsupplier = 'yes' AND YEAR(Date) = ?) AS prorefundInwards,
+    (SELECT SUM(amount) AS amount FROM procurementrefund WHERE refund2buyer = 'yes' AND YEAR(Date) = ?) AS prorefundOutwards,
+
+
+
+    (SELECT SUM(UnitPrice) FROM yyitems_sell
+      WHERE InvoiceNumber IN
+        (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) < ?)) AS totalSalesbf,
+
+    (SELECT SUM(sellprice) FROM procurementdatabase WHERE YEAR(salesdate) < ?) AS proSalesbf,
+
+    (SELECT SUM(amount) FROM refund 
+      WHERE (refund2buyer = "yes") AND YEAR(date) < ?) AS refundOutwardsbf,
+
+    (SELECT SUM(Amount) FROM yyitems_buy
+      WHERE Productname != "Discount" AND InvoiceNumber IN
+        (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) < ?)) AS totalPurchasebf,
+
+    (SELECT SUM(Amount) FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) < ?) AS PostageCourierbf,
+
+    (SELECT GROUP_CONCAT(courier, ':', amount) FROM (SELECT courier, SUM(amount) AS amount FROM creditnote WHERE YEAR(Date) < ?
+      GROUP BY courier) AS subquery) AS courierDatabf,
+
+    (SELECT 
+      SUM(UnitPrice)
+      FROM 
+        yyitems_buy
+      WHERE 
+        (Content_SKU IS NOT NULL AND Content_SKU != '') AND status != 'return'
+        AND InvoiceNumber IN (
+          SELECT Invoice_number 
+          FROM yybuy_record 
+          WHERE YEAR(timestamp) < ?)
+    ) AS allPurchasebf,
+
+    (SELECT SUM(CostPrice) FROM yyitems_sell
+      WHERE InvoiceNumber IN
+        (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) < ?)) AS allSalesbf,
+
+    (SELECT SUM(amount) FROM refund 
+      WHERE (fromSupplier = "yes") AND YEAR(date) < ?) AS refundInwardsbf,
+      
+    (SELECT SUM(MaxFee) AS totalShippingFee
+    FROM (
+        SELECT MAX(shippingfee) AS MaxFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) < ?
+        GROUP BY salesinvoice
+    ) AS Subquery) AS otherIncomeProbf,
+
+    (SELECT SUM(MaxRunnerFee) AS totalRunnerFee
+    FROM (
+        SELECT MAX(runnerfee) AS MaxRunnerFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) < ?
+        GROUP BY salesinvoice
+    ) AS SubRunnerFees) AS totalRunnerFeebf,
+
+    (SELECT SUM(costprice) FROM procurementdatabase WHERE YEAR(buydate) < ?) AS totalPurchaseprobf,
+
+    (SELECT SUM(costprice) FROM procurementdatabase WHERE name != 'return' AND YEAR(buydate) < ?) AS totalallPurchaseprobf,
+
+    (SELECT SUM(costprice) FROM procurementdatabase WHERE YEAR(salesdate) < ?) AS totalallSalesprobf,
+
+    (SELECT SUM(costprice) FROM procurementdatabase WHERE productname = "Discount" AND YEAR(salesdate) < ?) AS Discountprobf,
+
+    (SELECT SUM(UnitPrice) FROM yyitems_buy
+      WHERE ProductName = "Discount" AND InvoiceNumber IN
+        (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) < ?)) AS Discountbf,
+    (SELECT GROUP_CONCAT(category, ':', amount) FROM (SELECT Category, SUM(Amount) AS amount FROM yyexpensesrecord
+        WHERE Category != "Postage & Courier" AND YEAR(Date) < ? GROUP BY Category) AS subquery) AS categoryDatabf,
+    (SELECT SUM(amount) AS amount FROM creditnote WHERE YEAR(Date) < ?) AS totalCourierbf,
+    (SELECT SUM(Amount) AS amount FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) < ?) AS totalotherExpensesbf,
+    (SELECT SUM(Amount) AS amount FROM yycompanyfund2personal WHERE YEAR(Date) < ?) AS distribution2Ownersbf,
+    (SELECT SUM(amount) AS amount FROM procurementrefund WHERE fromsupplier <= 'yes' AND YEAR(Date) < ?) AS prorefundInwardsbf,
+    (SELECT SUM(amount) AS amount FROM procurementrefund WHERE refund2buyer <= 'yes' AND YEAR(Date) < ?) AS prorefundOutwardsbf,
+    
+
+
+
+    (SELECT SUM(bonuscredit) AS amount FROM yytopupbalance WHERE YEAR(date) <= ?) AS otherincomebonuscreditbf,
+
+    
+    (SELECT SUM(bonuscredit) AS amount FROM yytopupbalance WHERE YEAR(date) = ?) AS otherincomebonuscredit
+
+`;
+
+  // Perform a single query to the database
+  pool.query(profitLossQuery, [
+    selectedYear-1, selectedYear-1, selectedYear-1, selectedYear-1, selectedYear, selectedYear, selectedYear, selectedYear, 
+    selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear,
+    selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear,
+  
+    selectedYear, selectedYear, selectedYear, selectedYear, 
+    selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear,
+    selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear, selectedYear,
+    
+    selectedYear-1,
+  
+    selectedYear], (err, results) => {
     if (err) throw err;
-    const years = results;
 
-    // set default selected year to current year
-    let selectedYear = currentYear;
+    // Process the results
+    const otherincomebonuscredit = Math.abs(parseFloat(results[0].otherincomebonuscredit) || 0);
+    const totalSales = Math.abs(parseFloat(results[0].totalSales) || 0);
+    const proSales = Math.abs(parseFloat(results[0].proSales) || 0);
+    const otherIncomePro = Math.abs(parseFloat(results[0].otherIncomePro) || 0);
+    const totalRunnerFee = Math.abs(parseFloat(results[0].totalRunnerFee) || 0);
+    const prorefundOutwards = Math.abs(parseFloat(results[0].prorefundOutwards) || 0);
+    const prorefundInwards = Math.abs(parseFloat(results[0].prorefundInwards) || 0);
+    const refundOutwards = Math.abs(parseFloat(results[0].refundOutwards) || 0);
+    const refundInwards = Math.abs(parseFloat(results[0].refundInwards) || 0);
+    const lastYSales = Math.abs(parseFloat(results[0].lastYSales) || 0);
+    const lastYBuy = Math.abs(parseFloat(results[0].lastYBuy) || 0);
+    const totalPurchase = Math.abs(parseFloat(results[0].totalPurchase) || 0);
+    const totalPurchasepro = Math.abs(parseFloat(results[0].totalPurchasepro) || 0);
+    const PostageCourier = Math.abs(parseFloat(results[0].PostageCourier) || 0);
+    const courierData = results[0].courierData;
+    const categoryData = results[0].categoryData;
+    const allPurchase = Math.abs(parseFloat(results[0].allPurchase) || 0);
+    const allSales = Math.abs(parseFloat(results[0].allSales) || 0);
+    const lastYBuypro = Math.abs(parseFloat(results[0].lastYBuypro) || 0);
+    const lastYSalespro = Math.abs(parseFloat(results[0].lastYSalespro) || 0);
+    const totalallPurchasepro = Math.abs(parseFloat(results[0].totalallPurchasepro) || 0);
+    const totalallSalespro = Math.abs(parseFloat(results[0].totalallSalespro) || 0);
+    const totalCourier = Math.abs(parseFloat(results[0].totalCourier) || 0);
+    const Discountpro = Math.abs(parseFloat(results[0].Discountpro) || 0);
+    const Discount = Math.abs(parseFloat(results[0].Discount) || 0);
+    const totalotherExpenses = Math.abs(parseFloat(results[0].totalotherExpenses) || 0);
+    const distribution2Owners = Math.abs(parseFloat(results[0].distribution2Owners) || 0);
+    const procurementRun_Ship_fee = otherIncomePro +  totalRunnerFee;
+    const totalproSales = (proSales + procurementRun_Ship_fee);
+    const totalrefund_out = (prorefundOutwards + refundOutwards);
+    const totalrefund_in = (prorefundInwards + refundInwards);
+    const openStock = (lastYBuy + lastYBuypro - lastYSales - lastYSalespro);
+    const closeStock = (allPurchase + totalallPurchasepro - totalallSalespro - allSales);
+    const allPruchase = (totalPurchase + totalPurchasepro);
+    const totalDiscount = (Discount + Discountpro);
+    const revenue = (totalSales + totalproSales - totalrefund_out + otherincomebonuscredit);
+    const COGS = (openStock + allPruchase + PostageCourier - totalCourier - closeStock - totalrefund_in - totalDiscount);
+    const grossProfit = (revenue - COGS)
+    const nettProfit = ( grossProfit - totalotherExpenses);
 
-    // check if year is selected from the dropdown
-    if (req.query.year) {
-      selectedYear = parseInt(req.query.year);
-    }
 
-    const lastYear = (selectedYear - 1);
-    const bfYear = (selectedYear -2);
+    const totalSalesbf = Math.abs(parseFloat(results[0].totalSalesbf) || 0);
+    const proSalesbf = Math.abs(parseFloat(results[0].proSalesbf) || 0);
+    const otherIncomeProbf = Math.abs(parseFloat(results[0].otherIncomeProbf) || 0);
+    const totalRunnerFeebf = Math.abs(parseFloat(results[0].totalRunnerFeebf) || 0);
+    const prorefundOutwardsbf = Math.abs(parseFloat(results[0].prorefundOutwardsbf) || 0);
+    const prorefundInwardsbf = Math.abs(parseFloat(results[0].prorefundInwardsbf) || 0);
+    const refundOutwardsbf = Math.abs(parseFloat(results[0].refundOutwardsbf) || 0);
+    const refundInwardsbf = Math.abs(parseFloat(results[0].refundInwardsbf) || 0);
+    const totalPurchasebf = Math.abs(parseFloat(results[0].totalPurchasebf) || 0);
+    const totalPurchaseprobf = Math.abs(parseFloat(results[0].totalPurchaseprobf) || 0);
+    const PostageCourierbf = Math.abs(parseFloat(results[0].PostageCourierbf) || 0);
+    const courierDatabf = Math.abs(parseFloat(results[0].courierDatabf) || 0);
+    const categoryDatabf = results[0].categoryDatabf;
+    const allPurchasebf = Math.abs(parseFloat(results[0].allPurchasebf) || 0);
+    const allSalesbf = Math.abs(parseFloat(results[0].allSalesbf) || 0);
+    const totalallPurchaseprobf = Math.abs(parseFloat(results[0].totalallPurchaseprobf) || 0);
+    const totalallSalesprobf = Math.abs(parseFloat(results[0].totalallSalesprobf) || 0);
+    const totalCourierbf = Math.abs(parseFloat(results[0].totalCourierbf) || 0);
+    const Discountprobf = Math.abs(parseFloat(results[0].Discountprobf) || 0);
+    const Discountbf = Math.abs(parseFloat(results[0].Discountbf) || 0);
+    const totalotherExpensesbf = Math.abs(parseFloat(results[0].totalotherExpensesbf) || 0);
+    const distribution2Ownersbf = Math.abs(parseFloat(results[0].distribution2Ownersbf) || 0);
+    const otherincomebonuscreditbf = Math.abs(parseFloat(results[0].otherincomebonuscreditbf) || 0);
+    const procurementRun_Ship_feebf = otherIncomeProbf +  totalRunnerFeebf;
+    const totalproSalesbf = (proSalesbf + procurementRun_Ship_feebf);
+    const totalrefund_outbf = (prorefundOutwardsbf + refundOutwardsbf);
+    const totalrefund_inbf = (prorefundInwardsbf + refundInwardsbf);
+    const closeStockbf = (allPurchasebf + totalallPurchaseprobf - totalallSalesprobf - allSalesbf);
+    const allPruchasebf = (totalPurchasebf + totalPurchaseprobf);
+    const totalDiscountbf = (Discountbf + Discountprobf);
+    const nettProfitbf = ((totalSalesbf + totalproSalesbf - totalrefund_outbf + otherincomebonuscreditbf) - 
+    (allPruchasebf + PostageCourierbf - totalCourierbf - closeStockbf - totalrefund_inbf - totalDiscountbf) - 
+    totalotherExpensesbf);
 
-    // fetch total sales for the selected year from yyitems_sell table
-    pool.query('SELECT SUM(UnitPrice) AS total_salesno FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
+    const retainedBF = (nettProfitbf - distribution2Ownersbf);
+
+    pool.query('SELECT DISTINCT YEAR(timestamp) AS year FROM yysell_invoice ORDER BY year DESC', (err, yearsResults) => {
       if (err) throw err;
-      const totalSalesno = results[0].total_salesno;
+      const years = yearsResults;
+      
 
-      // fetch total sales for the selected year from yyitems_sell table where Content_SKU is not null
-      pool.query('SELECT SUM(Amount) AS total_sales FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-        if (err) throw err;
-        const totalSales = results[0].total_sales;
-
-        pool.query('SELECT SUM(CostPrice) AS total_cost FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-          if (err) throw err;
-          const totalCost = results[0].total_cost;
-
-          // fetch total purchases for the selected year from yyitems_buy table
-          pool.query('SELECT SUM(Amount) AS total_purchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-            if (err) throw err;
-            const totalPurchases = results[0].total_purchases;
-
-            pool.query('SELECT SUM(Amount) AS total_purchasesLastyear FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-              if (err) throw err;
-              const totalPurchasesLastyear = results[0].total_purchasesLastyear;
-
-              pool.query('SELECT SUM(CostPrice) AS total_costLastyear FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                if (err) throw err;
-                const totalCostLastyear = results[0].total_costLastyear;
-
-
-                pool.query('SELECT SUM(Amount) AS total_buy FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND YEAR(solddate) = ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) < ?)', [selectedYear,selectedYear], (err, results) => {
-                  if (err) throw err;
-                  const totalbuy = results[0].total_buy;
-
-                  pool.query('SELECT SUM(Amount) AS total_purchasesno FROM yyitems_buy WHERE ProductName != "Discount" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-                    if (err) throw err;
-                    const totalPurchasesno = results[0].total_purchasesno;
-
-                    pool.query('SELECT SUM(Amount) AS total_purchasesWOnosku FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-                      if (err) throw err;
-                      const total_purchasesWOnosku = results[0].total_purchasesWOnosku;
-
-                      // fetch total expenses for the selected year from yyexpensesrecord table
-                      pool.query('SELECT Category, SUM(Amount) AS total FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND Category != "Office Equipment" AND YEAR(Date) = ? GROUP BY Category', [selectedYear], (err, results) => {
-                        if (err) throw err;
-                        const categories = results;
-                        const totalExpensesByCategory = categories.reduce((acc, cur) => acc + cur.total, 0);
-
-                        // fetch total stock value for the selected year from yyitems_buy table
-                        pool.query('SELECT SUM(UnitPrice) AS total_stock_value  FROM yyitems_buy WHERE YEAR(solddate) != ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear, selectedYear], (err, results) => {
-                          if (err) throw err;
-                          const totalStockValue = results[0].total_stock_value;
-
-                          pool.query('SELECT SUM(Amount) AS total_ship FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [selectedYear], (err, results) => {
-                            if (err) throw err;
-                            const totalship = results[0].total_ship;
-
-                            pool.query('SELECT SUM(Amount) AS total_c2p FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [selectedYear], (err, results) => {
-                              if (err) throw err;
-                              const totalc2p = results[0].total_c2p;
-              
-                              pool.query('SELECT SUM(Amount) AS total_p2c FROM yypersonalfund2company WHERE YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                if (err) throw err;
-                                const totalp2c = results[0].total_p2c;
-              
-                                pool.query('SELECT SUM(amount) AS supRefund FROM refund WHERE fromSupplier = "yes" AND YEAR(date) = ?', [selectedYear], (err, results) => {
-                                  if (err) throw err;
-                                  const supRefunds = results[0].supRefund;
-              
-                                  pool.query('SELECT SUM(amount) AS refundsales FROM refund WHERE refund2buyer = "yes" AND YEAR(date) = ?', [selectedYear], (err, results) => {
-                                    if (err) throw err;
-                                    const refundsales = results[0].refundsales;
-
-                                    pool.query('SELECT SUM(bonuscredit) AS bonus FROM yytopupbalance WHERE YEAR(date) = ?', [selectedYear], (err, results) => {
-                                      if (err) throw err;
-                                      const bonus = results[0].bonus;
-
-                                      pool.query('SELECT SUM(Amount) AS bftotal_sales FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                        if (err) throw err;
-                                        const bftotalSales = results[0].bftotal_sales;
-                                
-                                        pool.query('SELECT SUM(Amount) AS bftotal_purchasesno FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                          if (err) throw err;
-                                          const bftotalPurchasesno = results[0].bftotal_purchasesno;
-                                        
-                                          pool.query('SELECT SUM(Amount) AS bftotal_purchasesWOnosku FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                            if (err) throw err;
-                                            const bftotal_purchasesWOnosku = results[0].bftotal_purchasesWOnosku;
-                      
-                                            pool.query('SELECT SUM(Amount) AS bftotal_ship FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [lastYear], (err, results) => {
-                                              if (err) throw err;
-                                              const bftotalship = results[0].bftotal_ship;
-
-                                              pool.query('SELECT SUM(Amount) AS buydiscount FROM yyitems_buy WHERE ProductName = "Discount" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-                                                if (err) throw err;
-                                                const total_buydiscount = results[0].buydiscount;
-                  
-                                              pool.query('SELECT SUM(Amount) AS bftotal_c2p FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [lastYear], (err, results) => {
-                                                if (err) throw err;
-                                                const bftotalc2p = results[0].bftotal_c2p;
-                                
-                                                pool.query('SELECT SUM(Amount) AS bftotal_p2c FROM yypersonalfund2company WHERE YEAR(Date) = ?', [lastYear], (err, results) => {
-                                                  if (err) throw err;
-                                                  const bftotalp2c = results[0].bftotal_p2c;
-                                
-                                                  pool.query('SELECT SUM(amount) AS bfsupRefund FROM refund WHERE fromSupplier = "yes" AND YEAR(date) = ?', [lastYear], (err, results) => {
-                                                    if (err) throw err;
-                                                    const bfsupRefunds = results[0].bfsupRefund;
-                                
-                                                    pool.query('SELECT SUM(amount) AS bfrefundsales FROM refund WHERE refund2buyer = "yes" AND YEAR(date) = ?', [lastYear], (err, results) => {
-                                                      if (err) throw err;
-                                                      const bfrefundsales = results[0].bfrefundsales;
-                  
-                                                      pool.query('SELECT SUM(bonuscredit) AS bfbonus FROM yytopupbalance WHERE YEAR(date) = ?', [lastYear], (err, results) => {
-                                                        if (err) throw err;
-                                                        const bfbonus = results[0].bfbonus;
-
-                                                        pool.query('SELECT SUM(Amount) AS bftotal_purchasesLastyear FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [bfYear], (err, results) => {
-                                                          if (err) throw err;
-                                                          const bftotalPurchasesLastyear = results[0].bftotal_purchasesLastyear;
-                                                        
-                                                          pool.query('SELECT SUM(CostPrice) AS bftotal_costLastyear FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [bfYear], (err, results) => {
-                                                            if (err) throw err;
-                                                            const bftotalCostLastyear = results[0].bftotal_costLastyear;
-                                                        
-                                                            pool.query('SELECT SUM(CostPrice) AS bftotal_cost FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [lastYear], (err, results) => {
-                                                              if (err) throw err;
-                                                              const bftotalCost = results[0].bftotal_cost;
-                                                  
-                                                              pool.query('SELECT SUM(Amount) AS bftotal_purchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [lastYear], (err, results) => {
-                                                                if (err) throw err;
-                                                                const bftotalPurchases = results[0].bftotal_purchases;
-                                                  
-                                                                pool.query('SELECT Category, SUM(Amount) AS bftotal FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ? GROUP BY Category', [lastYear], (err, results) => {
-                                                                  if (err) throw err;
-                                                                  const bfcategories = results;
-                                                                  const bftotalExpensesByCategory = bfcategories.reduce((acc, cur) => acc + cur.bftotal, 0);
-
-                                                                  pool.query('SELECT SUM(UnitPrice) AS bftotal_salesno FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                                                    if (err) throw err;
-                                                                    const bftotalSalesno = results[0].bftotal_salesno;
-
-                                                                    pool.query('SELECT courier, SUM(amount) AS total_sales FROM creditnote WHERE YEAR(`date`) = ? GROUP BY courier', [selectedYear], (err, results) => {
-                                                                      if (err) throw err;
-                                                                      const creditNoteTotals = results;
-
-                                                                      // render the EJS template with the fetched data
-                                                                      res.render('profitlossstate', { 
-                                                                        creditNoteTotals,
-                                                                        total_buydiscount,
-                                                                        totalSales, 
-                                                                        totalSalesno,
-                                                                        totalCost,
-                                                                        totalPurchases, 
-                                                                        totalExpenses: totalExpensesByCategory, 
-                                                                        categories,
-                                                                        totalStockValue,
-                                                                        totalship,
-                                                                        totalPurchasesno,
-                                                                        totalc2p,
-                                                                        totalp2c,
-                                                                        supRefunds,
-                                                                        refundsales,
-                                                                        years,
-                                                                        selectedYear,
-                                                                        total_purchasesWOnosku,
-                                                                        totalbuy,
-                                                                        totalPurchasesLastyear,
-                                                                        totalCostLastyear,
-                                                                        bonus,
-                                                                        bftotalSales,
-                                                                        bftotalPurchasesno,
-                                                                        bftotal_purchasesWOnosku,
-                                                                        bftotalship,
-                                                                        bftotalc2p,
-                                                                        bftotalp2c,
-                                                                        bfsupRefunds,
-                                                                        bfrefundsales,
-                                                                        bfbonus,
-                                                                        bftotalPurchasesLastyear,
-                                                                        bftotalCostLastyear,
-                                                                        bftotalPurchasesno,
-                                                                        bftotal_purchasesWOnosku,
-                                                                        bftotalCost,
-                                                                        bftotalPurchases,
-                                                                        bftotalExpenses: bftotalExpensesByCategory,
-                                                                        bftotalSalesno
-                                                                      });
-                                                                    });
-                                                                  });
-                                                                });
-                                                              });
-                                                            });
-                                                          });});
-                                                        });
-                                                      });
-                                                    });
-                                                  });
-                                                });
-                                              });
-                                            });
-                                          });
-                                        });
-                                      });
-                                    });
-                                  });
-                                });
-                              });
-                            });
-                          });
-                        });
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
+      // Render the page with fetched data
+      res.render('profitlossstate', {
+        COGS,
+        otherincomebonuscredit,
+        revenue,
+        nettProfit,
+        grossProfit,
+        totalPurchasepro,
+        totalproSales,
+        refundOutwards,
+        totalSales,
+        totalrefund_out,
+        totalrefund_in,
+        proSales,
+        procurementRun_Ship_fee,
+        lastYSales,
+        lastYBuy,
+        totalPurchase,
+        PostageCourier,
+        courierData,
+        categoryData,
+        years,
+        selectedYear,
+        openStock,
+        closeStock,
+        allPruchase,
+        totalDiscount,
+        totalotherExpenses,
+        totalCourier,
+        distribution2Owners,
+        retainedBF
       });
     });
   });
 });
-app.get('/balanceSheet', requireLogin, (req, res) => {
-  const currentYear = new Date().getFullYear(); // get current year
+app.get('/balanceSheet', async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const selectedYear = parseInt(req.query.year) || currentYear;
+    const lastYear = selectedYear - 1;
+    const bfYear = selectedYear - 2;
 
-  // fetch distinct years from yyitems_sell table
-  pool.query('SELECT DISTINCT YEAR(timestamp) AS year FROM yysell_invoice ORDER BY year DESC', (err, results) => {
-    if (err) throw err;
-    const years = results;
+    const yearQuery = 'SELECT DISTINCT YEAR(timestamp) AS year FROM yysell_invoice ORDER BY year DESC';
+    const years = await queryDatabase(yearQuery);
 
-    // set default selected year to current year
-    let selectedYear = currentYear;
+    const totalSalesResult = await queryDatabase(`
+      SELECT SUM(UnitPrice) AS totalSales FROM yyitems_sell
+        WHERE InvoiceNumber IN
+          (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) = ?)
+    `, [selectedYear]);
+    const totalSales = (totalSalesResult[0].totalSales || 0);
+    const totalCostResult = await queryDatabase('SELECT SUM(CostPrice) AS total_cost FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const totalCost = (totalCostResult[0].totalCost || 0);
+    const totalSalesnoResult = await queryDatabase('SELECT SUM(UnitPrice) AS totalSalesno FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [selectedYear]);
+    const totalSalesno = (totalSalesnoResult[0].totalSalesno || 0);
+    const totalSalesno2Result = await queryDatabase('SELECT SUM(CostPrice) AS totalSalesno2 FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const totalSalesno2 = (totalSalesno2Result[0].totalSalesno2 || 0);
+    const totalPurchasesResult = await queryDatabase('SELECT SUM(Amount) AS totalPurchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND status != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const totalPurchases = (totalPurchasesResult[0].totalPurchases || 0);
+    const totalPurchasesLastyearResult = await queryDatabase('SELECT SUM(Amount) AS total_purchasesLastyear FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear]);
+    const totalPurchasesLastyear = (totalPurchasesLastyearResult[0].totalPurchasesLastyear || 0);
+    const totalCostLastyearResult = await queryDatabase('SELECT SUM(CostPrice) AS total_costLastyear FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear]);
+    const totalCostLastyear = (totalCostLastyearResult[0].totalCostLastyear || 0);
+    const totalbuyResult = await queryDatabase('SELECT SUM(Amount) AS total_buy FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND YEAR(solddate) = ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) < ?)', [selectedYear, selectedYear]);
+    const totalbuy = (totalbuyResult[0].totalbuy || 0);
+    const totalPurchasesnoResult = await queryDatabase('SELECT SUM(Amount) AS total_purchasesno FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear]);
+    const totalPurchasesno = (totalPurchasesnoResult[0].totalPurchasesno || 0);
+    const totalPurchasesno2Result = await queryDatabase('SELECT SUM(Amount) AS totalPurchasesno2 FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const totalPurchasesno2 = (totalPurchasesno2Result[0].totalPurchasesno2 || 0);
+    const total_purchasesWOnoskuResult = await queryDatabase('SELECT SUM(Amount) AS total_purchasesWOnosku FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear]);
+    const total_purchasesWOnosku = (total_purchasesWOnoskuResult[0].total_purchasesWOnosku || 0);
+    const totalExpensesByCategoryResult = await queryDatabase('SELECT Category, SUM(Amount) AS total FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ? GROUP BY Category', [selectedYear]);
+    const totalExpensesByCategory = (totalExpensesByCategoryResult && totalExpensesByCategoryResult[0] && totalExpensesByCategoryResult[0].total) || 0;
+    const totalStockValue = await queryDatabase('SELECT SUM(UnitPrice) AS total_stock_value  FROM yyitems_buy WHERE YEAR(solddate) != ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear, selectedYear]);
+    const totalshipResult = await queryDatabase('SELECT SUM(Amount) AS total_ship FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [selectedYear]);
+    const totalship = (totalshipResult[0].totalship || 0);
+    const totalgdexResult = await queryDatabase('SELECT SUM(Amount) AS totalgdex FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND Name = "Gdex" AND YEAR(Date) <= ?', [selectedYear]);
+    const totalgdex = (totalgdexResult[0].totalgdex || 0);
+    const totalc2pResult = await queryDatabase('SELECT SUM(Amount) AS total_c2p FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [selectedYear]);
+    const totalc2p = (totalc2pResult[0].totalc2p || 0);
+    const totalp2cResult = await queryDatabase('SELECT SUM(Amount) AS totalp2c FROM yypersonalfund2company WHERE YEAR(Date) = ?', [selectedYear]);
+    const totalp2c = (totalp2cResult[0].totalp2c || 0);
+    const supRefundsResult = await queryDatabase('SELECT SUM(amount) AS supRefund FROM refund WHERE fromSupplier = "yes" AND YEAR(date) = ?', [selectedYear]);
+    const supRefunds = (supRefundsResult[0].supRefunds || 0);
+    const refundsalesResult = await queryDatabase('SELECT SUM(amount) AS refundsales FROM refund WHERE refund2buyer = "yes" AND YEAR(date) = ?', [selectedYear]);
+    const refundsales = (refundsalesResult[0].refundsales || 0);
+    const bonusResult = await queryDatabase('SELECT SUM(bonuscredit) AS bonus FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear]);
+    const bonus = (bonusResult[0].bonus || 0);
+    const bonus2Result = await queryDatabase('SELECT SUM(bonuscredit) AS bonus2 FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear]);
+    const bonus2 = (bonus2Result[0].bonus2 || 0);
+    const officeEquipmentResult = await queryDatabase('SELECT SUM(Amount) as officeEquipment FROM yyexpensesrecord WHERE Category = "Office Equipment" AND YEAR(Date) <= ?', [selectedYear]);
+    const officeEquipment = (officeEquipmentResult[0].officeEquipment || 0);
 
-    // check if year is selected from the dropdown
-    if (req.query.year) {
-      selectedYear = parseInt(req.query.year);
-    }
+    const salesDataResult = await queryDatabase('SELECT SUM(Amount) AS salesData FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const salesData = (salesDataResult[0].salesData || 0);
+    const totalSalespaidResult = await queryDatabase('SELECT SUM(Amount) AS totalSalespaid FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalSalespaid = (totalSalespaidResult[0].totalSalespaid || 0);
 
-    const lastYear = (selectedYear - 1);
-    const bfYear = (selectedYear -2);
+    const totalTopupResult = await queryDatabase('SELECT SUM(Amount) AS totalTopup FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalTopup = (totalTopupResult[0].totalTopup || 0);
+    const totalBuypaidResult = await queryDatabase('SELECT SUM(Amount) AS totalBuypaid FROM yypurchase_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalBuypaid = (totalBuypaidResult[0].totalBuypaid || 0);
+    const totalcapitalResult = await queryDatabase('SELECT SUM(amount) AS totalcapital FROM yyequity WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalcapital = (totalcapitalResult[0].totalcapital || 0);
+    const totalotcreditResult = await queryDatabase('SELECT SUM(Amount) AS totalotcredit FROM yyothercreditor WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalotcredit = (totalotcreditResult[0].totalotcredit || 0);
+    const totalotcreditpayResult = await queryDatabase('SELECT SUM(Amount) AS totalotcreditpay FROM yyothercreditor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalotcreditpay = (totalotcreditpayResult[0].totalotcreditpay || 0);
+    const totaldepositResult = await queryDatabase('SELECT SUM(amount) AS totaldeposit FROM yydeposit WHERE YEAR(date) <= ?', [selectedYear]);
+    const totaldeposit = (totaldepositResult[0].totaldeposit || 0);
+    const totalaccruedResult = await queryDatabase('SELECT SUM(Amount) AS totalaccrued FROM yyexpensesrecord WHERE accrued = "yes" AND YEAR(Date) <= ?', [selectedYear]);
+    const totalaccrued = (totalaccruedResult[0].totalaccrued || 0);
+    const totalaccruedpayResult = await queryDatabase('SELECT SUM(Amount) AS totalaccruedpay FROM yyaccruals WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalaccruedpay = (totalaccruedpayResult[0].totalaccruedpay || 0);
+    const totalotherdebtorResult = await queryDatabase('SELECT SUM(Amount) AS totalotherdebtor FROM yyotherdebtor WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalotherdebtor = (totalotherdebtorResult[0].totalotherdebtor || 0);
+    const totalprosaleResult = await queryDatabase('SELECT SUM(costprice) AS totalprosale FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear]);
+    const totalprosale = (totalprosaleResult[0].totalprosale || 0);
+    const totalpropayResult = await queryDatabase('SELECT SUM(amount) AS totalpropay FROM procurementsellpaymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalpropay = (totalpropayResult[0].totalpropay || 0);
+    const totalshippingfeeResult = await queryDatabase(`SELECT SUM(MaxFee) AS totalShippingFee
+    FROM (
+        SELECT MAX(shippingfee) AS MaxFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) <= ?
+        GROUP BY salesinvoice
+    ) AS Subquery`, [selectedYear]);
+    const totalShippingFee = (totalshippingfeeResult[0].totalShippingFee || 0);
+    const totalrunnerfeeResult = await queryDatabase(`SELECT SUM(MaxRunnerFee) AS totalrunnerfee
+    FROM (
+        SELECT MAX(runnerfee) AS MaxRunnerFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) <= ?
+        GROUP BY salesinvoice
+    ) AS Subquery`, [selectedYear]);
+    const totalrunnerfee = (totalrunnerfeeResult[0].totalrunnerfee || 0);
+    const totalproBuyResult = await queryDatabase('SELECT SUM(costprice) AS totalprobuy FROM procurementdatabase WHERE name != "return" AND YEAR(buydate) <= ?', [selectedYear]);
+    const totalprobuy = (totalproBuyResult[0].totalprobuy || 0);
+    const totalallproBuyResult = await queryDatabase('SELECT SUM(costprice) AS totalallprobuy FROM procurementdatabase WHERE YEAR(buydate) <= ?', [selectedYear]);
+    const totalallprobuy = (totalallproBuyResult[0].totalallprobuy || 0);
+    const totalproBuypayResult = await queryDatabase('SELECT SUM(amount) AS totalprobuypay FROM procurementbuypaymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalprobuypay = (totalproBuypayResult[0].totalprobuypay || 0);
+    const totalproSalesResult = await queryDatabase('SELECT SUM(costprice) AS totalprosell FROM procurementdatabase WHERE name != "return" AND YEAR(salesdate) <= ?', [selectedYear]);
+    const totalprosell = (totalproSalesResult[0].totalprosell || 0);
+    const totalSalespaymentResult = await queryDatabase('SELECT SUM(Amount) AS totalSalespayment FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalSalespayment = (totalSalespaymentResult[0].totalSalespayment || 0);
+    const totalBuypaymentResult = await queryDatabase('SELECT SUM(Amount) AS totalBuypayment FROM yypurchase_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalBuypayment = (totalBuypaymentResult[0].totalBuypayment || 0);
+    const totalAccruedResult = await queryDatabase('SELECT SUM(Amount) as totalAccrued FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL OR accrued = "no" AND Name != "Gdex" AND YEAR(Date) <= ?', [selectedYear]);
+    const totalAccrued = (totalAccruedResult[0].totalAccrued || 0);
+    const totalAccrualpaymentResult = await queryDatabase('SELECT SUM(Amount) AS totalAccrualpayment FROM yyaccruals WHERE detail != "creditnote" AND YEAR(Date) <= ?', [selectedYear]);
+    const totalAccrualpayment = (totalAccrualpaymentResult[0].totalAccrualpayment || 0);
+    const totaltopupResult = await queryDatabase('SELECT SUM(amount) as totaltopup FROM yytopupbalance WHERE wallet = "Gdex" AND YEAR(date) <= ?', [selectedYear]);
+    const totaltopup = (totaltopupResult[0].totaltopup || 0);
+    const totalrefundfromSupplierResult = await queryDatabase('SELECT SUM(amount) as totalrefundfromSupplier FROM refund WHERE fromSupplier = "yes" AND YEAR(date) <= ?', [selectedYear]);
+    const totalrefundfromSupplier = (totalrefundfromSupplierResult[0].totalrefundfromSupplier || 0);
+    const totalrefund2buyerResult = await queryDatabase('SELECT SUM(amount) as totalrefund2buyer FROM refund WHERE refund2buyer = "yes" AND YEAR(date) <= ?', [selectedYear]);
+    const totalrefund2buyer = (totalrefund2buyerResult[0].totalrefund2buyer || 0);
+    const totalcompanyfund2personalResult = await queryDatabase('SELECT SUM(Amount) AS totalcompanyfund2personal FROM yycompanyfund2personal WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalcompanyfund2personal = (totalcompanyfund2personalResult[0].totalcompanyfund2personal || 0);
+    const totalotherdebtorpayResult = await queryDatabase('SELECT SUM(amount) AS totalotherdebtorpay FROM yyotherdebtor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalotherdebtorpay = (totalotherdebtorpayResult[0].totalotherdebtorpay || 0);
+    const probuypaymentResult = await queryDatabase('SELECT SUM(amount) AS probuypayment FROM procurementbuypaymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const probuypayment = (probuypaymentResult[0].probuypayment || 0);
+    const prosalepaymentResult = await queryDatabase('SELECT SUM(amount) AS prosalepayment FROM procurementsellpaymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const prosalepayment = (prosalepaymentResult[0].prosalepayment || 0);
+    const prorefund2buyerResult = await queryDatabase('SELECT SUM(amount) AS prorefund2buyer FROM procurementrefund WHERE refund2buyer = "yes" AND YEAR(date) <= ?', [selectedYear]);
+    const prorefund2buyer = (prorefund2buyerResult[0].prorefund2buyer || 0);
+    const profromsupplierResult = await queryDatabase('SELECT SUM(amount) AS profromsupplier FROM procurementrefund WHERE fromsupplier = "yes" AND YEAR(date) <= ?', [selectedYear]);
+    const profromsupplier = (profromsupplierResult[0].profromsupplier || 0);
 
-    // fetch total sales for the selected year from yyitems_sell table
-    pool.query('SELECT SUM(UnitPrice) AS total_salesno FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-      if (err) throw err;
-      const totalSalesno = results[0].total_salesno;
 
-      pool.query('SELECT SUM(UnitPrice) AS total_salesno2 FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-        if (err) throw err;
-        const totalSalesno2 = results[0].total_salesno2;
+    const totalSalesbfResult = await queryDatabase('SELECT SUM(UnitPrice) AS totalSalesbf FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)', [selectedYear-1]);
+    const totalSalesbf = (totalSalesbfResult[0].totalSalesbf || 0);
+    const proSalesbfResult = await queryDatabase('SELECT SUM(sellprice) AS proSalesbf FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear-1]);
+    const proSalesbf = (proSalesbfResult[0].proSalesbf || 0);
+    const refundOutwardsbfResult = await queryDatabase('SELECT SUM(amount) AS refundOutwardsbf FROM refund WHERE (refund2buyer = "yes") AND YEAR(date) <= ?', [selectedYear-1]);
+    const refundOutwardsbf = (refundOutwardsbfResult[0].refundOutwardsbf || 0);
+    const totalPurchasebfResult = await queryDatabase('SELECT SUM(UnitPrice) AS totalPurchasebf FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) <= ?)', [selectedYear-1]);
+    const totalPurchasebf = (totalPurchasebfResult[0].totalPurchasebf || 0);
+    const PostageCourierbfResult = await queryDatabase('SELECT SUM(Amount) AS PostageCourierbf FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) <= ?', [selectedYear-1]);
+    const PostageCourierbf = (PostageCourierbfResult[0].PostageCourierbf || 0);
+    const allPurchasebfResult = await queryDatabase(`SELECT 
+                                SUM(UnitPrice) AS allPurchasebf
+                                FROM 
+                                  yyitems_buy
+                                WHERE 
+                                  (Content_SKU IS NOT NULL AND Content_SKU != '') AND status != 'return'
+                                  AND InvoiceNumber IN (
+                                    SELECT Invoice_number 
+                                    FROM yybuy_record 
+                                    WHERE YEAR(timestamp) <= ?)`, [selectedYear-1]);
+    const allPurchasebf = (allPurchasebfResult[0].allPurchasebf || 0);
+    const allSalesbfResult = await queryDatabase(`SELECT SUM(CostPrice) AS allSalesbf FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)`, [selectedYear-1]);
+    const allSalesbf = (allSalesbfResult[0].allSalesbf || 0);
+    const refundInwardsbfResult = await queryDatabase('SELECT SUM(amount) AS refundInwardsbf FROM refund WHERE (fromSupplier = "yes") AND YEAR(date) <= ?', [selectedYear-1]);
+    const refundInwardsbf = (refundInwardsbfResult[0].refundInwardsbf || 0);
+    const totalPurchaseprobfResult = await queryDatabase('SELECT SUM(costprice) AS totalPurchaseprobf FROM procurementdatabase WHERE YEAR(buydate) <= ?', [selectedYear-1]);
+    const totalPurchaseprobf = (totalPurchaseprobfResult[0].totalPurchaseprobf || 0);
+    
+    
+    const totalallPurchaseprobfResult = await queryDatabase('SELECT SUM(costprice) AS totalallPurchaseprobf FROM procurementdatabase WHERE name != "return" AND YEAR(buydate) <= ?', [selectedYear-1]);
+    const totalallPurchaseprobf = (totalallPurchaseprobfResult[0].totalallPurchaseprobf || 0);
+    const totalallSalesprobfResult = await queryDatabase('SELECT SUM(costprice) AS totalallSalesprobf FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear-1]);
+    const totalallSalesprobf = (totalallSalesprobfResult[0].totalallSalesprobf || 0);
+    const DiscountprobfResult = await queryDatabase('SELECT SUM(costprice) AS Discountprobf FROM procurementdatabase WHERE productname = "Discount" AND YEAR(salesdate) <= ?', [selectedYear-1]);
+    const Discountprobf = (DiscountprobfResult[0].Discountprobf || 0);
+    const DiscountbfResult = await queryDatabase(`SELECT SUM(ABS(UnitPrice)) AS Discountbf FROM yyitems_buy
+                                                  WHERE ProductName = "Discount" AND InvoiceNumber IN
+                                                    (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) <= ?)`, [selectedYear-1]);
+    const Discountbf = (DiscountbfResult[0].Discountbf || 0);
+    const totalCourierbfResult = await queryDatabase('SELECT SUM(amount) AS totalCourierbf FROM creditnote WHERE YEAR(Date) <= ?', [selectedYear-1]);
+    const totalCourierbf = (totalCourierbfResult[0].totalCourierbf || 0);
+    const totalotherExpensesbfResult = await queryDatabase('SELECT SUM(Amount) AS totalotherExpensesbf FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) <= ?', [selectedYear-1]);
+    const totalotherExpensesbf = (totalotherExpensesbfResult[0].totalotherExpensesbf || 0);
+    const distribution2OwnersbfResult = await queryDatabase('SELECT SUM(Amount) AS distribution2Ownersbf FROM yycompanyfund2personal WHERE YEAR(Date) <= ?', [selectedYear-1]);
+    const distribution2Ownersbf = (distribution2OwnersbfResult[0].distribution2Ownersbf || 0);
+    const prorefundInwardsbfResult = await queryDatabase('SELECT SUM(amount) AS prorefundInwardsbf FROM procurementrefund WHERE fromsupplier <= "yes" AND YEAR(Date) = ?', [selectedYear-1]);
+    const prorefundInwardsbf = (prorefundInwardsbfResult[0].prorefundInwardsbf || 0);
+    const prorefundOutwardsbfResult = await queryDatabase('SELECT SUM(amount) AS prorefundOutwardsbf FROM procurementrefund WHERE refund2buyer <= "yes" AND YEAR(Date) = ?', [selectedYear-1]);
+    const prorefundOutwardsbf = (prorefundOutwardsbfResult[0].prorefundOutwardsbf || 0);
+    const totalRunnerFeebfResult = await queryDatabase(`
+        SELECT SUM(MaxRunnerFee) AS totalRunnerFeebf
+        FROM (
+            SELECT MAX(runnerfee) AS MaxRunnerFee
+            FROM procurementdatabase
+            WHERE YEAR(salesdate) <= ?
+            GROUP BY salesinvoice
+        ) AS Subquery
+    `, [selectedYear - 1]);
+    const totalRunnerFeebf = totalRunnerFeebfResult[0].totalRunnerFeebf || 0;
 
-        // fetch total sales for the selected year from yyitems_sell table where Content_SKU is not null
-        pool.query('SELECT SUM(Amount) AS total_sales FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-          if (err) throw err;
-          const totalSales = results[0].total_sales;
+    const otherIncomeProbfResult = await queryDatabase(`
+    SELECT SUM(MaxFee) AS otherIncomeProbf
+    FROM (
+        SELECT MAX(shippingfee) AS MaxFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) <= ?
+        GROUP BY salesinvoice
+    ) AS Subquery
+    `, [selectedYear - 1]);
+    const otherIncomeProbf = otherIncomeProbfResult[0].otherIncomeProbf || 0;
+    const otherIncomeProResult = await queryDatabase(`
+        SELECT SUM(MaxFee) AS otherIncomePro
+        FROM (
+            SELECT MAX(shippingfee) AS MaxFee
+            FROM procurementdatabase
+            WHERE YEAR(salesdate) = ?
+            GROUP BY salesinvoice
+        ) AS Subquery
+    `, [selectedYear]);
+    const otherIncomePro = otherIncomeProResult[0].otherIncomePro || 0;
+    const totalRunnerFeeResult = await queryDatabase(`
+            SELECT SUM(MaxRunnerFee) AS totalRunnerFee
+            FROM (
+                SELECT MAX(runnerfee) AS MaxRunnerFee
+                FROM procurementdatabase
+                WHERE YEAR(salesdate) = ?
+                GROUP BY salesinvoice
+            ) AS Subquery
+        `, [selectedYear]);
+    const totalRunnerFee = totalRunnerFeeResult[0].totalRunnerFee || 0;
+    const proSalesResult = await queryDatabase('SELECT SUM(sellprice) AS proSales FROM procurementdatabase WHERE name != "return" AND YEAR(salesdate) = ?', [selectedYear]);
+    const proSales = (proSalesResult[0].proSales || 0);
+    const prorefundOutwardsResult = await queryDatabase('SELECT SUM(amount) AS prorefundOutwards FROM procurementrefund WHERE refund2buyer = "yes" AND YEAR(Date) = ?', [selectedYear]);
+    const prorefundOutwards = (prorefundOutwardsResult[0].prorefundOutwards || 0);
+    const refundOutwardsResult = await queryDatabase('SELECT SUM(amount) AS refundOutwards FROM refund WHERE (refund2buyer = "yes") AND YEAR(date) = ?', [selectedYear]);
+    const refundOutwards = (refundOutwardsResult[0].refundOutwards || 0);
 
-          pool.query('SELECT SUM(CostPrice) AS total_cost FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-            if (err) throw err;
-            const totalCost = results[0].total_cost;
+    const otherincomebonuscreditResult = await queryDatabase('SELECT SUM(bonuscredit) AS otherincomebonuscredit FROM yytopupbalance WHERE YEAR(date) = ?', [selectedYear]);
+    const otherincomebonuscredit = (otherincomebonuscreditResult[0].otherincomebonuscredit || 0);
+    const totalPurchaseproResult = await queryDatabase('SELECT SUM(costprice) AS totalPurchasepro FROM procurementdatabase WHERE YEAR(buydate) = ?', [selectedYear]);
+    const totalPurchasepro = (totalPurchaseproResult[0].totalPurchasepro || 0);
+    const PostageCourierResult = await queryDatabase('SELECT SUM(Amount) AS PostageCourier FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [selectedYear]);
+    const PostageCourier = (PostageCourierResult[0].PostageCourier || 0);
+    const totalCourierResult = await queryDatabase('SELECT SUM(amount) AS totalCourier FROM creditnote WHERE YEAR(Date) = ?', [selectedYear]);
+    const totalCourier = (totalCourierResult[0].totalCourier || 0);
+    const allPurchaseResult = await queryDatabase(`
+          SELECT SUM(UnitPrice) AS allPurchase
+          FROM yyitems_buy
+          WHERE (Content_SKU IS NOT NULL AND Content_SKU != '') AND status != 'return'
+            AND InvoiceNumber IN (
+              SELECT Invoice_number 
+              FROM yybuy_record 
+              WHERE YEAR(timestamp) <= ?)
+        `, [selectedYear]);
+const allPurchase = allPurchaseResult[0].allPurchase || 0;
 
-            // fetch total purchases for the selected year from yyitems_buy table
-            pool.query('SELECT SUM(Amount) AS total_purchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND status != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-              if (err) throw err;
-              const totalPurchases = results[0].total_purchases;
+const totalPurchaseResult = await queryDatabase(`
+SELECT SUM(Amount) AS totalPurchase FROM yyitems_buy
+WHERE Productname != "Discount" AND InvoiceNumber IN
+  (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) = ?)
+`, [selectedYear]);
+const totalPurchase = totalPurchaseResult[0].totalPurchase || 0;
 
-              pool.query('SELECT SUM(Amount) AS total_purchasesLastyear FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                if (err) throw err;
-                const totalPurchasesLastyear = results[0].total_purchasesLastyear;
+const allSalesResult = await queryDatabase(`
+SELECT SUM(CostPrice) AS allSales FROM yyitems_sell
+WHERE InvoiceNumber IN (
+    SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)
+`, [selectedYear]);
+const allSales = allSalesResult[0].allSales || 0;
 
-                pool.query('SELECT SUM(CostPrice) AS total_costLastyear FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                  if (err) throw err;
-                  const totalCostLastyear = results[0].total_costLastyear;
 
 
-                  pool.query('SELECT SUM(Amount) AS total_buy FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND YEAR(solddate) = ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) < ?)', [selectedYear,selectedYear], (err, results) => {
-                    if (err) throw err;
-                    const totalbuy = results[0].total_buy;
+    const totalallPurchaseproResult = await queryDatabase('SELECT SUM(costprice) AS totalallPurchasepro FROM procurementdatabase WHERE name != "return" AND YEAR(buydate) <= ?', [selectedYear]);
+    const totalallPurchasepro = (totalallPurchaseproResult[0].totalallPurchasepro || 0);
+    const totalallSalesproResult = await queryDatabase('SELECT SUM(costprice) AS totalallSalespro FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear]);
+    const totalallSalespro = (totalallSalesproResult[0].totalallSalespro || 0);
+    const prorefundInwardsResult = await queryDatabase('SELECT SUM(amount) AS prorefundInwards FROM procurementrefund WHERE fromsupplier = "yes" AND YEAR(Date) = ?', [selectedYear]);
+    const prorefundInwards = (prorefundInwardsResult[0].prorefundInwards || 0);
+    const refundInwardsResult = await queryDatabase('SELECT SUM(amount) AS refundInwards FROM refund WHERE (fromSupplier = "yes") AND YEAR(date) = ?', [selectedYear]);
+    const refundInwards = (refundInwardsResult[0].refundInwards || 0);
+    const DiscountResult = await queryDatabase(`
+      SELECT SUM(ABS(UnitPrice)) AS Discount 
+      FROM yyitems_buy 
+      WHERE ProductName = "Discount" 
+      AND InvoiceNumber IN (
+          SELECT Invoice_number 
+          FROM yybuy_record 
+          WHERE YEAR(timestamp) = ?)
+    `, [selectedYear]);
+    const Discount = (DiscountResult[0].Discount || 0);
 
-                    pool.query('SELECT SUM(Amount) AS total_purchasesno FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-                      if (err) throw err;
-                      const totalPurchasesno = results[0].total_purchasesno;
+    const DiscountproResult = await queryDatabase('SELECT SUM(costprice) AS Discountpro FROM procurementdatabase WHERE productname = "Discount" AND YEAR(salesdate) = ?', [selectedYear]);
+    const Discountpro = (DiscountproResult[0].Discountpro || 0);
+    const totalotherExpensesResult = await queryDatabase('SELECT SUM(Amount) AS totalotherExpenses FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ?', [selectedYear]);
+    const totalotherExpenses = (totalotherExpensesResult[0].totalotherExpenses || 0);
 
-                      pool.query('SELECT SUM(Amount) AS total_purchasesno2 FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-                        if (err) throw err;
-                        const totalPurchasesno2 = results[0].total_purchasesno2;
+    
+    const lastYBuyproResult = await queryDatabase('SELECT SUM(costprice) AS lastYBuypro FROM procurementdatabase WHERE name != "return" AND YEAR(buydate) <= ?', [selectedYear-1]);
+    const lastYBuypro = (lastYBuyproResult[0].lastYBuypro || 0);
+    const lastYSalesproResult = await queryDatabase('SELECT SUM(sellprice) AS lastYSalespro FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear-1]);
+    const lastYSalespro = (lastYSalesproResult[0].lastYSalespro || 0);
+    const lastYSalesResult = await queryDatabase(`
+      SELECT SUM(CostPrice) AS lastYSales FROM yyitems_sell
+        WHERE InvoiceNumber IN
+        (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)
+      `, [selectedYear-1]);
+    const lastYSales = (lastYSalesResult[0].lastYSales || 0);
+    const lastYBuyResult = await queryDatabase(`
+    SELECT SUM(UnitPrice) AS lastYBuy FROM yyitems_buy
+    WHERE (Content_SKU IS NOT NULL AND Content_SKU != '') AND status != 'return'
+    AND InvoiceNumber IN
+      (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) <= ?)
+      `, [selectedYear-1]);
+    const lastYBuy = (lastYBuyResult[0].lastYBuy || 0);
+    const distribution2OwnersResult = await queryDatabase('SELECT SUM(Amount) AS distribution2Owners FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [selectedYear]);
+    const distribution2Owners = (distribution2OwnersResult[0].distribution2Owners || 0);
+    const otherincomebonuscreditbfResult = await queryDatabase('SELECT SUM(bonuscredit) AS otherincomebonuscreditbf FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear-1]);
+    const otherincomebonuscreditbf = (otherincomebonuscreditbfResult[0].otherincomebonuscreditbf || 0);
 
-                        pool.query('SELECT SUM(Amount) AS total_purchasesWOnosku FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-                          if (err) throw err;
-                          const total_purchasesWOnosku = results[0].total_purchasesWOnosku;
+    const accountpayable = (totalPurchasesno2 - totalBuypaid + totalallprobuy - totalprobuypay);
+    const accruals = (totalaccrued - totalaccruedpay);
+    const accreceivable = (salesData - totalSalespaid + totalprosale + totalShippingFee + totalrunnerfee - totalpropay);
+    const totalcreditor = (totalotcredit - totalotcreditpay);
+    const closingstock = (totalPurchases + totalprobuy - totalSalesno2 - totalprosell);
+    const cashInbank = (totalSalespayment + prosalepayment - totalBuypayment - probuypayment + totalcapital + totalotcredit + totalotherdebtorpay
+      + totalrefundfromSupplier + profromsupplier - totalrefund2buyer - prorefund2buyer - totalAccrued - totalAccrualpayment - totaltopup 
+      - totalcompanyfund2personal - totaldeposit - totalotcreditpay - totalotherdebtor);
+    const cashInotherACC = (totalTopup + bonus2 - totalgdex);
+    const totalCurrestassets = (closingstock + accreceivable + cashInbank + cashInotherACC + totalotherdebtor + totaldeposit);
+    const currentLiabi = (accountpayable + totalcreditor + accruals);
+    const nettProfitbf = (totalSalesbf + (proSalesbf + (otherIncomeProbf +  totalRunnerFeebf)) - (prorefundOutwardsbf + refundOutwardsbf) - 
+    (totalPurchasebf + totalPurchaseprobf) - PostageCourierbf + totalCourierbf + (allPurchasebf + totalallPurchaseprobf - totalallSalesprobf - allSalesbf) + 
+    (prorefundInwardsbf + refundInwardsbf) + (Discountbf + Discountprobf) - totalotherExpensesbf);
+    const retainedBF = (nettProfitbf - distribution2Ownersbf);
 
-                          // fetch total expenses for the selected year from yyexpensesrecord table
-                          pool.query('SELECT Category, SUM(Amount) AS total FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ? GROUP BY Category', [selectedYear], (err, results) => {
-                            if (err) throw err;
-                            const categories = results;
-                            const totalExpensesByCategory = categories.reduce((acc, cur) => acc + cur.total, 0);
+    const nettProfit = ( ((totalSales + (proSales + (otherIncomePro +  totalRunnerFee)) - (prorefundOutwards + refundOutwards) + 
+    otherincomebonuscredit) - ((lastYBuy + lastYBuypro - lastYSales - lastYSalespro) + (totalPurchase + totalPurchasepro) + 
+    PostageCourier - totalCourier - (allPurchase + totalallPurchasepro - totalallSalespro - allSales) - 
+    (prorefundInwards + refundInwards) - (Discount + Discountpro))) - totalotherExpenses + otherincomebonuscreditbf);
 
-                            // fetch total stock value for the selected year from yyitems_buy table
-                            pool.query('SELECT SUM(UnitPrice) AS total_stock_value  FROM yyitems_buy WHERE YEAR(solddate) != ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear, selectedYear], (err, results) => {
-                              if (err) throw err;
-                              const totalStockValue = results[0].total_stock_value;
+    const retainedCF = (nettProfit + retainedBF - distribution2Owners);
 
-                              pool.query('SELECT SUM(Amount) AS total_ship FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                if (err) throw err;
-                                const totalship = results[0].total_ship;
-
-                                pool.query('SELECT SUM(Amount) AS total_gdex FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND Name = "Gdex" AND YEAR(Date) <= ?', [selectedYear], (err, results) => {
-                                  if (err) throw err;
-                                  const totalgdex = results[0].total_gdex;
-
-                                  pool.query('SELECT SUM(Amount) AS total_c2p FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                    if (err) throw err;
-                                    const totalc2p = results[0].total_c2p;
-
-                                    pool.query('SELECT SUM(Amount) AS totalp2c FROM yypersonalfund2company WHERE YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                      if (err) throw err;
-                                      const totalp2c = results[0].totalp2c;
-                    
-                                      pool.query('SELECT SUM(amount) AS supRefund FROM refund WHERE fromSupplier = "yes" AND YEAR(date) = ?', [selectedYear], (err, results) => {
-                                        if (err) throw err;
-                                        const supRefunds = results[0].supRefund;
-                    
-                                        pool.query('SELECT SUM(amount) AS refundsales FROM refund WHERE refund2buyer = "yes" AND YEAR(date) = ?', [selectedYear], (err, results) => {
-                                          if (err) throw err;
-                                          const refundsales = results[0].refundsales;
-
-                                          pool.query('SELECT SUM(bonuscredit) AS bonus FROM yytopupbalance WHERE YEAR(date) = ?', [selectedYear], (err, results) => {
-                                            if (err) throw err;
-                                            const bonus = results[0].bonus;
-
-                                            pool.query('SELECT SUM(bonuscredit) AS bonus2 FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                              if (err) throw err;
-                                              const bonus2 = results[0].bonus2;
-
-                                              pool.query('SELECT SUM(Amount) AS bftotal_sales FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                                if (err) throw err;
-                                                const bftotalSales = results[0].bftotal_sales;
-                                        
-                                                pool.query('SELECT SUM(Amount) AS bftotal_purchasesno FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                                  if (err) throw err;
-                                                  const bftotalPurchasesno = results[0].bftotal_purchasesno;
-                                                
-                                                  pool.query('SELECT SUM(Amount) AS bftotal_purchasesWOnosku FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                                    if (err) throw err;
-                                                    const bftotal_purchasesWOnosku = results[0].bftotal_purchasesWOnosku;
-                              
-                                                    pool.query('SELECT SUM(Amount) AS bftotal_ship FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [lastYear], (err, results) => {
-                                                      if (err) throw err;
-                                                      const bftotalship = results[0].bftotal_ship;
-                          
-                                                      pool.query('SELECT SUM(Amount) AS bftotal_c2p FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [lastYear], (err, results) => {
-                                                        if (err) throw err;
-                                                        const bftotalc2p = results[0].bftotal_c2p;
-                                        
-                                                        pool.query('SELECT SUM(Amount) AS bftotal_p2c FROM yypersonalfund2company WHERE YEAR(Date) = ?', [lastYear], (err, results) => {
-                                                          if (err) throw err;
-                                                          const bftotalp2c = results[0].bftotal_p2c;
-                                        
-                                                          pool.query('SELECT SUM(amount) AS bfsupRefund FROM refund WHERE fromSupplier = "yes" AND YEAR(date) = ?', [lastYear], (err, results) => {
-                                                            if (err) throw err;
-                                                            const bfsupRefunds = results[0].bfsupRefund;
-                                        
-                                                            pool.query('SELECT SUM(amount) AS bfrefundsales FROM refund WHERE refund2buyer = "yes" AND YEAR(date) = ?', [lastYear], (err, results) => {
-                                                              if (err) throw err;
-                                                              const bfrefundsales = results[0].bfrefundsales;
-                          
-                                                              pool.query('SELECT SUM(bonuscredit) AS bfbonus FROM yytopupbalance WHERE YEAR(date) = ?', [lastYear], (err, results) => {
-                                                                if (err) throw err;
-                                                                const bfbonus = results[0].bfbonus;
-
-                                                                pool.query('SELECT SUM(Amount) AS bftotal_purchasesLastyear FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [bfYear], (err, results) => {
-                                                                  if (err) throw err;
-                                                                  const bftotalPurchasesLastyear = results[0].bftotal_purchasesLastyear;
-                                                                
-                                                                  pool.query('SELECT SUM(CostPrice) AS bftotal_costLastyear FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [bfYear], (err, results) => {
-                                                                    if (err) throw err;
-                                                                    const bftotalCostLastyear = results[0].bftotal_costLastyear;
-                                                                
-                                                                    pool.query('SELECT SUM(CostPrice) AS bftotal_cost FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [lastYear], (err, results) => {
-                                                                      if (err) throw err;
-                                                                      const bftotalCost = results[0].bftotal_cost;
-                                                          
-                                                                      pool.query('SELECT SUM(Amount) AS bftotal_purchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [lastYear], (err, results) => {
-                                                                        if (err) throw err;
-                                                                        const bftotalPurchases = results[0].bftotal_purchases;
-                                                          
-                                                                        pool.query('SELECT Category, SUM(Amount) AS bftotal FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ? GROUP BY Category', [lastYear], (err, results) => {
-                                                                          if (err) throw err;
-                                                                          const bfcategories = results;
-                                                                          const bftotalExpensesByCategory = bfcategories.reduce((acc, cur) => acc + cur.bftotal, 0);
-
-                                                                          pool.query('SELECT SUM(UnitPrice) AS bftotal_salesno FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                                                            if (err) throw err;
-                                                                            const bftotalSalesno = results[0].bftotal_salesno;
-
-                                                                            pool.query('SELECT SUM(Amount) AS totalSalespaid FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (err, results) => {
-                                                                              if (err) throw err;
-                                                                              const totalSalespaid = results[0].totalSalespaid;
-
-                                                                              pool.query('SELECT SUM(Amount) AS totalTopup FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                                                                if (err) throw err;
-                                                                                const totalTopup = results[0].totalTopup;
-
-                                                                                pool.query('SELECT SUM(Amount) AS totalBuypaid FROM yypurchase_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                                                                  if (err) throw err;
-                                                                                  const totalBuypaid = results[0].totalBuypaid;
-
-                                                                                  pool.query('SELECT SUM(amount) AS totalcapital FROM yyequity WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                                                                    if (err) throw err;
-                                                                                    const totalcapital = results[0].totalcapital;
-
-                                                                                    pool.query('SELECT SUM(Amount) AS totalotcredit FROM yyothercreditor WHERE YEAR(date) = ?', [selectedYear], (err, results) => {
-                                                                                      if (err) throw err;
-                                                                                      const totalotcredit = results[0].totalotcredit;
-
-                                                                                      pool.query('SELECT SUM(amount) AS totaldeposit FROM yydeposit WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                                                                        if (err) throw err;
-                                                                                        const totaldeposit = results[0].totaldeposit;
-
-                                                                                        pool.query('SELECT SUM(Amount) AS totalaccrued FROM yyexpensesrecord WHERE accrued = "yes" AND settle = "no" AND YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                                                                          if (err) throw err;
-                                                                                          const totalaccrued = results[0].totalaccrued;
-
-                                                                                        pool.query(`
-                                                                                          SELECT 
-                                                                                            a.bank, 
-                                                                                            a.amount 
-                                                                                          FROM 
-                                                                                            yycurrent_assets a
-                                                                                          INNER JOIN (
-                                                                                            SELECT 
-                                                                                              bank, 
-                                                                                              MAX(date) AS max_date 
-                                                                                            FROM 
-                                                                                              yycurrent_assets 
-                                                                                            WHERE 
-                                                                                              YEAR(date) = ? 
-                                                                                            GROUP BY 
-                                                                                              bank
-                                                                                          ) b ON a.bank = b.bank AND a.date = b.max_date
-                                                                                        `, [selectedYear], (error, assetsResults, fields) => {
-                                                                                          if (error) {
-                                                                                            console.error(error);
-                                                                                            res.status(500).send('Error fetching data');
-                                                                                          } else {
-                                                                                            const assetsData = assetsResults.map(row => ({ ...row }));
-
-                                                                                            pool.query('SELECT SUM(Amount) as Atotalsalespay FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                              if (err) throw err;
-                                                                                              const Atotalsalespay = results[0].Atotalsalespay;
-                                                                                          
-                                                                                                pool.query('SELECT SUM(Amount) as Atotalbuypay FROM yypurchase_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                  if (err) throw err;
-                                                                                                  const Atotalbuypay = results[0].Atotalbuypay;
-
-                                                                                                  pool.query('SELECT SUM(Amount) as Atotalexpenses FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL AND Name != "Gdex" AND YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                    if (err) throw err;
-                                                                                                    const Atotalexpenses = results[0].Atotalexpenses;
-
-                                                                                                    pool.query('SELECT SUM(Amount) as AtotalExpensesPaymentbreakdown FROM yyaccruals WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                      if (err) throw err;
-                                                                                                      const AtotalExpensesPaymentbreakdown = results[0].AtotalExpensesPaymentbreakdown;
-
-                                                                                                      pool.query('SELECT SUM(Amount) as Atotaltopup FROM yytopupbalance WHERE wallet = "Gdex" AND YEAR(date) <= ? ORDER BY ID DESC', [selectedYear], (error, results) => {
-                                                                                                        if (err) throw err;
-                                                                                                        const Atotaltopup = results[0].Atotaltopup;
-
-                                                                                                        pool.query('SELECT SUM(amount) as Arefund2buyer FROM refund WHERE refund2buyer = "yes" AND YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                          if (err) throw err;
-                                                                                                          const Arefund2buyer = results[0].Arefund2buyer;
-
-                                                                                                          pool.query('SELECT SUM(amount) as AfromSupplier FROM refund WHERE fromSupplier = "yes" AND YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                            if (err) throw err;
-                                                                                                            const AfromSupplier = results[0].AfromSupplier;
-
-                                                                                                            pool.query('SELECT SUM(Amount) as Acompanyfund2personal FROM yycompanyfund2personal WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                              if (err) throw err;
-                                                                                                              const Acompanyfund2personal = results[0].Acompanyfund2personal;
-
-                                                                                                              pool.query('SELECT SUM(amount) as Adeposit FROM yydeposit WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                if (err) throw err;
-                                                                                                                const Adeposit = results[0].Adeposit;
-
-                                                                                                                pool.query('SELECT SUM(Amount) as Acreditor FROM yyothercreditor WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                  if (err) throw err;
-                                                                                                                  const Acreditor = results[0].Acreditor;
-
-                                                                                                                  pool.query('SELECT SUM(amount) as Aequity FROM yyequity WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                    if (err) throw err;
-                                                                                                                    const Acapital = results[0].Aequity;
-
-                                                                                                                    pool.query('SELECT SUM(amount) as Acreditorpayment FROM yyothercreditor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                      if (err) throw err;
-                                                                                                                      const Acreditorpayment = results[0].Acreditorpayment;
-
-                                                                                                                      pool.query('SELECT SUM(Amount) as Adebtor FROM yyotherdebtor WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                        if (err) throw err;
-                                                                                                                        const Adebtor = results[0].Adebtor;
-
-                                                                                                                        pool.query('SELECT SUM(amount) as Adebtorpayment FROM yyotherdebtor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                          if (err) throw err;
-                                                                                                                          const Adebtorpayment = results[0].Adebtorpayment;
-
-                                                                                                                          const bankledger = (Atotalsalespay-Atotalbuypay-Atotalexpenses-Atotaltopup-AtotalExpensesPaymentbreakdown-Arefund2buyer+AfromSupplier-Adeposit+Acapital+Acreditor-Acreditorpayment+Adebtorpayment-Adebtor+Acompanyfund2personal);
-                                                                                                                         
-                                                                                                                          pool.query('SELECT SUM(Amount) as officeEquipment FROM yyexpensesrecord WHERE Category = "Office Equipment" AND YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                                                                                                            if (err) throw err;
-                                                                                                                            const officeEquipment = results[0].officeEquipment;
-
-                                                                                                                            // render the EJS template with the fetched data
-                                                                                                                            res.render('balanceSheet', { 
-                                                                                                                              officeEquipment,
-                                                                                                                              bankledger,
-                                                                                                                              totalaccrued,
-                                                                                                                              totaldeposit,
-                                                                                                                              totalSalesno2,
-                                                                                                                              totalPurchasesno2,
-                                                                                                                              totalcapital,
-                                                                                                                              totalotcredit,
-                                                                                                                              totalBuypaid,
-                                                                                                                              totalTopup,
-                                                                                                                              totalSalespaid,
-                                                                                                                              totalSales, 
-                                                                                                                              totalSalesno,
-                                                                                                                              totalCost,
-                                                                                                                              totalPurchases, 
-                                                                                                                              totalExpenses: totalExpensesByCategory, 
-                                                                                                                              categories,
-                                                                                                                              totalStockValue,
-                                                                                                                              totalship,
-                                                                                                                              totalPurchasesno,
-                                                                                                                              totalc2p,
-                                                                                                                              totalp2c,
-                                                                                                                              supRefunds,
-                                                                                                                              refundsales,
-                                                                                                                              years,
-                                                                                                                              selectedYear,
-                                                                                                                              total_purchasesWOnosku,
-                                                                                                                              totalbuy,
-                                                                                                                              totalPurchasesLastyear,
-                                                                                                                              totalCostLastyear,
-                                                                                                                              bonus,
-                                                                                                                              bonus2,
-                                                                                                                              bftotalSales,
-                                                                                                                              bftotalPurchasesno,
-                                                                                                                              bftotal_purchasesWOnosku,
-                                                                                                                              bftotalship,
-                                                                                                                              bftotalc2p,
-                                                                                                                              bftotalp2c,
-                                                                                                                              bfsupRefunds,
-                                                                                                                              bfrefundsales,
-                                                                                                                              bfbonus,
-                                                                                                                              bftotalPurchasesLastyear,
-                                                                                                                              bftotalCostLastyear,
-                                                                                                                              bftotalPurchasesno,
-                                                                                                                              bftotal_purchasesWOnosku,
-                                                                                                                              bftotalCost,
-                                                                                                                              bftotalPurchases,
-                                                                                                                              bftotalExpenses: bftotalExpensesByCategory,
-                                                                                                                              bftotalSalesno,
-                                                                                                                              totalgdex,
-                                                                                                                              assetsData 
-                                                                                                                            });
-                                                                                                                          });
-                                                                                                                        });
-                                                                                                                      });
-                                                                                                                    });
-                                                                                                                  });
-                                                                                                                });
-                                                                                                              });
-                                                                                                            });
-                                                                                                          });
-                                                                                                        });
-                                                                                                      });
-                                                                                                    });
-                                                                                                  });
-                                                                                                });
-                                                                                              });
-                                                                                            };
-                                                                                          });
-                                                                                        });
-                                                                                      });
-                                                                                    });
-                                                                                  });
-                                                                                });
-                                                                              });
-                                                                            });
-                                                                          });
-                                                                        });
-                                                                      });
-                                                                    });
-                                                                  });
-                                                                });
-                                                              });
-                                                            });
-                                                          });
-                                                        });
-                                                      });
-                                                    });
-                                                  });
-                                                });
-                                              });
-                                            });
-                                          });
-                                        });
-                                      });
-                                    });
-                                  });
-                                });
-                              });
-                            });
-                          });
-                        });
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
+    res.render('balanceSheet', {
+      retainedBF,
+      retainedCF,
+      currentLiabi,
+      cashInotherACC,
+      totalCurrestassets,
+      cashInbank,
+      years,
+      totalcreditor,
+      closingstock,
+      accreceivable,
+      totalotherdebtor,
+      accountpayable,
+      accruals,
+      selectedYear,
+      totalaccruedpay,
+      officeEquipment,
+      totalPurchases, 
+      totalCost,
+      totalSalesno2,
+      totalaccrued,
+      totaldeposit,
+      totalPurchasesno2,
+      totalcapital,
+      totalotcredit,
+      totalBuypaid,
+      totalTopup,
+      totalSalespaid,
+      totalSales, 
+      totalSalesno,
+      totalExpenses: totalExpensesByCategory,
+      totalStockValue,
+      totalship,
+      totalPurchasesno,
+      totalc2p,
+      totalp2c,
+      supRefunds,
+      refundsales,
+      years,
+      selectedYear,
+      total_purchasesWOnosku,
+      totalbuy,
+      totalPurchasesLastyear,
+      totalCostLastyear,
+      bonus,
+      bonus2,
+      totalgdex
     });
-  });
+  } catch (error) {
+    console.error('Database query error:', error);
+    res.status(500).send('Error fetching data');
+  }
 });
-app.get('/trialbalance', requireLogin, (req, res) => {
-  const currentYear = new Date().getFullYear(); // get current year
-
-  // fetch distinct years from yyitems_sell table
-  pool.query('SELECT DISTINCT YEAR(timestamp) AS year FROM yysell_invoice ORDER BY year DESC', (err, results) => {
-    if (err) throw err;
-    const years = results;
-
-    // set default selected year to current year
-    let selectedYear = currentYear;
-
-    // check if year is selected from the dropdown
-    if (req.query.year) {
-      selectedYear = parseInt(req.query.year);
-    }
-
-    const lastYear = (selectedYear - 1);
-    const bfYear = (selectedYear -2);
-
-    // fetch total sales for the selected year from yyitems_sell table
-    pool.query('SELECT SUM(UnitPrice) AS total_salesno FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-      if (err) throw err;
-      const totalSalesno = results[0].total_salesno;
-
-      pool.query('SELECT SUM(UnitPrice) AS total_salesno2 FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-        if (err) throw err;
-        const totalSalesno2 = results[0].total_salesno2;
-
-        // fetch total sales for the selected year from yyitems_sell table where Content_SKU is not null
-        pool.query('SELECT SUM(Amount) AS total_sales FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-          if (err) throw err;
-          const totalSales = results[0].total_sales;
-
-          pool.query('SELECT SUM(CostPrice) AS total_cost FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-            if (err) throw err;
-            const totalCost = results[0].total_cost;
-
-            // fetch total purchases for the selected year from yyitems_buy table
-            pool.query('SELECT SUM(Amount) AS total_purchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-              if (err) throw err;
-              const totalPurchases = results[0].total_purchases;
-
-              pool.query('SELECT SUM(Amount) AS total_purchasesLastyear FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                if (err) throw err;
-                const totalPurchasesLastyear = results[0].total_purchasesLastyear;
-
-                pool.query('SELECT SUM(CostPrice) AS total_costLastyear FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                  if (err) throw err;
-                  const totalCostLastyear = results[0].total_costLastyear;
-
-
-                  pool.query('SELECT SUM(Amount) AS total_buy FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND YEAR(solddate) = ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) < ?)', [selectedYear,selectedYear], (err, results) => {
-                    if (err) throw err;
-                    const totalbuy = results[0].total_buy;
-
-                    pool.query('SELECT SUM(Amount) AS total_purchasesno FROM yyitems_buy WHERE ProductName != "Discount" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-                      if (err) throw err;
-                      const totalPurchasesno = results[0].total_purchasesno;
-
-                      pool.query('SELECT SUM(Amount) AS total_purchasesno2 FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear], (err, results) => {
-                        if (err) throw err;
-                        const totalPurchasesno2 = results[0].total_purchasesno2;
-
-                        pool.query('SELECT SUM(Amount) AS total_purchasesWOnosku FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-                          if (err) throw err;
-                          const total_purchasesWOnosku = results[0].total_purchasesWOnosku;
-
-                          pool.query('SELECT SUM(Amount) AS buydiscount FROM yyitems_buy WHERE ProductName = "Discount" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-                            if (err) throw err;
-                            const total_buydiscount = results[0].buydiscount;
-
-                            pool.query('SELECT SUM(Amount) AS selldiscount FROM yyitems_sell WHERE product_name = "Discount" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [selectedYear], (err, results) => {
-                              if (err) throw err;
-                              const total_selldiscount = results[0].selldiscount;
-
-                          // fetch total expenses for the selected year from yyexpensesrecord table
-                          pool.query('SELECT Category, SUM(Amount) AS total FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ? GROUP BY Category', [selectedYear], (err, results) => {
-                            if (err) throw err;
-                            const categories = results;
-                            const totalExpensesByCategory = categories.reduce((acc, cur) => acc + cur.total, 0);
-
-                            // fetch total stock value for the selected year from yyitems_buy table
-                            pool.query('SELECT SUM(UnitPrice) AS total_stock_value  FROM yyitems_buy WHERE YEAR(solddate) != ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear, selectedYear], (err, results) => {
-                              if (err) throw err;
-                              const totalStockValue = results[0].total_stock_value;
-
-                              pool.query('SELECT SUM(Amount) AS total_ship FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                if (err) throw err;
-                                const totalship = results[0].total_ship;
-
-                                pool.query('SELECT SUM(Amount) AS total_gdex FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND Name = "Gdex" AND YEAR(Date) <= ?', [selectedYear], (err, results) => {
-                                  if (err) throw err;
-                                  const totalgdex = results[0].total_gdex;
-
-                                  pool.query('SELECT SUM(Amount) AS total_c2p FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                    if (err) throw err;
-                                    const totalc2p = results[0].total_c2p;
-                    
-                                    pool.query('SELECT SUM(Amount) AS total_p2c FROM yypersonalfund2company WHERE YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                      if (err) throw err;
-                                      const totalp2c = results[0].total_p2c;
-                    
-                                      pool.query('SELECT SUM(amount) AS supRefund FROM refund WHERE fromSupplier = "yes" AND YEAR(date) = ?', [selectedYear], (err, results) => {
-                                        if (err) throw err;
-                                        const supRefunds = results[0].supRefund;
-                    
-                                        pool.query('SELECT SUM(amount) AS refundsales FROM refund WHERE refund2buyer = "yes" AND YEAR(date) = ?', [selectedYear], (err, results) => {
-                                          if (err) throw err;
-                                          const refundsales = results[0].refundsales;
-
-                                          pool.query('SELECT SUM(bonuscredit) AS bonus FROM yytopupbalance WHERE YEAR(date) = ?', [selectedYear], (err, results) => {
-                                            if (err) throw err;
-                                            const bonus = results[0].bonus;
-
-                                            pool.query('SELECT SUM(bonuscredit) AS bonus2 FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                              if (err) throw err;
-                                              const bonus2 = results[0].bonus2;
-
-                                              pool.query('SELECT SUM(Amount) AS bftotal_sales FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                                if (err) throw err;
-                                                const bftotalSales = results[0].bftotal_sales;
-                                        
-                                                pool.query('SELECT SUM(Amount) AS bftotal_purchasesno FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                                  if (err) throw err;
-                                                  const bftotalPurchasesno = results[0].bftotal_purchasesno;
-                                                
-                                                  pool.query('SELECT SUM(Amount) AS bftotal_purchasesWOnosku FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                                    if (err) throw err;
-                                                    const bftotal_purchasesWOnosku = results[0].bftotal_purchasesWOnosku;
-                              
-                                                    pool.query('SELECT SUM(Amount) AS bftotal_ship FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [lastYear], (err, results) => {
-                                                      if (err) throw err;
-                                                      const bftotalship = results[0].bftotal_ship;
-                          
-                                                      pool.query('SELECT SUM(Amount) AS bftotal_c2p FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [lastYear], (err, results) => {
-                                                        if (err) throw err;
-                                                        const bftotalc2p = results[0].bftotal_c2p;
-                                        
-                                                        pool.query('SELECT SUM(Amount) AS bftotal_p2c FROM yypersonalfund2company WHERE YEAR(Date) = ?', [lastYear], (err, results) => {
-                                                          if (err) throw err;
-                                                          const bftotalp2c = results[0].bftotal_p2c;
-                                        
-                                                          pool.query('SELECT SUM(amount) AS bfsupRefund FROM refund WHERE fromSupplier = "yes" AND YEAR(date) = ?', [lastYear], (err, results) => {
-                                                            if (err) throw err;
-                                                            const bfsupRefunds = results[0].bfsupRefund;
-                                        
-                                                            pool.query('SELECT SUM(amount) AS bfrefundsales FROM refund WHERE refund2buyer = "yes" AND YEAR(date) = ?', [lastYear], (err, results) => {
-                                                              if (err) throw err;
-                                                              const bfrefundsales = results[0].bfrefundsales;
-                          
-                                                              pool.query('SELECT SUM(bonuscredit) AS bfbonus FROM yytopupbalance WHERE YEAR(date) = ?', [lastYear], (err, results) => {
-                                                                if (err) throw err;
-                                                                const bfbonus = results[0].bfbonus;
-
-                                                                pool.query('SELECT SUM(Amount) AS bftotal_purchasesLastyear FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [bfYear], (err, results) => {
-                                                                  if (err) throw err;
-                                                                  const bftotalPurchasesLastyear = results[0].bftotal_purchasesLastyear;
-                                                                
-                                                                  pool.query('SELECT SUM(CostPrice) AS bftotal_costLastyear FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [bfYear], (err, results) => {
-                                                                    if (err) throw err;
-                                                                    const bftotalCostLastyear = results[0].bftotal_costLastyear;
-                                                                
-                                                                    pool.query('SELECT SUM(CostPrice) AS bftotal_cost FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [lastYear], (err, results) => {
-                                                                      if (err) throw err;
-                                                                      const bftotalCost = results[0].bftotal_cost;
-                                                          
-                                                                      pool.query('SELECT SUM(Amount) AS bftotal_purchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [lastYear], (err, results) => {
-                                                                        if (err) throw err;
-                                                                        const bftotalPurchases = results[0].bftotal_purchases;
-                                                          
-                                                                        pool.query('SELECT Category, SUM(Amount) AS bftotal FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ? GROUP BY Category', [lastYear], (err, results) => {
-                                                                          if (err) throw err;
-                                                                          const bfcategories = results;
-                                                                          const bftotalExpensesByCategory = bfcategories.reduce((acc, cur) => acc + cur.bftotal, 0);
-
-                                                                          pool.query('SELECT SUM(UnitPrice) AS bftotal_salesno FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [lastYear], (err, results) => {
-                                                                            if (err) throw err;
-                                                                            const bftotalSalesno = results[0].bftotal_salesno;
-
-                                                                            pool.query('SELECT SUM(Amount) AS totalSalespaid FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (err, results) => {
-                                                                              if (err) throw err;
-                                                                              const totalSalespaid = results[0].totalSalespaid;
-
-                                                                              pool.query('SELECT SUM(Amount) AS totalTopup FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                                                                if (err) throw err;
-                                                                                const totalTopup = results[0].totalTopup;
-
-                                                                                pool.query('SELECT SUM(Amount) AS totalBuypaid FROM yypurchase_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                                                                  if (err) throw err;
-                                                                                  const totalBuypaid = results[0].totalBuypaid;
-
-                                                                                  pool.query('SELECT SUM(amount) AS totalcapital FROM yyequity WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                                                                    if (err) throw err;
-                                                                                    const totalcapital = results[0].totalcapital;
-
-                                                                                    pool.query('SELECT SUM(Amount) AS totalotcredit FROM yyothercreditor WHERE YEAR(date) = ?', [selectedYear], (err, results) => {
-                                                                                      if (err) throw err;
-                                                                                      const totalotcredit = results[0].totalotcredit;
-
-                                                                                      pool.query('SELECT SUM(amount) AS totaldeposit FROM yydeposit WHERE YEAR(date) <= ?', [selectedYear], (err, results) => {
-                                                                                        if (err) throw err;
-                                                                                        const totaldeposit = results[0].totaldeposit;
-
-                                                                                        pool.query('SELECT SUM(Amount) AS totalaccrued FROM yyexpensesrecord WHERE accrued = "yes" AND settle = "no" AND YEAR(Date) = ?', [selectedYear], (err, results) => {
-                                                                                          if (err) throw err;
-                                                                                          const totalaccrued = results[0].totalaccrued;
-
-                                                                                          pool.query('SELECT Category, SUM(Amount) AS total FROM yyexpensesrecord WHERE YEAR(Date) = ? GROUP BY Category', [selectedYear], (err, results) => {
-                                                                                            if (err) throw err;
-                                                                                            const categoriesss = results;
-
-                                                                                            pool.query(`
-                                                                                              SELECT 
-                                                                                                a.bank, 
-                                                                                                a.amount 
-                                                                                              FROM 
-                                                                                                yycurrent_assets a
-                                                                                              INNER JOIN (
-                                                                                                SELECT 
-                                                                                                  bank, 
-                                                                                                  MAX(date) AS max_date 
-                                                                                                FROM 
-                                                                                                  yycurrent_assets 
-                                                                                                WHERE 
-                                                                                                  YEAR(date) = ? 
-                                                                                                GROUP BY 
-                                                                                                  bank
-                                                                                              ) b ON a.bank = b.bank AND a.date = b.max_date
-                                                                                            `, [selectedYear], (error, assetsResults, fields) => {
-                                                                                              if (error) {
-                                                                                                console.error(error);
-                                                                                                res.status(500).send('Error fetching data');
-                                                                                              } else {
-                                                                                                const assetsData = assetsResults.map(row => ({ ...row }));
-
-                                                                                                pool.query('SELECT SUM(Amount) as Atotalsalespay FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                  if (err) throw err;
-                                                                                                  const Atotalsalespay = results[0].Atotalsalespay;
-                                                                                              
-                                                                                                    pool.query('SELECT SUM(Amount) as Atotalbuypay FROM yypurchase_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                      if (err) throw err;
-                                                                                                      const Atotalbuypay = results[0].Atotalbuypay;
-    
-                                                                                                      pool.query('SELECT SUM(Amount) as Atotalexpenses FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL AND Name != "Gdex" AND YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                        if (err) throw err;
-                                                                                                        const Atotalexpenses = results[0].Atotalexpenses;
-    
-                                                                                                        pool.query('SELECT SUM(Amount) as AtotalExpensesPaymentbreakdown FROM yyaccruals WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                          if (err) throw err;
-                                                                                                          const AtotalExpensesPaymentbreakdown = results[0].AtotalExpensesPaymentbreakdown;
-    
-                                                                                                          pool.query('SELECT SUM(Amount) as Atotaltopup FROM yytopupbalance WHERE wallet = "Gdex" AND YEAR(date) <= ? ORDER BY ID DESC', [selectedYear], (error, results) => {
-                                                                                                            if (err) throw err;
-                                                                                                            const Atotaltopup = results[0].Atotaltopup;
-    
-                                                                                                            pool.query('SELECT SUM(amount) as Arefund2buyer FROM refund WHERE refund2buyer = "yes" AND YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                              if (err) throw err;
-                                                                                                              const Arefund2buyer = results[0].Arefund2buyer;
-    
-                                                                                                              pool.query('SELECT SUM(amount) as AfromSupplier FROM refund WHERE fromSupplier = "yes" AND YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                if (err) throw err;
-                                                                                                                const AfromSupplier = results[0].AfromSupplier;
-    
-                                                                                                                pool.query('SELECT SUM(Amount) as Acompanyfund2personal FROM yycompanyfund2personal WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                  if (err) throw err;
-                                                                                                                  const Acompanyfund2personal = results[0].Acompanyfund2personal;
-    
-                                                                                                                  pool.query('SELECT SUM(amount) as Adeposit FROM yydeposit WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                    if (err) throw err;
-                                                                                                                    const Adeposit = results[0].Adeposit;
-    
-                                                                                                                    pool.query('SELECT SUM(Amount) as Acreditor FROM yyothercreditor WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                      if (err) throw err;
-                                                                                                                      const Acreditor = results[0].Acreditor;
-    
-                                                                                                                      pool.query('SELECT SUM(amount) as Aequity FROM yyequity WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                        if (err) throw err;
-                                                                                                                        const Acapital = results[0].Aequity;
-    
-                                                                                                                        pool.query('SELECT SUM(amount) as Acreditorpayment FROM yyothercreditor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                          if (err) throw err;
-                                                                                                                          const Acreditorpayment = results[0].Acreditorpayment;
-    
-                                                                                                                          pool.query('SELECT SUM(Amount) as Adebtor FROM yyotherdebtor WHERE YEAR(Date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                            if (err) throw err;
-                                                                                                                            const Adebtor = results[0].Adebtor;
-    
-                                                                                                                            pool.query('SELECT SUM(amount) as Adebtorpayment FROM yyotherdebtor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear], (error, results) => {
-                                                                                                                              if (err) throw err;
-                                                                                                                              const Adebtorpayment = results[0].Adebtorpayment;
-    
-                                                                                                                              const bankledger = (Atotalsalespay-Atotalbuypay-Atotalexpenses-Atotaltopup-AtotalExpensesPaymentbreakdown-Arefund2buyer+AfromSupplier-Adeposit+Acapital+Acreditor-Acreditorpayment+Adebtorpayment-Adebtor+Acompanyfund2personal);
-                                                                                                                             
-                                                                                                                              pool.query('SELECT SUM(amount) AS totalamount, courier FROM creditnote WHERE YEAR(date) <= ? GROUP BY courier', [selectedYear], (error, amountResults) => {
-                                                                                                                                if (error) {
-                                                                                                                                  console.error(error);
-                                                                                                                                  res.status(500).send('Error fetching creditnote data');
-                                                                                                                                } else {
-                                                                                                                                  pool.query('SELECT SUM(used) AS totalused, courier FROM creditnote WHERE YEAR(useddate) <= ? GROUP BY courier', [selectedYear], (error, usedResults) => {
-                                                                                                                                    if (error) {
-                                                                                                                                      console.error(error);
-                                                                                                                                      res.status(500).send('Error fetching creditnote data');
-                                                                                                                                    } else {
-                                                                                                                                      // Combine the amount and used results based on the courier
-                                                                                                                                      const creditNoteBalances = {};
-                                                                                                                              
-                                                                                                                                      amountResults.forEach((amountRow) => {
-                                                                                                                                        const courier = amountRow.courier;
-                                                                                                                                        const totalAmount = amountRow.totalamount;
-                                                                                                                                        const usedRow = usedResults.find((usedRow) => usedRow.courier === courier);
-                                                                                                                              
-                                                                                                                                        if (usedRow) {
-                                                                                                                                          const totalUsed = usedRow.totalused;
-                                                                                                                                          const balance = totalAmount - totalUsed;
-                                                                                                                                          creditNoteBalances[courier] = balance;
-                                                                                                                                        } else {
-                                                                                                                                          // If used result is not available for the courier, use total amount as the balance
-                                                                                                                                          creditNoteBalances[courier] = totalAmount;
-                                                                                                                                        }
-                                                                                                                                      });
-
-                                                                                                                                  pool.query('SELECT SUM(amount) AS totalCreditNote FROM creditnote', (error, results) => {
-                                                                                                                                    if (error) {
-                                                                                                                                      console.error(error);
-                                                                                                                                      res.status(500).send('Error fetching credit note data');
-                                                                                                                                    } else {
-                                                                                                                                      const totalCreditNote = results[0].totalCreditNote || 0;
-                                                                                                                                  
-
-                                                                                                                              // render the EJS template with the fetched data
-                                                                                                                              res.render('trialbalance', {
-                                                                                                                                totalCreditNote, 
-                                                                                                                                creditNoteBalances,
-                                                                                                                                bankledger,
-                                                                                                                                total_selldiscount,
-                                                                                                                                total_buydiscount,
-                                                                                                                                totaldeposit,
-                                                                                                                                totalSalesno2,
-                                                                                                                                totalPurchasesno2,
-                                                                                                                                totalcapital,
-                                                                                                                                totalotcredit,
-                                                                                                                                totalBuypaid,
-                                                                                                                                totalTopup,
-                                                                                                                                totalSalespaid,
-                                                                                                                                totalSales, 
-                                                                                                                                totalSalesno,
-                                                                                                                                totalCost,
-                                                                                                                                totalPurchases, 
-                                                                                                                                totalExpenses: totalExpensesByCategory, 
-                                                                                                                                categories,
-                                                                                                                                totalStockValue,
-                                                                                                                                totalship,
-                                                                                                                                totalPurchasesno,
-                                                                                                                                totalc2p,
-                                                                                                                                totalp2c,
-                                                                                                                                supRefunds,
-                                                                                                                                refundsales,
-                                                                                                                                years,
-                                                                                                                                selectedYear,
-                                                                                                                                total_purchasesWOnosku,
-                                                                                                                                totalbuy,
-                                                                                                                                totalPurchasesLastyear,
-                                                                                                                                totalCostLastyear,
-                                                                                                                                bonus,
-                                                                                                                                bonus2,
-                                                                                                                                bftotalSales,
-                                                                                                                                bftotalPurchasesno,
-                                                                                                                                bftotal_purchasesWOnosku,
-                                                                                                                                bftotalship,
-                                                                                                                                bftotalc2p,
-                                                                                                                                bftotalp2c,
-                                                                                                                                bfsupRefunds,
-                                                                                                                                bfrefundsales,
-                                                                                                                                bfbonus,
-                                                                                                                                bftotalPurchasesLastyear,
-                                                                                                                                bftotalCostLastyear,
-                                                                                                                                bftotalPurchasesno,
-                                                                                                                                bftotal_purchasesWOnosku,
-                                                                                                                                bftotalCost,
-                                                                                                                                bftotalPurchases,
-                                                                                                                                bftotalExpenses: bftotalExpensesByCategory,
-                                                                                                                                bftotalSalesno,
-                                                                                                                                totalgdex,
-                                                                                                                                assetsData,
-                                                                                                                                totalaccrued,
-                                                                                                                                categoriesss 
-                                                                                                                                });
-                                                                                                                              }})
-                                                                                                                          }});
-                                                                                                                        }});
-                                                                                                                        });
-                                                                                                                            });
-                                                                                                                          });
-                                                                                                                        });
-                                                                                                                      });
-                                                                                                                    });
-                                                                                                                  });
-                                                                                                                });
-                                                                                                              });
-                                                                                                            });
-                                                                                                          });
-                                                                                                        });
-                                                                                                      });
-                                                                                                    });
-                                                                                                  };
-                                                                                                });
-                                                                                              });
-                                                                                            });
-                                                                                          });
-                                                                                        });
-                                                                                      });
-                                                                                    });
-                                                                                  });
-                                                                                });
-                                                                              });
-                                                                            });
-                                                                          });
-                                                                        });
-                                                                      });
-                                                                    });
-                                                                  });
-                                                                });
-                                                              });
-                                                            });
-                                                          });
-                                                        });
-                                                      });
-                                                    });
-                                                  });
-                                                });
-                                              });
-                                            });
-                                          });
-                                        });
-                                      });
-                                    });
-                                  });
-                                });
-                              });
-                            });
-                          });
-                        });
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
+async function queryDatabase(query, params = []) {
+  return new Promise((resolve, reject) => {
+    pool.query(query, params, (err, results) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(results);
     });
   });
+}
+app.get('/trialbalance', async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const selectedYear = parseInt(req.query.year) || currentYear;
+    const lastYear = selectedYear - 1;
+    const bfYear = selectedYear - 2;
+
+    const yearQuery = 'SELECT DISTINCT YEAR(timestamp) AS year FROM yysell_invoice ORDER BY year DESC';
+    const years = await queryDatabase(yearQuery);
+
+    const totalSalesResult = await queryDatabase(`
+      SELECT SUM(UnitPrice) AS totalSales FROM yyitems_sell
+        WHERE InvoiceNumber IN
+          (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) = ?)
+    `, [selectedYear]);
+    const totalSales = (totalSalesResult[0].totalSales || 0);
+    const totalCostResult = await queryDatabase('SELECT SUM(CostPrice) AS total_cost FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const totalCost = (totalCostResult[0].totalCost || 0);
+    const totalSalesnoResult = await queryDatabase('SELECT SUM(UnitPrice) AS totalSalesno FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) = ?)', [selectedYear]);
+    const totalSalesno = (totalSalesnoResult[0].totalSalesno || 0);
+    const totalSalesno2Result = await queryDatabase('SELECT SUM(CostPrice) AS totalSalesno2 FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const totalSalesno2 = (totalSalesno2Result[0].totalSalesno2 || 0);
+    const totalPurchasesResult = await queryDatabase('SELECT SUM(Amount) AS totalPurchases FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND status != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const totalPurchases = (totalPurchasesResult[0].totalPurchases || 0);
+    const totalPurchasesLastyearResult = await queryDatabase('SELECT SUM(Amount) AS totalPurchasesLastyear FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND status != "return" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [lastYear]);
+    const totalPurchasesLastyear = (totalPurchasesLastyearResult[0].totalPurchasesLastyear || 0);
+    const totalCostLastyearResult = await queryDatabase('SELECT SUM(CostPrice) AS totalCostLastyear FROM yyitems_sell WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [lastYear]);
+    const totalCostLastyear = (totalCostLastyearResult[0].totalCostLastyear || 0);
+    const totalbuyResult = await queryDatabase('SELECT SUM(Amount) AS total_buy FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND YEAR(solddate) = ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) < ?)', [selectedYear, selectedYear]);
+    const totalbuy = (totalbuyResult[0].totalbuy || 0);
+    const totalPurchasesnoResult = await queryDatabase('SELECT SUM(Amount) AS total_purchasesno FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear]);
+    const totalPurchasesno = (totalPurchasesnoResult[0].totalPurchasesno || 0);
+    const totalPurchasesno2Result = await queryDatabase('SELECT SUM(Amount) AS totalPurchasesno2 FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const totalPurchasesno2 = (totalPurchasesno2Result[0].totalPurchasesno2 || 0);
+    const total_purchasesWOnoskuResult = await queryDatabase('SELECT SUM(Amount) AS total_purchasesWOnosku FROM yyitems_buy WHERE Content_SKU IS NOT NULL AND Content_SKU != "" AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear]);
+    const total_purchasesWOnosku = (total_purchasesWOnoskuResult[0].total_purchasesWOnosku || 0);
+    const totalExpensesByCategoryResult = await queryDatabase('SELECT Category, SUM(Amount) AS total FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ? GROUP BY Category', [selectedYear]);
+    const totalExpensesByCategory = (totalExpensesByCategoryResult && totalExpensesByCategoryResult[0] && totalExpensesByCategoryResult[0].total) || 0;
+    const totalStockValue = await queryDatabase('SELECT SUM(UnitPrice) AS total_stock_value  FROM yyitems_buy WHERE YEAR(solddate) != ? AND InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(`timestamp`) = ?)', [selectedYear, selectedYear]);
+    const totalshipResult = await queryDatabase('SELECT SUM(Amount) AS total_ship FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [selectedYear]);
+    const totalship = (totalshipResult[0].totalship || 0);
+    const totalgdexResult = await queryDatabase('SELECT SUM(Amount) AS totalgdex FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND Name = "Gdex" AND YEAR(Date) <= ?', [selectedYear]);
+    const totalgdex = (totalgdexResult[0].totalgdex || 0);
+    const totalc2pResult = await queryDatabase('SELECT SUM(Amount) AS total_c2p FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [selectedYear]);
+    const totalc2p = (totalc2pResult[0].totalc2p || 0);
+    const totalp2cResult = await queryDatabase('SELECT SUM(Amount) AS totalp2c FROM yypersonalfund2company WHERE YEAR(Date) = ?', [selectedYear]);
+    const totalp2c = (totalp2cResult[0].totalp2c || 0);
+    const supRefundsResult = await queryDatabase('SELECT SUM(amount) AS supRefund FROM refund WHERE fromSupplier = "yes" AND YEAR(date) = ?', [selectedYear]);
+    const supRefunds = (supRefundsResult[0].supRefunds || 0);
+    const refundsalesResult = await queryDatabase('SELECT SUM(amount) AS refundsales FROM refund WHERE refund2buyer = "yes" AND YEAR(date) = ?', [selectedYear]);
+    const refundsales = (refundsalesResult[0].refundsales || 0);
+    const bonusResult = await queryDatabase('SELECT SUM(bonuscredit) AS bonus FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear]);
+    const bonus = (bonusResult[0].bonus || 0);
+    const bonus2Result = await queryDatabase('SELECT SUM(bonuscredit) AS bonus2 FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear]);
+    const bonus2 = (bonus2Result[0].bonus2 || 0);
+    const officeEquipmentResult = await queryDatabase('SELECT SUM(Amount) as officeEquipment FROM yyexpensesrecord WHERE Category = "Office Equipment" AND YEAR(Date) <= ?', [selectedYear]);
+    const officeEquipment = (officeEquipmentResult[0].officeEquipment || 0);
+
+    const salesDataResult = await queryDatabase('SELECT SUM(Amount) AS salesData FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(`timestamp`) <= ?)', [selectedYear]);
+    const salesData = (salesDataResult[0].salesData || 0);
+    const totalSalespaidResult = await queryDatabase('SELECT SUM(Amount) AS totalSalespaid FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalSalespaid = (totalSalespaidResult[0].totalSalespaid || 0);
+
+    const totalTopupResult = await queryDatabase('SELECT SUM(Amount) AS totalTopup FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalTopup = (totalTopupResult[0].totalTopup || 0);
+    const totalBuypaidResult = await queryDatabase('SELECT SUM(Amount) AS totalBuypaid FROM yypurchase_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalBuypaid = (totalBuypaidResult[0].totalBuypaid || 0);
+    const totalcapitalResult = await queryDatabase('SELECT SUM(amount) AS totalcapital FROM yyequity WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalcapital = (totalcapitalResult[0].totalcapital || 0);
+    const totalotcreditResult = await queryDatabase('SELECT SUM(Amount) AS totalotcredit FROM yyothercreditor WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalotcredit = (totalotcreditResult[0].totalotcredit || 0);
+    const totalotcreditpayResult = await queryDatabase('SELECT SUM(Amount) AS totalotcreditpay FROM yyothercreditor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalotcreditpay = (totalotcreditpayResult[0].totalotcreditpay || 0);
+    const totaldepositResult = await queryDatabase('SELECT SUM(amount) AS totaldeposit FROM yydeposit WHERE YEAR(date) <= ?', [selectedYear]);
+    const totaldeposit = (totaldepositResult[0].totaldeposit || 0);
+    const totalaccruedResult = await queryDatabase('SELECT SUM(Amount) AS totalaccrued FROM yyexpensesrecord WHERE accrued = "yes" AND YEAR(Date) <= ?', [selectedYear]);
+    const totalaccrued = (totalaccruedResult[0].totalaccrued || 0);
+    const totalaccruedpayResult = await queryDatabase('SELECT SUM(Amount) AS totalaccruedpay FROM yyaccruals WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalaccruedpay = (totalaccruedpayResult[0].totalaccruedpay || 0);
+    const totalotherdebtorResult = await queryDatabase('SELECT SUM(Amount) AS totalotherdebtor FROM yyotherdebtor WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalotherdebtor = (totalotherdebtorResult[0].totalotherdebtor || 0);
+    const totalprosaleResult = await queryDatabase('SELECT SUM(costprice) AS totalprosale FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear]);
+    const totalprosale = (totalprosaleResult[0].totalprosale || 0);
+    const totalpropayResult = await queryDatabase('SELECT SUM(amount) AS totalpropay FROM procurementsellpaymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalpropay = (totalpropayResult[0].totalpropay || 0);
+    const totalshippingfeeResult = await queryDatabase(`SELECT SUM(MaxFee) AS totalShippingFee
+    FROM (
+        SELECT MAX(shippingfee) AS MaxFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) <= ?
+        GROUP BY salesinvoice
+    ) AS Subquery`, [selectedYear]);
+    const totalShippingFee = (totalshippingfeeResult[0].totalShippingFee || 0);
+    const totalrunnerfeeResult = await queryDatabase(`SELECT SUM(MaxRunnerFee) AS totalrunnerfee
+    FROM (
+        SELECT MAX(runnerfee) AS MaxRunnerFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) <= ?
+        GROUP BY salesinvoice
+    ) AS Subquery`, [selectedYear]);
+    const totalrunnerfee = (totalrunnerfeeResult[0].totalrunnerfee || 0);
+    const totalproBuyResult = await queryDatabase('SELECT SUM(costprice) AS totalprobuy FROM procurementdatabase WHERE name != "return" AND YEAR(buydate) <= ?', [selectedYear]);
+    const totalprobuy = (totalproBuyResult[0].totalprobuy || 0);
+    const totalallproBuyResult = await queryDatabase('SELECT SUM(costprice) AS totalallprobuy FROM procurementdatabase WHERE YEAR(buydate) <= ?', [selectedYear]);
+    const totalallprobuy = (totalallproBuyResult[0].totalallprobuy || 0);
+    const totalproBuypayResult = await queryDatabase('SELECT SUM(amount) AS totalprobuypay FROM procurementbuypaymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalprobuypay = (totalproBuypayResult[0].totalprobuypay || 0);
+    const totalproSalesResult = await queryDatabase('SELECT SUM(costprice) AS totalprosell FROM procurementdatabase WHERE name != "return" AND YEAR(salesdate) <= ?', [selectedYear]);
+    const totalprosell = (totalproSalesResult[0].totalprosell || 0);
+    const totalSalespaymentResult = await queryDatabase('SELECT SUM(Amount) AS totalSalespayment FROM yysales_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalSalespayment = (totalSalespaymentResult[0].totalSalespayment || 0);
+    const totalBuypaymentResult = await queryDatabase('SELECT SUM(Amount) AS totalBuypayment FROM yypurchase_paymentbreakdown WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalBuypayment = (totalBuypaymentResult[0].totalBuypayment || 0);
+    const totalAccruedResult = await queryDatabase('SELECT SUM(Amount) as totalAccrued FROM yyexpensesrecord WHERE accrued = "" OR accrued IS NULL OR accrued = "no" AND Name != "Gdex" AND YEAR(Date) <= ?', [selectedYear]);
+    const totalAccrued = (totalAccruedResult[0].totalAccrued || 0);
+    const totalAccrualpaymentResult = await queryDatabase('SELECT SUM(Amount) AS totalAccrualpayment FROM yyaccruals WHERE detail != "creditnote" AND YEAR(Date) <= ?', [selectedYear]);
+    const totalAccrualpayment = (totalAccrualpaymentResult[0].totalAccrualpayment || 0);
+    const totaltopupResult = await queryDatabase('SELECT SUM(amount) as totaltopup FROM yytopupbalance WHERE wallet = "Gdex" AND YEAR(date) <= ?', [selectedYear]);
+    const totaltopup = (totaltopupResult[0].totaltopup || 0);
+    const totalrefundfromSupplierResult = await queryDatabase('SELECT SUM(amount) as totalrefundfromSupplier FROM refund WHERE fromSupplier = "yes" AND YEAR(date) <= ?', [selectedYear]);
+    const totalrefundfromSupplier = (totalrefundfromSupplierResult[0].totalrefundfromSupplier || 0);
+    const totalrefund2buyerResult = await queryDatabase('SELECT SUM(amount) as totalrefund2buyer FROM refund WHERE refund2buyer = "yes" AND YEAR(date) <= ?', [selectedYear]);
+    const totalrefund2buyer = (totalrefund2buyerResult[0].totalrefund2buyer || 0);
+    const totalcompanyfund2personalResult = await queryDatabase('SELECT SUM(Amount) AS totalcompanyfund2personal FROM yycompanyfund2personal WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalcompanyfund2personal = (totalcompanyfund2personalResult[0].totalcompanyfund2personal || 0);
+    const totalotherdebtorpayResult = await queryDatabase('SELECT SUM(amount) AS totalotherdebtorpay FROM yyotherdebtor_paymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const totalotherdebtorpay = (totalotherdebtorpayResult[0].totalotherdebtorpay || 0);
+    const probuypaymentResult = await queryDatabase('SELECT SUM(amount) AS probuypayment FROM procurementbuypaymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const probuypayment = (probuypaymentResult[0].probuypayment || 0);
+    const prosalepaymentResult = await queryDatabase('SELECT SUM(amount) AS prosalepayment FROM procurementsellpaymentbreakdown WHERE YEAR(date) <= ?', [selectedYear]);
+    const prosalepayment = (prosalepaymentResult[0].prosalepayment || 0);
+    const prorefund2buyerResult = await queryDatabase('SELECT SUM(amount) AS prorefund2buyer FROM procurementrefund WHERE refund2buyer = "yes" AND YEAR(date) <= ?', [selectedYear]);
+    const prorefund2buyer = (prorefund2buyerResult[0].prorefund2buyer || 0);
+    const profromsupplierResult = await queryDatabase('SELECT SUM(amount) AS profromsupplier FROM procurementrefund WHERE fromsupplier = "yes" AND YEAR(date) <= ?', [selectedYear]);
+    const profromsupplier = (profromsupplierResult[0].profromsupplier || 0);
+
+
+    const totalSalesbfResult = await queryDatabase('SELECT SUM(UnitPrice) AS totalSalesbf FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)', [selectedYear-1]);
+    const totalSalesbf = (totalSalesbfResult[0].totalSalesbf || 0);
+    const proSalesbfResult = await queryDatabase('SELECT SUM(sellprice) AS proSalesbf FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear-1]);
+    const proSalesbf = (proSalesbfResult[0].proSalesbf || 0);
+    const refundOutwardsbfResult = await queryDatabase('SELECT SUM(amount) AS refundOutwardsbf FROM refund WHERE (refund2buyer = "yes") AND YEAR(date) <= ?', [selectedYear-1]);
+    const refundOutwardsbf = (refundOutwardsbfResult[0].refundOutwardsbf || 0);
+    const totalPurchasebfResult = await queryDatabase('SELECT SUM(UnitPrice) AS totalPurchasebf FROM yyitems_buy WHERE InvoiceNumber IN (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) <= ?)', [selectedYear-1]);
+    const totalPurchasebf = (totalPurchasebfResult[0].totalPurchasebf || 0);
+    const PostageCourierbfResult = await queryDatabase('SELECT SUM(Amount) AS PostageCourierbf FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) <= ?', [selectedYear-1]);
+    const PostageCourierbf = (PostageCourierbfResult[0].PostageCourierbf || 0);
+    const allPurchasebfResult = await queryDatabase(`SELECT 
+                                SUM(UnitPrice) AS allPurchasebf
+                                FROM 
+                                  yyitems_buy
+                                WHERE 
+                                  (Content_SKU IS NOT NULL AND Content_SKU != '') AND status != 'return'
+                                  AND InvoiceNumber IN (
+                                    SELECT Invoice_number 
+                                    FROM yybuy_record 
+                                    WHERE YEAR(timestamp) <= ?)`, [selectedYear-1]);
+    const allPurchasebf = (allPurchasebfResult[0].allPurchasebf || 0);
+    const allSalesbfResult = await queryDatabase(`SELECT SUM(CostPrice) AS allSalesbf FROM yyitems_sell WHERE InvoiceNumber IN (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)`, [selectedYear-1]);
+    const allSalesbf = (allSalesbfResult[0].allSalesbf || 0);
+    const refundInwardsbfResult = await queryDatabase('SELECT SUM(amount) AS refundInwardsbf FROM refund WHERE (fromSupplier = "yes") AND YEAR(date) <= ?', [selectedYear-1]);
+    const refundInwardsbf = (refundInwardsbfResult[0].refundInwardsbf || 0);
+    const totalPurchaseprobfResult = await queryDatabase('SELECT SUM(costprice) AS totalPurchaseprobf FROM procurementdatabase WHERE YEAR(buydate) <= ?', [selectedYear-1]);
+    const totalPurchaseprobf = (totalPurchaseprobfResult[0].totalPurchaseprobf || 0);
+    
+    
+    const totalallPurchaseprobfResult = await queryDatabase('SELECT SUM(costprice) AS totalallPurchaseprobf FROM procurementdatabase WHERE name != "return" AND YEAR(buydate) <= ?', [selectedYear-1]);
+    const totalallPurchaseprobf = (totalallPurchaseprobfResult[0].totalallPurchaseprobf || 0);
+    const totalallSalesprobfResult = await queryDatabase('SELECT SUM(costprice) AS totalallSalesprobf FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear-1]);
+    const totalallSalesprobf = (totalallSalesprobfResult[0].totalallSalesprobf || 0);
+    const DiscountprobfResult = await queryDatabase('SELECT SUM(costprice) AS Discountprobf FROM procurementdatabase WHERE productname = "Discount" AND YEAR(salesdate) <= ?', [selectedYear-1]);
+    const Discountprobf = (DiscountprobfResult[0].Discountprobf || 0);
+    const DiscountbfResult = await queryDatabase(`SELECT SUM(ABS(UnitPrice)) AS Discountbf FROM yyitems_buy
+                                                  WHERE ProductName = "Discount" AND InvoiceNumber IN
+                                                    (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) <= ?)`, [selectedYear-1]);
+    const Discountbf = (DiscountbfResult[0].Discountbf || 0);
+    const totalCourierbfResult = await queryDatabase('SELECT SUM(amount) AS totalCourierbf FROM creditnote WHERE YEAR(Date) <= ?', [selectedYear-1]);
+    const totalCourierbf = (totalCourierbfResult[0].totalCourierbf || 0);
+    const totalCreditnoteResult = await queryDatabase('SELECT SUM(amount) AS totalCreditnote FROM creditnote WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totalCreditnote = (totalCreditnoteResult[0].totalCreditnote || 0);
+    const totalotherExpensesbfResult = await queryDatabase('SELECT SUM(Amount) AS totalotherExpensesbf FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) <= ?', [selectedYear-1]);
+    const totalotherExpensesbf = (totalotherExpensesbfResult[0].totalotherExpensesbf || 0);
+    const distribution2OwnersbfResult = await queryDatabase('SELECT SUM(Amount) AS distribution2Ownersbf FROM yycompanyfund2personal WHERE YEAR(Date) <= ?', [selectedYear-1]);
+    const distribution2Ownersbf = (distribution2OwnersbfResult[0].distribution2Ownersbf || 0);
+    const prorefundInwardsbfResult = await queryDatabase('SELECT SUM(amount) AS prorefundInwardsbf FROM procurementrefund WHERE fromsupplier <= "yes" AND YEAR(Date) = ?', [selectedYear-1]);
+    const prorefundInwardsbf = (prorefundInwardsbfResult[0].prorefundInwardsbf || 0);
+    const prorefundOutwardsbfResult = await queryDatabase('SELECT SUM(amount) AS prorefundOutwardsbf FROM procurementrefund WHERE refund2buyer <= "yes" AND YEAR(Date) = ?', [selectedYear-1]);
+    const prorefundOutwardsbf = (prorefundOutwardsbfResult[0].prorefundOutwardsbf || 0);
+    const totalRunnerFeebfResult = await queryDatabase(`
+        SELECT SUM(MaxRunnerFee) AS totalRunnerFeebf
+        FROM (
+            SELECT MAX(runnerfee) AS MaxRunnerFee
+            FROM procurementdatabase
+            WHERE YEAR(salesdate) <= ?
+            GROUP BY salesinvoice
+        ) AS Subquery
+    `, [selectedYear - 1]);
+    const totalRunnerFeebf = totalRunnerFeebfResult[0].totalRunnerFeebf || 0;
+
+    const otherIncomeProbfResult = await queryDatabase(`
+    SELECT SUM(MaxFee) AS otherIncomeProbf
+    FROM (
+        SELECT MAX(shippingfee) AS MaxFee
+        FROM procurementdatabase
+        WHERE YEAR(salesdate) <= ?
+        GROUP BY salesinvoice
+    ) AS Subquery
+    `, [selectedYear - 1]);
+    const otherIncomeProbf = otherIncomeProbfResult[0].otherIncomeProbf || 0;
+    const otherIncomeProResult = await queryDatabase(`
+        SELECT SUM(MaxFee) AS otherIncomePro
+        FROM (
+            SELECT MAX(shippingfee) AS MaxFee
+            FROM procurementdatabase
+            WHERE YEAR(salesdate) = ?
+            GROUP BY salesinvoice
+        ) AS Subquery
+    `, [selectedYear]);
+    const otherIncomePro = otherIncomeProResult[0].otherIncomePro || 0;
+    const totalRunnerFeeResult = await queryDatabase(`
+            SELECT SUM(MaxRunnerFee) AS totalRunnerFee
+            FROM (
+                SELECT MAX(runnerfee) AS MaxRunnerFee
+                FROM procurementdatabase
+                WHERE YEAR(salesdate) = ?
+                GROUP BY salesinvoice
+            ) AS Subquery
+        `, [selectedYear]);
+    const totalRunnerFee = totalRunnerFeeResult[0].totalRunnerFee || 0;
+    const proSalesResult = await queryDatabase('SELECT SUM(sellprice) AS proSales FROM procurementdatabase WHERE name != "return" AND YEAR(salesdate) = ?', [selectedYear]);
+    const proSales = (proSalesResult[0].proSales || 0);
+    const prorefundOutwardsResult = await queryDatabase('SELECT SUM(amount) AS prorefundOutwards FROM procurementrefund WHERE refund2buyer = "yes" AND YEAR(Date) = ?', [selectedYear]);
+    const prorefundOutwards = (prorefundOutwardsResult[0].prorefundOutwards || 0);
+    const refundOutwardsResult = await queryDatabase('SELECT SUM(amount) AS refundOutwards FROM refund WHERE (refund2buyer = "yes") AND YEAR(date) = ?', [selectedYear]);
+    const refundOutwards = (refundOutwardsResult[0].refundOutwards || 0);
+
+    const otherincomebonuscreditResult = await queryDatabase('SELECT SUM(bonuscredit) AS otherincomebonuscredit FROM yytopupbalance WHERE YEAR(date) = ?', [selectedYear]);
+    const otherincomebonuscredit = (otherincomebonuscreditResult[0].otherincomebonuscredit || 0);
+    const totalPurchaseproResult = await queryDatabase('SELECT SUM(costprice) AS totalPurchasepro FROM procurementdatabase WHERE YEAR(buydate) = ?', [selectedYear]);
+    const totalPurchasepro = (totalPurchaseproResult[0].totalPurchasepro || 0);
+    const PostageCourierResult = await queryDatabase('SELECT SUM(Amount) AS PostageCourier FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [selectedYear]);
+    const PostageCourier = (PostageCourierResult[0].PostageCourier || 0);
+    const totalCourierResult = await queryDatabase('SELECT SUM(amount) AS totalCourier FROM creditnote WHERE YEAR(Date) = ?', [selectedYear]);
+    const totalCourier = (totalCourierResult[0].totalCourier || 0);
+    const allPurchaseResult = await queryDatabase(`
+          SELECT SUM(UnitPrice) AS allPurchase
+          FROM yyitems_buy
+          WHERE (Content_SKU IS NOT NULL AND Content_SKU != '') AND status != 'return'
+            AND InvoiceNumber IN (
+              SELECT Invoice_number 
+              FROM yybuy_record 
+              WHERE YEAR(timestamp) <= ?)
+        `, [selectedYear]);
+const allPurchase = allPurchaseResult[0].allPurchase || 0;
+
+const totalPurchaseResult = await queryDatabase(`
+SELECT SUM(Amount) AS totalPurchase FROM yyitems_buy
+WHERE Productname != "Discount" AND InvoiceNumber IN
+  (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) = ?)
+`, [selectedYear]);
+const totalPurchase = totalPurchaseResult[0].totalPurchase || 0;
+
+const allSalesResult = await queryDatabase(`
+SELECT SUM(CostPrice) AS allSales FROM yyitems_sell
+WHERE InvoiceNumber IN (
+    SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)
+`, [selectedYear]);
+const allSales = allSalesResult[0].allSales || 0;
+
+
+
+    const totalallPurchaseproResult = await queryDatabase('SELECT SUM(costprice) AS totalallPurchasepro FROM procurementdatabase WHERE name != "return" AND YEAR(buydate) <= ?', [selectedYear]);
+    const totalallPurchasepro = (totalallPurchaseproResult[0].totalallPurchasepro || 0);
+    const totalallSalesproResult = await queryDatabase('SELECT SUM(costprice) AS totalallSalespro FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear]);
+    const totalallSalespro = (totalallSalesproResult[0].totalallSalespro || 0);
+    const prorefundInwardsResult = await queryDatabase('SELECT SUM(amount) AS prorefundInwards FROM procurementrefund WHERE fromsupplier = "yes" AND YEAR(Date) = ?', [selectedYear]);
+    const prorefundInwards = (prorefundInwardsResult[0].prorefundInwards || 0);
+    const refundInwardsResult = await queryDatabase('SELECT SUM(amount) AS refundInwards FROM refund WHERE (fromSupplier = "yes") AND YEAR(date) = ?', [selectedYear]);
+    const refundInwards = (refundInwardsResult[0].refundInwards || 0);
+    const DiscountResult = await queryDatabase(`
+      SELECT SUM(ABS(UnitPrice)) AS Discount 
+      FROM yyitems_buy 
+      WHERE ProductName = "Discount" 
+      AND InvoiceNumber IN (
+          SELECT Invoice_number 
+          FROM yybuy_record 
+          WHERE YEAR(timestamp) = ?)
+    `, [selectedYear]);
+    const Discount = (DiscountResult[0].Discount || 0);
+
+    const DiscountproResult = await queryDatabase('SELECT SUM(costprice) AS Discountpro FROM procurementdatabase WHERE productname = "Discount" AND YEAR(salesdate) = ?', [selectedYear]);
+    const Discountpro = (DiscountproResult[0].Discountpro || 0);
+    const totalotherExpensesResult = await queryDatabase('SELECT SUM(Amount) AS totalotherExpenses FROM yyexpensesrecord WHERE Category != "Postage & Courier" AND YEAR(Date) = ?', [selectedYear]);
+    const totalotherExpenses = (totalotherExpensesResult[0].totalotherExpenses || 0);
+    const totalshippingfeesResult = await queryDatabase('SELECT SUM(Amount) AS totalshippingfees FROM yyexpensesrecord WHERE Category = "Postage & Courier" AND YEAR(Date) = ?', [selectedYear]);
+    const totalshippingfees = (totalshippingfeesResult[0].totalshippingfees || 0);
+    
+    const totalbankchargesResult = await queryDatabase('SELECT SUM(Amount) AS totalbankcharges FROM yyexpensesrecord WHERE Category = "Bank Charges" AND YEAR(Date) = ?', [selectedYear]);
+    const totalbankcharges = (totalbankchargesResult[0].totalbankcharges || 0);
+    const handlingexpensesResult = await queryDatabase('SELECT SUM(Amount) AS handlingexpenses FROM yyexpensesrecord WHERE Category = "Handling Expenses" AND YEAR(Date) = ?', [selectedYear]);
+    const handlingexpenses = (handlingexpensesResult[0].handlingexpenses || 0);
+    const totalwagesResult = await queryDatabase('SELECT SUM(Amount) AS totalwages FROM yyexpensesrecord WHERE Category = "Wages" AND YEAR(Date) = ?', [selectedYear]);
+    const totalwages = (totalwagesResult[0].totalwages || 0);
+
+    
+    const lastYBuyproResult = await queryDatabase('SELECT SUM(costprice) AS lastYBuypro FROM procurementdatabase WHERE name != "return" AND YEAR(buydate) <= ?', [selectedYear-1]);
+    const lastYBuypro = (lastYBuyproResult[0].lastYBuypro || 0);
+    const lastYSalesproResult = await queryDatabase('SELECT SUM(sellprice) AS lastYSalespro FROM procurementdatabase WHERE YEAR(salesdate) <= ?', [selectedYear-1]);
+    const lastYSalespro = (lastYSalesproResult[0].lastYSalespro || 0);
+    const lastYSalesResult = await queryDatabase(`
+      SELECT SUM(CostPrice) AS lastYSales FROM yyitems_sell
+        WHERE InvoiceNumber IN
+        (SELECT Invoice_number FROM yysell_invoice WHERE YEAR(timestamp) <= ?)
+      `, [selectedYear-1]);
+    const lastYSales = (lastYSalesResult[0].lastYSales || 0);
+    const lastYBuyResult = await queryDatabase(`
+    SELECT SUM(UnitPrice) AS lastYBuy FROM yyitems_buy
+    WHERE (Content_SKU IS NOT NULL AND Content_SKU != '') AND status != 'return'
+    AND InvoiceNumber IN
+      (SELECT Invoice_number FROM yybuy_record WHERE YEAR(timestamp) <= ?)
+      `, [selectedYear-1]);
+    const lastYBuy = (lastYBuyResult[0].lastYBuy || 0);
+    const distribution2OwnersResult = await queryDatabase('SELECT SUM(Amount) AS distribution2Owners FROM yycompanyfund2personal WHERE YEAR(Date) = ?', [selectedYear]);
+    const distribution2Owners = (distribution2OwnersResult[0].distribution2Owners || 0);
+    const totaldistribution2OwnersResult = await queryDatabase('SELECT SUM(Amount) AS totaldistribution2Owners FROM yycompanyfund2personal WHERE YEAR(Date) <= ?', [selectedYear]);
+    const totaldistribution2Owners = (totaldistribution2OwnersResult[0].totaldistribution2Owners || 0);
+    const otherincomebonuscreditbfResult = await queryDatabase('SELECT SUM(bonuscredit) AS otherincomebonuscreditbf FROM yytopupbalance WHERE YEAR(date) <= ?', [selectedYear-1]);
+    const otherincomebonuscreditbf = (otherincomebonuscreditbfResult[0].otherincomebonuscreditbf || 0);
+
+    const accountpayable = (totalPurchasesno2 - totalBuypaid + totalallprobuy - totalprobuypay);
+    const accruals = (totalaccrued - totalaccruedpay);
+    const accreceivable = (salesData - totalSalespaid + totalprosale + totalShippingFee + totalrunnerfee - totalpropay);
+    const totalcreditor = (totalotcredit - totalotcreditpay);
+    const closingstock = (totalPurchases + totalprobuy - totalSalesno2 - totalprosell);
+    const cashInbank = (totalSalespayment + prosalepayment - totalBuypayment - probuypayment + totalcapital + totalotcredit + totalotherdebtorpay
+      + totalrefundfromSupplier + profromsupplier - totalrefund2buyer - prorefund2buyer - totalAccrued - totalAccrualpayment - totaltopup 
+      - totalcompanyfund2personal - totaldeposit - totalotcreditpay - totalotherdebtor);
+    const cashInotherACC = (totalTopup + bonus2 - totalgdex);
+    const totalCurrestassets = (closingstock + accreceivable + cashInbank + cashInotherACC + totalotherdebtor + totaldeposit);
+    const currentLiabi = (accountpayable + totalcreditor + accruals);
+    const nettProfitbf = (totalSalesbf + (proSalesbf + (otherIncomeProbf +  totalRunnerFeebf)) - (prorefundOutwardsbf + refundOutwardsbf) - 
+    (totalPurchasebf + totalPurchaseprobf) - PostageCourierbf + totalCourierbf + (allPurchasebf + totalallPurchaseprobf - totalallSalesprobf - allSalesbf) + 
+    (prorefundInwardsbf + refundInwardsbf) + (Discountbf + Discountprobf) - totalotherExpensesbf);
+    const retainedBF = (nettProfitbf - distribution2Ownersbf + otherincomebonuscreditbf);
+
+    const nettProfit = ( ((totalSales + (proSales + (otherIncomePro +  totalRunnerFee)) - (prorefundOutwards + refundOutwards) + 
+    otherincomebonuscredit) - ((lastYBuy + lastYBuypro - lastYSales - lastYSalespro) + (totalPurchase + totalPurchasepro) + 
+    PostageCourier - totalCourier - (allPurchase + totalallPurchasepro - totalallSalespro - allSales) - 
+    (prorefundInwards + refundInwards) - (Discount + Discountpro))) - totalotherExpenses + otherincomebonuscreditbf);
+
+    const retainedCF = (nettProfit + retainedBF - distribution2Owners);
+    const openstock  = (totalPurchasesLastyear - totalCostLastyear);
+    const buydiscount = (Discount + Discountpro);
+    console.log(accountpayable);
+
+    res.render('trialbalance', {
+      accountpayable,
+      totalshippingfees,
+      totalwages,
+      totalbankcharges,
+      totaldistribution2Owners,
+      totalCreditnote,
+      totalPurchasepro,
+      totalPurchase,
+      handlingexpenses,
+      totalotherExpenses,
+      otherincomebonuscredit,
+      buydiscount,
+      prorefundOutwards,
+      refundOutwards,
+      refundInwards,
+      prorefundInwards,
+      otherIncomePro,
+      totalRunnerFee,
+      openstock,
+      proSales,
+      retainedBF,
+      retainedCF,
+      currentLiabi,
+      cashInotherACC,
+      totalCurrestassets,
+      cashInbank,
+      years,
+      totalcreditor,
+      closingstock,
+      accreceivable,
+      totalotherdebtor,
+      accountpayable,
+      accruals,
+      selectedYear,
+      totalaccruedpay,
+      officeEquipment,
+      totalPurchases, 
+      totalCost,
+      totalSalesno2,
+      totalaccrued,
+      totaldeposit,
+      totalPurchasesno2,
+      totalcapital,
+      totalotcredit,
+      totalBuypaid,
+      totalTopup,
+      totalSalespaid,
+      totalSales, 
+      totalSalesno,
+      totalExpenses: totalExpensesByCategory,
+      totalStockValue,
+      totalship,
+      totalPurchasesno,
+      totalc2p,
+      totalp2c,
+      supRefunds,
+      refundsales,
+      years,
+      selectedYear,
+      total_purchasesWOnosku,
+      totalbuy,
+      totalPurchasesLastyear,
+      totalCostLastyear,
+      bonus,
+      bonus2,
+      totalgdex
+    });
+  } catch (error) {
+    console.error('Database query error:', error);
+    res.status(500).send('Error fetching data');
+  }
 });
 app.get('/yyequity', requireLogin, function(req, res){
   pool.query('SELECT *, DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate FROM yyequity', function(error, results, fields) {
@@ -2121,9 +2088,6 @@ app.post('/yycurrentassets', upload.array(), function (req, res) {
     }
   });
 });
-
-
-
 app.get('/creditnote', requireLogin, function(req, res){
   pool.query(`SELECT *, DATE_FORMAT(date, "%Y-%m-%d") as formattedDate, DATE_FORMAT(useddate, "%Y-%m-%d") as formattedusedDate FROM creditnote`, function(error, results, fields) {
     if (error) {
@@ -2157,417 +2121,10 @@ app.post('/creditnote',upload.single('file'), function (req, res) {
     }
   });
 });
-
-app.post('/logout', (req, res) => {
-  // Destroy the user's session
-  req.session.destroy();
-  // Redirect to the login page
-  res.redirect('/login');
-});
-app.get('/login', (req, res) => {
-  res.render('login');
-});
-app.get('/signup', (req, res) => {
-  res.render('signup');
-});
 //-------------------------------------Import & Export---------------------------------------------------------------------------------------------------------------------
 app.get('/inout', requireLogin, function(req, res) {
   const successMessage = req.query.success; // Get the success parameter from the query string
   res.render('inout', { successMessage: successMessage });
-});
-//----------------------------Y Kick Zone Shop----------------------------------------------
-app.post('/importsell_csv', upload.single('file'), function (req, res) {
-  const { path: csvFilePath } = req.file;
-
-  const invoiceNos = new Set(); // Set to keep track of InvoiceNos already inserted into the sell_invoice table
-
-  // Parse the CSV file and insert the data into MySQL tables
-  fs.createReadStream(csvFilePath)
-    .pipe(csv())
-    .on('data', (data) => {
-      // Extract the relevant data from the CSV row
-      const { InvoiceNo, Date, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, sku, Product_Name, Quantity, SizeUS, UnitPrice, Amount, gender, Remarks } = data;
-      const parsedUnitPrice = parseFloat(UnitPrice.replace(/[^0-9.-]+/g,""));
-      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
-
-      if (!invoiceNos.has(InvoiceNo)) {
-        // If the InvoiceNo hasn't been inserted into the sell_invoice table yet, insert it along with the relevant data
-        invoiceNos.add(InvoiceNo); // Add the InvoiceNo to the Set of already-inserted InvoiceNos
-        pool.query('INSERT INTO sell_invoice (Invoice_number, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks, Date], (error, results, fields) => {
-          if (error) {
-            console.error(error);
-          } else {
-            // If the insert into sell_invoice is successful, insert the corresponding data into the items_sell table
-            pool.query('INSERT INTO items_sell (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, sku, Product_Name, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender], (error, results, fields) => {
-              if (error) {
-                console.error(error);
-              } else {
-                console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
-              }
-            });
-          }
-        });
-      } else {
-        // If the InvoiceNo has already been inserted into the sell_invoice table, insert the corresponding data into the items_sell table only
-        pool.query('INSERT INTO items_sell (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [InvoiceNo, sku, Product_Name, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender], (error, results, fields) => {
-          if (error) {
-            console.error(error);
-          } else {
-            console.log(`Data successfully inserted for InvoiceNo ${InvoiceNo}`);
-          }
-        });
-      }
-    })
-    .on('end', () => {
-      console.log('CSV file successfully processed');
-      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
-    });
-});
-app.get('/exportsell_csv', function(req, res) {
-  const sql = `SELECT sell_invoice.Invoice_number, sell_invoice.Name, sell_invoice.Phone, sell_invoice.Remarks, sell_invoice.timestamp As date, sell_invoice.Address1, sell_invoice.Address2, sell_invoice.Address3, sell_invoice.PostCode, sell_invoice.City, sell_invoice.State, sell_invoice.Country, items_sell.Content_SKU, items_sell.ProductName, items_sell.SizeUS, items_sell.Quantity, items_sell.UnitPrice, items_sell.Amount, items_sell.gender
-                FROM sell_invoice
-                LEFT JOIN items_sell ON sell_invoice.Invoice_number = items_sell.InvoiceNumber
-                LEFT JOIN items_buy ON items_sell.Content_SKU = items_buy.Content_SKU AND items_sell.SizeUS = items_buy.SizeUS
-                ORDER BY sell_invoice.Invoice_number, items_sell.Content_SKU`;
-
-  pool.query(sql, function(error, results, fields) {
-    if (error) throw error;
-
-    const csvData = [];
-    let currentInvoiceNo = null;
-
-    // Iterate through the SQL query results and build the CSV data
-    results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
-
-      // If this row has a different invoice number than the previous one, start a new row in the CSV
-      if (row.Invoice_number !== currentInvoiceNo) {
-        csvData.push({
-          InvoiceNo: row.Invoice_number,
-          Date: formattedDate, // Use the formatted date property
-          Name: row.Name,
-          Phone: row.Phone,
-          Address1: row.Address1,
-          Address2: row.Address2,
-          Address3: row.Address3,
-          PostCode: row.PostCode,
-          City: row.City,
-          State: row.State,
-          Country: row.Country,
-          sku: row.Content_SKU,
-          Product_Name: row.product_name,
-          SizeUS: row.SizeUS,
-          Quantity: row.Quantity,
-          UnitPrice: row.UnitPrice,
-          Amount: row.Amount,
-          gender: row.gender,
-          Remarks: row.Remarks
-        });
-        currentInvoiceNo = row.Invoice_number;
-      } else {
-        // If this row has the same invoice number as the previous one, add a new row to the CSV with only the item data
-        csvData.push({
-          InvoiceNo: row.Invoice_number,
-          Date: formattedDate, // Use the formatted date property
-          Name: row.Name,
-          Phone: row.Phone,
-          Address1: row.Address1,
-          Address2: row.Address2,
-          Address3: row.Address3,
-          PostCode: row.PostCode,
-          City: row.City,
-          State: row.State,
-          Country: row.Country,
-          sku: row.Content_SKU,
-          Product_Name: row.product_name,
-          SizeUS: row.SizeUS,
-          Quantity: row.Quantity,
-          UnitPrice: row.UnitPrice,
-          Amount: row.Amount,
-          gender: row.gender,
-        });
-      }
-    });
-
-    // Use fast-csv to stream the CSV data to the HTTP response
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=sell_data.csv');
-    fastCsv.write(csvData, { headers: true }).pipe(res);
-  });
-});
-app.post('/importspay_csv', upload.single('file'), function (req, res) {
-  const { path: csvFilePath } = req.file;
-  
-  // Parse the CSV file and insert the data into MySQL tables
-  fs.createReadStream(csvFilePath)
-    .pipe(csv())
-    .on('data', (data) => {
-      // Extract the relevant data from the CSV row
-      const { InvoiceNumber, Date, Amount, IntoWhichBank, OtherCurrencyRemark } = data;
-      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
-
-      pool.query('INSERT INTO sales_paymentbreakdown ( Date, Invoice_No, Bank, Amount, Remarks ) VALUES (?, ?, ?, ?, ?)', [Date, InvoiceNumber, IntoWhichBank, parsedAmount, OtherCurrencyRemark], (error, results) => {
-          if (error) {
-            console.error(error);
-            res.send('An error occurred while processing the CSV file.');
-          } else {
-            console.log(`Data successfully inserted for InvoiceNo ${InvoiceNumber}`);
-          }
-        });
-    })
-    .on('end', () => {
-      console.log('CSV file successfully processed');
-      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
-    });
-});
-app.get('/exportspay_csv', function(req, res) {
-  const sql = `SELECT sales_paymentbreakdown.Invoice_No, sales_paymentbreakdown.Date as date, sales_paymentbreakdown.Bank, sales_paymentbreakdown.Amount, sales_paymentbreakdown.Remarks
-               FROM sales_paymentbreakdown
-               ORDER BY sales_paymentbreakdown.Invoice_No`;
-
-  pool.query(sql, function(error, results) {
-    if (error) throw error;
-
-    const csvData = [];
-    // Iterate through the SQL query results and build the CSV data
-    results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
-        csvData.push({
-          InvoiceNumber: row.Invoice_No,
-          Date: formattedDate,
-          IntoWhichBank: row.Bank,
-          Amount: row.Amount,
-          OtherCurrencyRemark: row.Remarks
-        });
-    });
-
-    // Use fast-csv to stream the CSV data to the HTTP response
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=ykzsalespaymentbreakdown_data.csv');
-    fastCsv.write(csvData, { headers: true }).pipe(res);
-  });
-});
-app.post('/importbuy_csv', upload.single('file'), function (req, res) {
-  const { path: csvFilePath } = req.file;
-
-  const invoiceNos = new Set(); // Set to keep track of InvoiceNos already inserted into the sell_invoice table
-
-  // Parse the CSV file and insert the data into MySQL tables
-  fs.createReadStream(csvFilePath)
-    .pipe(csv())
-    .on('data', (data) => {
-      // Extract the relevant data from the CSV row
-      const { PONo, Date, Name, BankName, Bank, BankNumber, Remarks, ProductName, SizeUS, Quantity, UnitPrice, Amount, SKU, gender } = data;
-      const parsedUnitPrice = parseFloat(UnitPrice && UnitPrice.replace(/[^0-9.-]+/g,""));
-      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
-
-      if (!isNaN(parsedUnitPrice) && !isNaN(parsedAmount)) {
-        // Only insert the row if parsedUnitPrice and parsedAmount are not NaN
-        if (!invoiceNos.has(PONo)) {
-          // If the InvoiceNo hasn't been inserted into the sell_invoice table yet, insert it along with the relevant data
-          invoiceNos.add(PONo); // Add the InvoiceNo to the Set of already-inserted InvoiceNos
-          pool.query('INSERT INTO buy_record (Invoice_number, Name, BankName, Bank, Bankaccount, Remarks, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)', [PONo, Name, BankName, Bank, BankNumber,Remarks, Date], (error, results, fields) => {
-            if (error) {
-              console.error(error);
-            } else {
-              // If the insert into sell_invoice is successful, insert the corresponding data into the items_sell table
-              pool.query('INSERT INTO items_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [PONo, SKU, ProductName, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender], (error, results) => {
-                if (error) {
-                  console.error(error);
-                } else {
-                  console.log(`Data successfully inserted for InvoiceNo ${PONo}`);
-                }
-              });
-            }
-          });
-        } else {
-          // If the InvoiceNo has already been inserted into the sell_invoice table, insert the corresponding data into the items_sell table only
-          pool.query('INSERT INTO yyitems_buy (InvoiceNumber, Content_SKU, ProductName, SizeUS, Quantity, UnitPrice, Amount, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [PONo, SKU, ProductName, SizeUS, Quantity, parsedUnitPrice, parsedAmount, gender], (error, results) => {
-            if (error) {
-              console.error(error);
-            } else {
-              console.log(`Data successfully inserted for InvoiceNo ${PONo}`);
-            }
-          });
-        }
-      } else {
-        console.log(`Skipping row with InvoiceNo ${PONo} due to NaN values`);
-      }
-    })
-    .on('end', () => {
-      console.log('CSV file successfully processed');
-      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
-    });
-});
-app.get('/exportbuy_csv', function(req, res) {
-  const sql = `SELECT buy_record.Invoice_number, buy_record.Name, buy_record.BankName, buy_record.Bank, buy_record.timestamp as date, buy_record.Bankaccount, buy_record.Remarks, items_buy.Content_SKU, items_buy.ProductName, items_buy.SizeUS, items_buy.Quantity, items_buy.UnitPrice, items_buy.Amount
-               FROM buy_record
-               JOIN items_buy ON yybuy_record.Invoice_number = items_buy.InvoiceNumber
-               ORDER BY buy_record.Invoice_number, items_buy.Content_SKU`;
-
-  pool.query(sql, function(error, results, fields) {
-    if (error) throw error;
-
-    const csvData = [];
-    let currentInvoiceNo = null;
-    // Iterate through the SQL query results and build the CSV data
-    results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
-
-      // If this row has a different invoice number than the previous one, start a new row in the CSV
-      if (row.Invoice_number !== currentInvoiceNo) {
-        csvData.push({
-          PONo: row.Invoice_number,
-          Date: formattedDate,
-          Name: row.Name,
-          BankName: row.BankName,
-          Bank: row.Bank,
-          BankNumber: row.Bankaccount,
-          Remarks: row.Remarks,
-          ProductName: row.ProductName,
-          SKU: row.Content_SKU,
-          SizeUS: row.SizeUS,
-          Quantity: row.Quantity,
-          UnitPrice: row.UnitPrice,
-          Amount: row.Amount, 
-          gender: row.gender
-        });
-        currentInvoiceNo = row.Invoice_number;
-      } else {
-        // If this row has the same invoice number as the previous one, add a new row to the CSV
-        csvData.push({
-          PONo: row.Invoice_number,
-          Date: formattedDate,
-          Name: row.Name,
-          BankName: row.BankName,
-          Bank: row.Bank,
-          BankNumber: row.Bankaccount,
-          Remarks: row.Remarks,
-          ProductName: row.ProductName,
-          SKU: row.Content_SKU,
-          SizeUS: row.SizeUS,
-          Quantity: row.Quantity,
-          UnitPrice: row.UnitPrice,
-          Amount: row.Amount,
-          gender: row.gender
-        });
-      }
-    });
-
-    // Use fast-csv to stream the CSV data to the HTTP response
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=buy_data.csv');
-    fastCsv.write(csvData, { headers: true }).pipe(res);
-  });
-});
-app.post('/importbpay_csv', upload.single('file'), function (req, res) {
-  const { path: csvFilePath } = req.file;
-  
-  // Parse the CSV file and insert the data into MySQL tables
-  fs.createReadStream(csvFilePath)
-    .pipe(csv())
-    .on('data', (data) => {
-      // Extract the relevant data from the CSV row
-      const { PONo, Date, Amount, To, OtherCurrencyRemark, BankRefs } = data;
-      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
-
-
-      pool.query('INSERT INTO purchase_paymentbreakdown ( Date, Invoice_No, Bank, Amount, Remarks, BankRefs ) VALUES (?, ?, ?, ?, ?, ?)', [Date, PONo, To, parsedAmount, OtherCurrencyRemark, BankRefs], (error, results) => {
-          if (error) {
-            console.error(error);
-            res.send('An error occurred while processing the CSV file.');
-          } else {
-            console.log(`Data successfully inserted for InvoiceNo ${PONo}`);
-          }
-        });
-    })
-    .on('end', () => {
-      console.log('CSV file successfully processed');
-      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
-    });
-});
-app.get('/exportbpay_csv', function(req, res) {
-  const sql = `SELECT purchase_paymentbreakdown.Invoice_No, purchase_paymentbreakdown.Date as date, purchase_paymentbreakdown.Bank, purchase_paymentbreakdown.Amount, purchase_paymentbreakdown.Remarks, purchase_paymentbreakdown.BankRefs
-               FROM purchase_paymentbreakdown
-               ORDER BY purchase_paymentbreakdown.Invoice_No`;
-
-  pool.query(sql, function(error, results) {
-    if (error) throw error;
-
-    const csvData = [];
-    // Iterate through the SQL query results and build the CSV data
-    results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
-        csvData.push({
-          PONo: row.Invoice_No,
-          Date: formattedDate,
-          To: row.Bank,
-          Amount: row.Amount,
-          OtherCurrencyRemark: row.Remarks,
-          BankRefs: row.BankRefs
-        });
-    });
-
-    // Use fast-csv to stream the CSV data to the HTTP response
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=ykzpurchasepaymentbreakdown_data.csv');
-    fastCsv.write(csvData, { headers: true }).pipe(res);
-  });
-});
-// y kick zone expenses record
-app.post('/importexpenses_csv', upload.single('file'), function (req, res) {
-  const { path: csvFilePath } = req.file;
-  
-  // Parse the CSV file and insert the data into MySQL tables
-  fs.createReadStream(csvFilePath)
-    .pipe(csv())
-    .on('data', (data) => {
-      // Extract the relevant data from the CSV row
-      const { Date, InvoiceNumber, Category, Bank, Name, Amount, Detail } = data;
-      const parsedAmount = parseFloat(Amount.replace(/[^0-9.-]+/g,""));
-
-      pool.query('INSERT INTO expensesrecord ( Date, Invoice_No, Category, Bank, Name, Amount, Detail ) VALUES (?, ?, ?, ?, ?, ?, ?)', [Date, InvoiceNumber, Category, Bank, Name, parsedAmount, Detail], (error, results) => {
-          if (error) {
-            console.error(error);
-            res.send('An error occurred while processing the CSV file.');
-          } else {
-            console.log(`Data successfully inserted for InvoiceNo ${InvoiceNumber}`);
-          }
-        });
-    })
-    .on('end', () => {
-      console.log('CSV file successfully processed');
-      res.redirect('/inout?success=true'); // Redirect to the /inout route with the success parameter
-    });
-});
-app.get('/exportexpenses_csv', function(req, res) {
-  const sql = `SELECT ykzexpensesrecord.Invoice_No, ykzexpensesrecord.Date as date, ykzexpensesrecord.Bank, ykzexpensesrecord.Amount, ykzexpensesrecord.Name, ykzexpensesrecord.Category, ykzexpensesrecord.Detail
-               FROM ykzexpensesrecord
-               ORDER BY ykzexpensesrecord.Invoice_No`;
-
-  pool.query(sql, function(error, results) {
-    if (error) throw error;
-
-    const csvData = [];
-    // Iterate through the SQL query results and build the CSV data
-    results.forEach((row) => {
-      const formattedDate = moment(row.date).format('YYYY-MM-DD'); // Use moment.js to format the date string
-        csvData.push({
-          InvoiceNumber: row.Invoice_No,
-          Date: formattedDate,
-          Category: row.Category,
-          Bank: row.Bank,
-          Name: row.Name,
-          Amount: row.Amount,
-          Detail: row.Detail
-        });
-    });
-
-    // Use fast-csv to stream the CSV data to the HTTP response
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=ykzexpenses_record_data.csv');
-    fastCsv.write(csvData, { headers: true }).pipe(res);
-  });
 });
 //----------------------------Yong & Yi Partnership Enterprise----------------------------------------------done change
 app.post('/yyimportsell_csv', upload.single('file'), function (req, res) {
@@ -4917,7 +4474,7 @@ app.post('/topupbalance', upload.single('file'), urlencodedParser, function(req,
 //-------below is for Yong & Yi  Partnership Enterprise-----------------------------------------------------------------------------
 //-------------------Sales-----------------------------------------------------------------------------
 //for sales - sell invoice
-app.get('/yysell_invoice', requireLogin, function(req, res) {
+app.get('/yysell_invoice', function(req, res) {
   const startDate = req.query.start_date;
   const endDate = req.query.end_date;
 
@@ -4947,7 +4504,7 @@ app.get('/yysell_invoice', requireLogin, function(req, res) {
     }
   });
 });
-app.get('/yyproduct-details', requireLogin, (req, res) => {
+app.get('/yyproduct-details', (req, res) => {
   const sku = req.query.sku;
   const size = req.query.size;
   const query = `
@@ -4969,7 +4526,7 @@ app.get('/yyproduct-details', requireLogin, (req, res) => {
     });
   });
 });
-app.get('/yyproduct-name', requireLogin, (req, res) => {
+app.get('/yyproduct-name', (req, res) => {
   const sku = req.query.sku;
   const query = `
     SELECT DISTINCT ProductName
@@ -5028,7 +4585,7 @@ app.get('/getQuantityAndCostPrice', (req, res) => {
   });
 });
 app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (req, res) {
-  const { name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [], field8 = []} = req.body;
+  const { date, name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, field1 = [], field2 = [], field3 = [], field4 = [], field5 = [], field6 = [], field7 = [], field8 = []} = req.body;
 
   pool.query('SELECT MAX(Invoice_number) as maxInvoiceNumber FROM yysell_invoice', (error, results, fields) => {
     if (error) {
@@ -5038,7 +4595,7 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
       const maxInvoiceNumber = results[0].maxInvoiceNumber;
       const invoice_number = (maxInvoiceNumber ? parseInt(maxInvoiceNumber) : 0) + 1;
 
-      pool.query('INSERT INTO yysell_invoice (Invoice_number, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [invoice_number, name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks], (error, results, fields) => {
+      pool.query('INSERT INTO yysell_invoice (timestamp, Invoice_number, Name, Phone, Address1, Address2, Address3, PostCode, City, State, Country, Remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [date, invoice_number, name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks], (error, results, fields) => {
         if (error) {
           console.error(error);
           return res.status(500).send('Error saving form data');
@@ -5075,10 +4632,10 @@ app.post('/yysell_invoice', upload.single('file'), urlencodedParser, function (r
                 const sku = item;
                 const size = field3[index];
                 const qty = field5[index];
-                const unitPrice = field8[index];
-                const soldDate = moment().format('YYYY-MM-DD');
+                const unitPrice = field8[index] === '' || field8[index] == null ? null : field8[index];
+                console.log(sku, size, qty, unitPrice, soldDate);
                 for (let i = 0; i < qty; i++) {
-                  pool.query('UPDATE yyitems_buy SET sold = ?, solddate = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND sold = ? AND status = ? LIMIT ?', ['yes', soldDate, unitPrice, sku, size, 'no', 'check', parseInt(qty)], (error, results, fields) => {
+                  pool.query('UPDATE yyitems_buy SET sold = ?, solddate = ? WHERE UnitPrice = ? AND Content_SKU = ? AND SizeUS = ? AND sold = ? AND status = ? LIMIT ?', ['yes', date, unitPrice, sku, size, 'no', 'check', parseInt(qty)], (error, results, fields) => {
                     if (error) {
                       console.error(error);
                       return res.status(500).send('Error updating yyitems_buy table');
@@ -6275,92 +5832,59 @@ app.get('/yyaccruals', requireLogin, function(req, res) {
 });
 app.post('/yyaccruals', upload.single('file'), urlencodedParser, function(req, res){
   const { id, date, invoice_no, bank, name, creditN, amount, detail } = req.body;
-
   const invoiceNumber = invoice_no || '0';
-
-  // Get the filename from the request
   const filename = req.file ? req.file.filename : 'N/A';
+  const actualAmount = creditN ? creditN : amount; // Use credit note amount if available, otherwise use the input amount
 
-  // Insert the form data into MySQL
-  pool.query('INSERT INTO yyaccruals (Date, Invoice_No, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, ifnull(?, "N/A"))', [date, invoiceNumber, bank, name, amount, detail, filename], (error, results, fields) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send('Error saving form data');
-    } else {
-      console.log(req.body);
+  // Insert the form data into MySQL with the actual amount
+  pool.query('INSERT INTO yyaccruals (Date, Invoice_No, Bank, Name, Amount, Detail, File) VALUES (?, ?, ?, ?, ?, ?, IFNULL(?, "N/A"))', 
+    [date, invoiceNumber, bank, name, actualAmount, detail, filename], (error, results, fields) => {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error saving form data');
+        return;
+      }
+      console.log('Data inserted into yyaccruals:', req.body);
 
       // Update the settle column for the specified ID
       pool.query('UPDATE yyexpensesrecord SET settle = "yes" WHERE ID = ?', [id], function(error, results, fields) {
         if (error) {
           console.error(error);
           res.status(500).send('Error updating data');
-        } else {
-          if (creditN && creditN > 0) {
-            // Get the creditnote rows for the courier
-            pool.query('SELECT id, amount, used FROM creditnote WHERE courier = ? AND used < amount ORDER BY id', [name], function(error, creditNoteResults, fields) {
+          return;
+        }
+
+        if (creditN && creditN > 0) {
+          // Update the creditnote as used if it matches the exact amount and has not been used
+          pool.query('UPDATE creditnote SET used = "yes", useddate = ? WHERE courier = ? AND amount = ? AND (used = "no" OR used is null OR used = "")', 
+            [new Date().toISOString(), name, creditN], function(error, results, fields) {
               if (error) {
                 console.error(error);
-                res.status(500).send('Error fetching creditnote data');
-              } else {
-                let remainingCreditN = creditN;
-                let redirectPerformed = false;
-
-                // Update the creditnote rows based on available creditN amount
-                creditNoteResults.forEach((row) => {
-                  if (remainingCreditN <= 0) {
-                    return; // Exit the loop if creditN is fully used
-                  }
-
-                  const availableAmount = row.amount - row.used;
-                  const usedAmount = Math.min(availableAmount, remainingCreditN);
-                  remainingCreditN -= usedAmount;
-
-                  const usedDate = now.toISOString();
-
-                  pool.query('UPDATE creditnote SET used = ?, useddate = ? WHERE id = ?', [row.used + usedAmount, usedDate, row.id], function(error, results, fields) {
-                    if (error) {
-                      console.error(error);
-                      res.status(500).send('Error updating creditnote');
-                    } else {
-                      if (remainingCreditN === 0 && !redirectPerformed) {
-                        // All creditN amount has been used and redirect has not been performed yet
-                        redirectPerformed = true;
-                        res.redirect('/yyaccruals');
-                      }
-                    }
-                  });
-                });
-
-                if (remainingCreditN > 0 && !redirectPerformed) {
-                  // If there is remaining creditN amount and redirect has not been performed yet,
-                  // insert a new row in the creditnote table
-                  pool.query('INSERT INTO creditnote (courier, amount, used, useddate) VALUES (?, ?, ?, ?)', [name, creditN, remainingCreditN, usedDate], function(error, results, fields) {
-                    if (error) {
-                      console.error(error);
-                      res.status(500).send('Error inserting creditnote data');
-                    } else {
-                      res.redirect('/yyaccruals');
-                    }
-                  });
-                }
+                res.status(500).send('Error updating creditnote data');
+                return;
               }
-            });
-          } else {
-            res.redirect('/yyaccruals');
-          }
+              if (results.affectedRows > 0) {
+                console.log('Credit note marked as used');
+              } else {
+                console.log('No matching credit note to update');
+              }
+              res.redirect('/yyaccruals');
+          });
+        } else {
+          res.redirect('/yyaccruals');
         }
       });
-    }
-  });
+    });
 });
 
+
 //for procurement buy
-app.get('/procurementbuy', function(req, res) {
+app.get('/procurementbuy', requireLogin, function(req, res) {
   // Query the database to retrieve all rows with summed quantity
   const sql = `
-  SELECT buyinvoice, sku, productname, size, costprice, SUM(buyquantity) as quantity
+  SELECT buyinvoice, sku, productname, size, costprice, SUM(buyquantity) as quantity, DATE_FORMAT(buydate, "%Y-%m-%d") AS formattedDate, name
   FROM procurementdatabase
-  GROUP BY sku, size, costprice, productname, buyinvoice
+  GROUP BY sku, size, costprice, productname, buyinvoice, formattedDate, name
   ORDER BY buyinvoice DESC`;
 
   // Execute the SQL query
@@ -6376,7 +5900,7 @@ app.get('/procurementbuy', function(req, res) {
     }
   });
 });
-app.get('/procurementbuyproduct-name', (req, res) => {
+app.get('/procurementbuyproduct-name', requireLogin, (req, res) => {
   const sku = req.query.sku;
   const query = `
     SELECT DISTINCT productname
@@ -6398,26 +5922,27 @@ app.get('/procurementbuyproduct-name', (req, res) => {
 });
 app.post('/procurementbuy', upload.single('file'), (req, res) => {
   const {
-      field1, field2, field3, field4, field5, field7, 
-      name, bank, bankname, bankacc, remarks, discount
+    field1, field2, field3, field4, field5, field7, 
+    name, bank, bankname, bankacc, remarks, discount, buydate
   } = req.body;
 
-  const buydate = new Date();
-
   pool.query('SELECT MAX(buyinvoice) AS maxBuyInvoice FROM procurementdatabase', (err, result) => {
-      if (err) {
-          console.error('Error fetching maximum buyinvoice:', err);
-          res.status(500).send('Error processing request');
-          return;
-      }
+    if (err) {
+      console.error('Error fetching maximum buyinvoice:', err);
+      res.status(500).send('Error processing request');
+      return;
+    }
 
-      const maxBuyInvoice = result[0].maxBuyInvoice;
-      let invoiceCounter = maxBuyInvoice ? parseInt(maxBuyInvoice.replace('PO', ''), 10) + 1 : 1;
-      const buyinvoice = `PO${invoiceCounter.toString().padStart(5, '0')}`;
+    const maxBuyInvoice = result[0].maxBuyInvoice;
+    let invoiceCounter = maxBuyInvoice ? parseInt(maxBuyInvoice.replace('PO', ''), 10) + 1 : 1;
+    const buyinvoice = `PO${invoiceCounter.toString().padStart(5, '0')}`;
 
-      const sql = 'INSERT INTO procurementdatabase (sku, productname, size, gender, buydate, buyinvoice, name, bank, bankname, bankacc, buyremarks, costprice, buyquantity) VALUES ?';
-      const values = field1.map((_, i) => [
-          field1[i],
+    const insertData = [];
+    field1.forEach((sku, i) => {
+      const quantity = parseInt(field5[i]);
+      for (let j = 0; j < quantity; j++) {
+        insertData.push([
+          sku,
           field2[i],
           field3[i],
           field7[i],
@@ -6429,26 +5954,44 @@ app.post('/procurementbuy', upload.single('file'), (req, res) => {
           bankacc,
           remarks,
           parseFloat(field4[i]),
-          parseInt(field5[i])
-      ]);
-
-      if (parseFloat(discount) > 0) {
-          values.push([null, 'Discount', null, null, buydate, buyinvoice, name, bank, bankname, bankacc, remarks, -parseFloat(discount), 1]);
+          1 // Quantity is always 1 for each row
+        ]);
       }
+    });
 
-      pool.query(sql, [values], (err, result) => {
-          if (err) {
-              console.error('Error inserting data:', err);
-              res.status(500).send('Error processing request');
-              return;
-          }
-          res.render('procurementbuy', { successMessage: 'Form submitted successfully' });
+    if (parseFloat(discount) > 0) {
+      insertData.push([null, 'Discount', null, null, buydate, buyinvoice, name, bank, bankname, bankacc, remarks, -parseFloat(discount), 1]);
+    }
+
+    const sql = 'INSERT INTO procurementdatabase (sku, productname, size, gender, buydate, buyinvoice, name, bank, bankname, bankacc, buyremarks, costprice, buyquantity) VALUES ?';
+
+    pool.query(sql, [insertData], (err, result) => {
+      if (err) {
+        console.error('Error inserting data:', err);
+        res.status(500).send('Error processing request');
+        return;
+      }
+      const sqlSelect = `
+      SELECT buyinvoice, sku, productname, size, costprice, SUM(buyquantity) as quantity, DATE_FORMAT(buydate, "%Y-%m-%d") AS formattedDate, name
+      FROM procurementdatabase
+      GROUP BY sku, size, costprice, productname, buyinvoice, formattedDate, name
+      ORDER BY buyinvoice DESC`;
+
+      pool.query(sqlSelect, (err, selectResult) => {
+        if (err) {
+          console.error('Error fetching updated data from the database:', err);
+          res.status(500).send('Error processing request');
+          return;
+        }
+        res.render('procurementbuy', { successMessage: 'Form submitted successfully', data: selectResult, });
       });
+    });
   });
 });
-app.get('/procurementbuy-payment', function(req, res) {
+
+app.get('/procurementbuy-payment', requireLogin, function(req, res) {
   const invoiceQuery = `
-    SELECT DATE_FORMAT(p.buydate, "%Y-%m-%d") AS formattedbuyDate, p.buyinvoice, SUM(p.costprice) AS totalAmount, IFNULL(b.totalPaid, 0) AS totalPaid,
+    SELECT DATE_FORMAT(p.buydate, "%Y-%m-%d") AS formattedbuyDate, p.buyinvoice, p.name, SUM(p.costprice) AS totalAmount, IFNULL(b.totalPaid, 0) AS totalPaid,
     CASE
       WHEN SUM(p.costprice) - IFNULL(b.totalPaid, 0) < 0 THEN 'Overpaid'
       WHEN SUM(p.costprice) - IFNULL(b.totalPaid, 0) > 0 THEN 'Need to Pay'
@@ -6460,7 +6003,7 @@ app.get('/procurementbuy-payment', function(req, res) {
       FROM procurementbuypaymentbreakdown
       GROUP BY buyinvoice
     ) AS b ON p.buyinvoice = b.buyinvoice
-    GROUP BY p.buyinvoice, b.totalPaid, p.buydate
+    GROUP BY p.buyinvoice, b.totalPaid, p.buydate, p.name
   `;
 
   const paymentBreakdownQuery = `
@@ -6518,7 +6061,7 @@ app.post('/procurementbuy-payment', upload.single('file'), urlencodedParser, fun
     }
   });
 });
-app.get('/procurementBuypayment_search', function(req, res) {
+app.get('/procurementBuypayment_search', requireLogin, function(req, res) {
   const invoiceNumber = req.query.invoice_number;
 
   const invoiceQuery = `
@@ -6535,7 +6078,7 @@ app.get('/procurementBuypayment_search', function(req, res) {
       GROUP BY buyinvoice
     ) AS b ON p.buyinvoice = b.buyinvoice
     WHERE p.buyinvoice = ?
-    GROUP BY p.buyinvoice, p.costprice, b.totalPaid, p.name
+    GROUP BY p.buyinvoice, b.totalPaid, p.name
   `;
 
   const paymentBreakdownQuery = `
@@ -6565,6 +6108,7 @@ app.get('/procurementBuypayment_search', function(req, res) {
         WHERE buyinvoice = ?
           AND productname = 'Discount'
       `;
+    
 
       pool.query(discountQuery, [invoiceNumber], function(error, discountResult, fields) {
         if (error) {
@@ -6591,10 +6135,23 @@ app.get('/procurementBuypayment_search', function(req, res) {
     });
   });
 });
-app.get('/procurementbuy-generate', function(req, res) {
-  res.render('procurementbuy-generate');
+app.get('/procurementbuy-generate', requireLogin, function(req, res) {
+  pool.query(`
+  SELECT buyinvoice, name, sku, productname, DATE_FORMAT(buydate, "%d/%m/%Y") AS formattedDate, SUM(buyquantity) AS totalQuantity, SUM(costprice) AS totalAmount
+  FROM procurementdatabase
+  WHERE sku IS NOT NULL AND sku != ""
+  GROUP BY buyinvoice, name, buydate, sku, productname
+  ORDER BY buyinvoice DESC`, function(error, results, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    } else {
+      const invoiceData = results;
+      res.render('procurementbuy-generate', { invoiceData });
+    }
+  });
 });
-app.get('/procurementbuygenerate', (req, res) => {
+app.get('/procurementbuygenerate', requireLogin, (req, res) => {
   const invoiceNumber = req.query.invoice_number;
 
   // Query the buy_record table
@@ -6612,7 +6169,7 @@ app.get('/procurementbuygenerate', (req, res) => {
       // Query the items_buy table with grouping by ProductName, SizeUS, and UnitPrice
       const itemsBuyQuery = `SELECT sku, productname, size, costprice, SUM(buyquantity) AS TotalQuantity
         FROM procurementdatabase
-        WHERE buyinvoice = '${invoiceNumber}' AND sku IS NOT NULL AND sku != ""
+        WHERE buyinvoice = '${invoiceNumber}' AND sku IS NOT NULL AND sku != "" AND name != "return"
         GROUP BY sku, productname, size, costprice`;
 
       pool.query(itemsBuyQuery, (error, itemsBuyResults) => {
@@ -6667,12 +6224,15 @@ app.get('/procurementbuygenerate', (req, res) => {
 });
 
 
-app.get('/procurementsales', function(req, res) {
+app.get('/procurementsales', requireLogin, function(req, res) {
   const startDate = req.query.start_date;
   const endDate = req.query.end_date;
 
+  // Query for fetching sales data
   let query = `
-    SELECT salesinvoice, sku, size, sellprice, productname, gender, costprice, salesdate FROM procurementdatabase WHERE sku IS NOT NULL AND sku <> ''
+    SELECT salesinvoice, sku, size, productname, gender, runnerfee, shippingfee, tracknum, sellprice, DATE_FORMAT(salesdate, "%Y-%m-%d") AS formattedDate
+    FROM procurementdatabase
+    WHERE salesinvoice != '' AND sku IS NOT NULL AND sku <> ''
   `;
 
   if (startDate && endDate) {
@@ -6680,140 +6240,786 @@ app.get('/procurementsales', function(req, res) {
   }
 
   query += `
-    GROUP BY salesinvoice, sku, size, sellprice, productname, gender, costprice, salesdate
+    GROUP BY salesinvoice, sku, size, sellprice, productname, gender, salesdate, shippingfee, tracknum, runnerfee
     ORDER BY salesinvoice DESC, CAST(size AS DECIMAL(10,2)) ASC
   `;
 
-  pool.query(query, function(error, results, fields) {
+  // Query for fetching buyers
+  const queryBuyers = 'SELECT * FROM buyerlist';
+
+  // First, fetch buyers
+  pool.query(queryBuyers, (err, buyers) => {
+      if (err) {
+          console.error('Error fetching buyers:', err);
+          return res.status(500).send('Error fetching buyers');
+      }
+
+      // Then, fetch sales data
+      pool.query(query, function(error, salesData) {
+        if (error) {
+          console.error(error);
+          return res.status(500).send('Error fetching sales data');
+        }
+
+        // Render the EJS template with both sales data and buyers
+        res.render('procurementsales', { salesData, buyers });
+      });
+  });
+});
+app.post('/addbuyer', urlencodedParser, (req, res) => {
+  const { name, phone, adr1, adr2, adr3, postcode, city, state, country } = req.body;
+  console.log(req.body)
+
+  const query = `INSERT INTO buyerlist (name, phone, adr1, adr2, adr3, postcode, city, state, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  // Assuming 'pool' is your MySQL connection pool
+  pool.query(query, [name, phone, adr1, adr2, adr3, postcode, city, state, country], (error, results) => {
+      if (error) {
+          console.error('Error adding buyer to database:', error);
+          return res.status(500).send('Error adding buyer to database');
+      }
+      res.redirect('/procurementsales');
+  });
+});
+app.get('/fetch-items', requireLogin, (req, res) => {
+  // Split the buyinvoice input into an array and trim whitespace
+  const buyInvoices = req.query.buyinvoices.split(',').map(invoice => invoice.trim());
+
+  // Construct the query with placeholders for parameterized query
+  const placeholders = buyInvoices.map(() => '?').join(',');
+  const query = `
+    SELECT buyinvoice, sku, productname, size, costprice, SUM(buyquantity) AS total_quantity
+    FROM procurementdatabase
+    WHERE sellto is null AND buyinvoice IN (${placeholders})
+    GROUP BY buyinvoice, sku, size, costprice, productname
+    ORDER BY buyinvoice, sku, size, costprice, productname;
+  `;
+
+  // Execute the query with buyInvoices array as parameters
+  pool.query(query, buyInvoices, (error, results) => {
+    if (error) {
+      console.error('Error fetching aggregated items:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+    res.json(results);
+  });
+});
+function queryAsync(query, params) {
+  return new Promise((resolve, reject) => {
+      pool.query(query, params, (error, results) => {
+          if (error) reject(error);
+          else resolve(results);
+      });
+  });
+}
+async function generateNewSalesInvoiceNumber() {
+  const results = await queryAsync('SELECT salesinvoice FROM procurementdatabase ORDER BY salesinvoice DESC LIMIT 1', []);
+  const lastInvoice = results[0]?.salesinvoice || '#000000';
+  const invoiceNumber = parseInt(lastInvoice.slice(1)) + 1;
+  return `#${invoiceNumber.toString().padStart(6, '0')}`;
+}
+app.post('/procurementsales', upload.single('file'), async (req, res) => {
+  const { buyerid, shippingfee, runnerfee, remarks, boxNames, boxItems, salesdate } = req.body;
+
+  try {
+      const buyerResults = await queryAsync('SELECT * FROM buyerlist WHERE id = ?', [buyerid]);
+      if (buyerResults.length === 0) {
+          return res.status(404).send('Buyer not found');
+      }
+      const buyerInfo = buyerResults[0];
+      const invoiceNumber = await generateNewSalesInvoiceNumber();
+
+      for (const [boxId, items] of Object.entries(boxItems)) {
+          const boxName = boxNames[boxId];
+
+          for (let i = 0; i < items.sku.length; i++) {
+              const itemDetails = extractItemDetails(items, i);
+              const totalQuantityInt = parseInt(itemDetails.total_quantity, 10);
+              const shippingFee = parseFloat(shippingfee);
+              const runnerFee = parseFloat(runnerfee);
+
+              const updateRowIds = await queryAsync(`
+                  SELECT id FROM procurementdatabase 
+                  WHERE buyinvoice = ? AND productname = ? AND sku = ? AND size = ? AND costprice = ?
+                  ORDER BY id ASC 
+                  LIMIT ?
+              `, [itemDetails.buyinvoice, itemDetails.productname, itemDetails.sku, itemDetails.size, itemDetails.costprice, totalQuantityInt]);
+
+              const idsToUpdate = updateRowIds.map(row => row.id);
+
+              if(idsToUpdate.length > 0) {
+                  await queryAsync(`
+                      UPDATE procurementdatabase 
+                      SET sellto = ?, phone = ?, adres1 = ?, adres2 = ?, adres3 = ?, postcode = ?, city = ?, state = ?, country = ?, shippingfee = ?, runnerfee = ?, tracknum = ?, salesremarks = ?, salesinvoice = ?, salesdate = ?, sellprice = ?
+                      WHERE id IN (?)
+                  `, [
+                      buyerInfo.name, buyerInfo.phone, buyerInfo.adr1, buyerInfo.adr2, buyerInfo.adr3, buyerInfo.postcode, buyerInfo.city, buyerInfo.state, buyerInfo.country, shippingFee, runnerFee, boxName, remarks, invoiceNumber, salesdate, itemDetails.costprice, idsToUpdate
+                  ]);
+              }
+          }
+      }
+
+      // After updates, fetch and render the updated sales data.
+      const updatedData = await queryAsync(`
+          SELECT salesinvoice, sku, productname, size, sellprice, SUM(buyquantity) as quantity
+          FROM procurementdatabase
+          WHERE salesinvoice = ?
+          GROUP BY sku, size, costprice, productname, salesinvoice, sellprice
+          ORDER BY salesinvoice DESC
+      `, [invoiceNumber]);
+
+      res.render('procurementsales-payment', {
+          successMessage: 'Form submitted successfully',
+          salesdata: updatedData
+      });
+  } catch (error) {
+      console.error('Error processing sales invoice:', error);
+      res.status(500).send('Error processing sales invoice');
+  }
+});
+function extractItemDetails(items, index) {
+  return {
+      buyinvoice: items.buyInvoice?.[index] || '', // Using optional chaining and providing default value
+      productname: items.productname?.[index] || '',
+      sku: items.sku?.[index] || '',
+      size: items.size?.[index] || '',
+      costprice: items.costprice?.[index] || '',
+      total_quantity: items.quantities?.[index] || ''
+  };
+}
+app.get('/procurementsales-payment', requireLogin, function(req, res) {
+  const invoiceQuery = `
+    SELECT 
+    DATE_FORMAT(p.salesdate, "%Y-%m-%d") AS formattedbuyDate, 
+    p.salesinvoice,
+    SUM(p.sellprice) + IFNULL(fees.runnerfee, 0) + IFNULL(fees.shippingfee, 0) AS totalAmount, 
+    IFNULL(b.totalPaid, 0) AS totalPaid, 
+    p.sellto, 
+    CASE
+        WHEN SUM(p.sellprice) + IFNULL(fees.runnerfee, 0) + IFNULL(fees.shippingfee, 0) - IFNULL(b.totalPaid, 0) < 0 THEN 'Overpaid'
+        WHEN SUM(p.sellprice) + IFNULL(fees.runnerfee, 0) + IFNULL(fees.shippingfee, 0) - IFNULL(b.totalPaid, 0) > 0 THEN 'Need to Pay'
+        ELSE 'Settled'
+    END AS status
+  FROM 
+    procurementdatabase AS p
+  LEFT JOIN (
+    SELECT 
+        salesinvoice, 
+        SUM(amount) AS totalPaid
+    FROM 
+        procurementsellpaymentbreakdown
+    GROUP BY 
+        salesinvoice
+  ) AS b ON p.salesinvoice = b.salesinvoice
+  LEFT JOIN (
+    SELECT 
+        salesinvoice, 
+        MAX(runnerfee) AS runnerfee, -- Assuming runnerfee and shippingfee are the same for all rows of the same salesinvoice
+        MAX(shippingfee) AS shippingfee
+    FROM 
+        procurementdatabase
+    GROUP BY 
+        salesinvoice
+  ) AS fees ON p.salesinvoice = fees.salesinvoice
+  GROUP BY 
+    p.salesinvoice, 
+    b.totalPaid, 
+    p.salesdate, 
+    p.sellto, 
+    fees.runnerfee, 
+    fees.shippingfee
+  `;
+
+  const paymentBreakdownQuery = `
+    SELECT *, DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate
+    FROM procurementsellpaymentbreakdown
+  `;
+
+  pool.query(invoiceQuery, function(error, invoiceResults, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error retrieving invoice data');
+      return;
+    }
+
+    pool.query(paymentBreakdownQuery, function(error, paymentBreakdownResults, fields) {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error retrieving payment breakdown data');
+        return;
+      }
+
+      const filteredInvoices = invoiceResults.filter((invoice) => {
+        return invoice.status === 'Overpaid' || invoice.status === 'Need to Pay';
+      });
+
+      res.render('procurementsales-payment', {
+        invoiceData: filteredInvoices,
+        paymentBreakdownData: paymentBreakdownResults
+      });
+    });
+  });
+});
+app.post('/procurementsales-payment', upload.single('file'), urlencodedParser, function(req, res) {
+
+  const invoiceQuery = `
+    SELECT 
+    DATE_FORMAT(p.salesdate, "%Y-%m-%d") AS formattedbuyDate, 
+    p.salesinvoice,
+    SUM(p.sellprice) + IFNULL(fees.runnerfee, 0) + IFNULL(fees.shippingfee, 0) AS totalAmount, 
+    IFNULL(b.totalPaid, 0) AS totalPaid, 
+    p.sellto, 
+    CASE
+        WHEN SUM(p.sellprice) + IFNULL(fees.runnerfee, 0) + IFNULL(fees.shippingfee, 0) - IFNULL(b.totalPaid, 0) < 0 THEN 'Overpaid'
+        WHEN SUM(p.sellprice) + IFNULL(fees.runnerfee, 0) + IFNULL(fees.shippingfee, 0) - IFNULL(b.totalPaid, 0) > 0 THEN 'Need to Pay'
+        ELSE 'Settled'
+    END AS status
+  FROM 
+    procurementdatabase AS p
+  LEFT JOIN (
+    SELECT 
+        salesinvoice, 
+        SUM(amount) AS totalPaid
+    FROM 
+        procurementsellpaymentbreakdown
+    GROUP BY 
+        salesinvoice
+  ) AS b ON p.salesinvoice = b.salesinvoice
+  LEFT JOIN (
+    SELECT 
+        salesinvoice, 
+        MAX(runnerfee) AS runnerfee, -- Assuming runnerfee and shippingfee are the same for all rows of the same salesinvoice
+        MAX(shippingfee) AS shippingfee
+    FROM 
+        procurementdatabase
+    GROUP BY 
+        salesinvoice
+  ) AS fees ON p.salesinvoice = fees.salesinvoice
+  GROUP BY 
+    p.salesinvoice, 
+    b.totalPaid, 
+    p.salesdate, 
+    p.sellto, 
+    p.sellprice, 
+    fees.runnerfee, 
+    fees.shippingfee
+  `;
+
+  const paymentBreakdownQuery = `
+    SELECT *, DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate
+    FROM procurementsellpaymentbreakdown
+  `;
+  
+  const { date, invoice_no, name, amount, remarks, bankref } = req.body;
+
+  // Get the filename from the request
+  const filename = req.file ? req.file.filename : 'N/A';
+
+  // Insert the form data into the procurementsellpaymentbreakdown table
+  pool.query('INSERT INTO procurementsellpaymentbreakdown (date, salesinvoice, name, amount, remarks, file, bankrefs) VALUES (?, ?, ?, ?, ?, ?, ?)', [date, invoice_no, name, amount, remarks, filename, bankref], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error saving form data');
+      return;
+    }
+
+    // After inserting data, retrieve updated invoice and payment breakdown data
+    // First, execute the invoiceQuery
+    pool.query(invoiceQuery, function(error, invoiceResults, fields) {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error retrieving invoice data');
+        return;
+      }
+
+      // Then, execute the paymentBreakdownQuery
+      pool.query(paymentBreakdownQuery, function(error, paymentBreakdownResults, fields) {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error retrieving payment breakdown data');
+          return;
+        }
+
+        // Filter invoices to include only 'Overpaid' or 'Need to Pay'
+        const filteredInvoices = invoiceResults.filter((invoice) => {
+          return invoice.status === 'Overpaid' || invoice.status === 'Need to Pay';
+        });
+
+        // Render the page with updated data
+        res.render('procurementsales-payment', {
+          successMessage: 'Form submitted successfully',
+          invoiceData: filteredInvoices,
+          paymentBreakdownData: paymentBreakdownResults
+        });
+      });
+    });
+  });
+});
+app.get('/procurementSalespayment_search', requireLogin, function(req, res) {
+  const invoiceNumber = req.query.invoice_number;
+
+  const invoiceQuery = `
+    SELECT 
+    DATE_FORMAT(p.salesdate, "%Y-%m-%d") AS formattedbuyDate, 
+    p.salesinvoice,
+    SUM(p.sellprice) + IFNULL(fees.runnerfee, 0) + IFNULL(fees.shippingfee, 0) AS totalAmount, 
+    IFNULL(b.totalPaid, 0) AS totalPaid, 
+    p.sellto, 
+    p.salesremarks,
+    CASE
+        WHEN SUM(p.sellprice) + IFNULL(fees.runnerfee, 0) + IFNULL(fees.shippingfee, 0) - IFNULL(b.totalPaid, 0) < 0 THEN 'Overpaid'
+        WHEN SUM(p.sellprice) + IFNULL(fees.runnerfee, 0) + IFNULL(fees.shippingfee, 0) - IFNULL(b.totalPaid, 0) > 0 THEN 'Need to Pay'
+        ELSE 'Settled'
+    END AS status
+    FROM 
+    procurementdatabase AS p
+    LEFT JOIN (
+        SELECT 
+            salesinvoice, 
+            SUM(amount) AS totalPaid
+        FROM 
+            procurementsellpaymentbreakdown
+        GROUP BY 
+            salesinvoice
+    ) AS b ON p.salesinvoice = b.salesinvoice
+    LEFT JOIN (
+        SELECT 
+            salesinvoice, 
+            MAX(runnerfee) AS runnerfee, 
+            MAX(shippingfee) AS shippingfee
+        FROM 
+            procurementdatabase
+        GROUP BY 
+            salesinvoice
+    ) AS fees ON p.salesinvoice = fees.salesinvoice
+    WHERE p.salesinvoice = ? -- Correct placement of WHERE clause
+    GROUP BY 
+    p.salesinvoice, 
+    b.totalPaid, 
+    p.salesdate, 
+    p.sellto, 
+    p.salesremarks,
+    fees.runnerfee, 
+    fees.shippingfee
+  `;
+
+  const paymentBreakdownQuery = `
+    SELECT *, DATE_FORMAT(date, "%Y-%m-%d") AS formattedDate
+    FROM procurementsellpaymentbreakdown
+    WHERE salesinvoice = ?
+  `;
+
+  pool.query(invoiceQuery, [invoiceNumber], function(error, invoiceResults, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error retrieving invoice data');
+      return;
+    }
+
+    pool.query(paymentBreakdownQuery, [invoiceNumber], function(error, paymentBreakdownResults, fields) {
+      if (error) {
+        console.error(error);
+        res.status(500).send('Error retrieving payment breakdown data');
+        return;
+      }
+  
+      const totalAmount = (invoiceResults.length > 0 ? invoiceResults[0].totalAmount : 0);
+      const totalPaid = invoiceResults.length > 0 ? invoiceResults[0].totalPaid : 0;
+      const balance = totalAmount - totalPaid;
+
+      res.render('procurementsalespayment-details', {
+        invoiceNumber: invoiceNumber,
+        sellrecordResults: invoiceResults,
+        paymentBreakdownData: paymentBreakdownResults,
+        totalAmount: totalAmount,
+        totalPaid: totalPaid,
+        balance: balance
+      });
+    });
+  });
+});
+app.get('/procurementrefund', requireLogin, function(req, res) {
+  const fromSupQuery = 'SELECT * FROM procurementrefund WHERE fromSupplier = ? ORDER BY date DESC';
+  const refund2BuyerQuery = 'SELECT * FROM procurementrefund WHERE refund2buyer = ? ORDER BY date DESC';
+  
+  const queries = [
+    { query: fromSupQuery, params: ['yes'], label: 'fromSupData' },
+    { query: refund2BuyerQuery, params: ['yes'], label: 'refund2BuyerData' }
+  ];
+
+  const promises = queries.map(q => new Promise((resolve, reject) => {
+    pool.query(q.query, q.params, function(error, results, fields) {
+      if (error) {
+        reject(error);
+      } else {
+        resolve({ label: q.label, data: results });
+      }
+    });
+  }));
+
+  Promise.all(promises)
+    .then(results => {
+      const data = results.reduce((acc, curr) => {
+        acc[curr.label] = curr.data.map(row => ({ ...row }));
+        return acc;
+      }, {});
+      res.render('procurementrefund', { data });
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    });
+});
+app.post('/prorefund2buyer', (req, res) => {
+  const { salesinvoice, amount, remarks, date, field1, field2, field3, field4, field5 } = req.body;
+  console.log(req.body);
+  console.log('Field 1:', field1);
+  console.log('Field 2:', field2);
+  console.log('Field 3:', field3);
+  console.log('Field 4:', field4);
+  console.log('Field 5:', field5);
+
+  // Define the database queries
+  const fromSupQuery = 'SELECT * FROM procurementrefund WHERE fromSupplier = ? ORDER BY date DESC';
+  const refund2BuyerQuery = 'SELECT * FROM procurementrefund WHERE refund2buyer = ? ORDER BY date DESC';
+  
+  const queries = [
+    { query: fromSupQuery, params: ['yes'], label: 'fromSupData' },
+    { query: refund2BuyerQuery, params: ['yes'], label: 'refund2BuyerData' }
+  ];
+
+  const promises = queries.map(q => new Promise((resolve, reject) => {
+    // Execute each query
+    pool.query(q.query, q.params, function(error, results, fields) {
+      if (error) {
+        reject(error);
+      } else {
+        resolve({ label: q.label, data: results });
+      }
+    });
+  }));
+
+  // Execute all queries in parallel
+  Promise.all(promises)
+    .then(results => {
+      // Insert the form data into MySQL
+      pool.query('INSERT INTO procurementrefund (invoice, amount, remarks, refund2buyer, date) VALUES (?, ?, ?, "yes", ?)', [salesinvoice, amount, remarks, date], (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error saving form data');
+        } else {
+          // Iterate over the arrays to update procurementdatabase
+          for (let i = 0; i < field1.length; i++) {
+            const sku = field1[i];
+            const productname = field2[i];
+            const size = field3[i];
+            const sellprice = field5[i];
+            
+            // Update procurementdatabase
+            pool.query('UPDATE procurementdatabase SET ship = "refund" WHERE sku = ? AND productname = ? AND size = ? AND sellprice = ?', [sku, productname, size, sellprice], (error, results, fields) => {
+              if (error) {
+                console.error(error);
+                res.status(500).send('Error updating procurementdatabase');
+              }
+            });
+          }
+          
+          // Redirect to procurementrefund page after updating
+          res.redirect('/procurementrefund');
+        }
+      });
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    });
+});
+app.post('/prorefund', (req, res) => {
+  const { buyinvoice, amount, remarks, date, field1, field2, field3, field4, field5 } = req.body;
+  console.log(req.body);
+
+  // Define the database queries
+  const fromSupQuery = 'SELECT * FROM procurementrefund WHERE fromSupplier = ? ORDER BY date DESC';
+  const refund2BuyerQuery = 'SELECT * FROM procurementrefund WHERE refund2buyer = ? ORDER BY date DESC';
+  
+  const queries = [
+    { query: fromSupQuery, params: ['yes'], label: 'fromSupData' },
+    { query: refund2BuyerQuery, params: ['yes'], label: 'refund2BuyerData' }
+  ];
+
+  const promises = queries.map(q => new Promise((resolve, reject) => {
+    // Execute each query
+    pool.query(q.query, q.params, function(error, results, fields) {
+      if (error) {
+        reject(error);
+      } else {
+        resolve({ label: q.label, data: results });
+      }
+    });
+  }));
+
+  // Execute all queries in parallel
+  Promise.all(promises)
+    .then(results => {
+      // Insert the form data into MySQL
+      pool.query('INSERT INTO procurementrefund (invoice, amount, remarks, refund2buyer, fromSupplier, date) VALUES (?, ?, ?, NULL, "yes", ?)', [buyinvoice, amount, remarks, date], (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error saving form data');
+        } else {
+          // Update procurementdatabase
+          for (let i = 0; i < field1.length; i++) {
+            const sku = field1[i];
+            const productname = field2[i];
+            const size = field3[i];
+            const quantity = field4[i];
+            const costprice = field5[i];
+            
+            // Update procurementdatabase for rows matching SKU, product name, size, and quantity
+            pool.query('UPDATE procurementdatabase SET name = "return" WHERE sku = ? AND productname = ? AND size = ? AND ship IS NULL AND costprice = ? LIMIT ?', [sku, productname, size, costprice, parseInt(quantity, 10)], (error, results, fields) => {
+              if (error) {
+                console.error(error);
+                res.status(500).send('Error updating procurementdatabase');
+              }
+            });
+          }
+          
+          // Redirect to the procurementrefund page after successful form submission
+          res.redirect('/procurementrefund');
+        }
+      });
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    });
+});
+app.get('/proreturned', requireLogin, function(req, res){
+  pool.query(`
+    SELECT SUM(buyquantity) AS totalQuantity, buyinvoice, size, sku, costprice, name, productname
+    FROM procurementdatabase
+    WHERE name = "return"
+    GROUP BY sku, size, costprice, buyinvoice, name, productname
+    ORDER BY buyinvoice DESC
+  `, function(error, results, fields) {
     if (error) {
       console.error(error);
       res.status(500).send('Error fetching data');
     } else {
+      // Add the formattedDate field to each row of data
       const data = results.map(row => ({ ...row }));
-      res.render('procurementsales', { data });
+      res.render('proreturned', { data });
     }
   });
 });
-app.post('/procurementsales', upload.single('file'), urlencodedParser, async function (req, res) {
-  console.log(req.body);
-
-  // Extract other form fields as needed
-  const { name, phone, adr1, adr2, adr3, postcode, city, state, country, runnerfee, shipfee, remarks, POnumber, field1 } = req.body;
-
-  // Initialize an array to store promises for database updates
-  const updatePromises = [];
-  // Handle the "boxData" that was sent from the client-side
-  const boxData = JSON.parse(req.body.boxData);
-
-  // Get the current date in 'YYYY-MM-DD' format in your local time zone
-  const currentDate = new Date();
-
-
-  // Process the box data here
-  for (const box of boxData) {
-      const boxNumber = box.boxNumber;
-      const trackingNumber = box.trackingNumber;
-      const items = box.items;
-
-      // Process each item in the box
-      for (const item of items) {
-          const sku = item.sku;
-          const unitPrice = item.unitPrice;
-          const quantity = parseInt(item.quantity);
-          const salesInvoice = req.body.salesinvoice;
-          const updatePromise = new Promise((resolve, reject) => {
-            // Update the database with SKU, POnumber, sellprice, and tracking number
-            pool.query(
-                'UPDATE procurementdatabase SET sellto = ?, phone = ?, adres1 = ?, adres2 = ?, adres3 = ?, postcode = ?, city = ?, state = ?, country = ?, salesremarks = ?, runnerfee = ?, shippingfee = ?, tracknum = ?, sellprice = ?, salesinvoice = ?, salesdate = ? WHERE buyinvoice = ? AND sku = ? LIMIT ?',
-                [name, phone, adr1, adr2, adr3, postcode, city, state, country, remarks, runnerfee, shipfee, trackingNumber, unitPrice, salesInvoice, currentDate, POnumber, sku, quantity],
-                (error, results, fields) => {
-                    if (error) {
-                        console.error(error);
-                        reject(error);
-                    } else {
-                        // Log the updated row in the database and its values
-                        console.log(`Updated row for SKU ${sku} in the database with the following values:`);
-                        console.log('Name:', name);
-                        console.log('Phone:', phone);
-                        // Add more log statements for other fields as needed
-
-                        resolve(results);
-                    }
-                }
-            );
-        });
-
-          updatePromises.push(updatePromise);
+app.get('/fetch-sales-invoice-data', requireLogin, (req, res) => {
+  const { salesinvoice } = req.query;
+  pool.query('SELECT sku, productname, size, buyquantity, sellprice FROM procurementdatabase WHERE salesinvoice = ?', [salesinvoice], (error, results) => {
+      if (error) {
+          console.error(error);
+          return res.status(500).json({ error: 'Internal Server Error' });
       }
-  }
-
-  // Wait for all database updates to complete
-  try {
-      await Promise.all(updatePromises);
-      res.render('procurementsales', { successMessage: 'Form submitted successfully' });
-  } catch (error) {
-      console.error(error);
-      res.status(500).send('Error updating data');
-  }
-});
-app.get('/get-sales-invoices', (req, res) => {
-  // Query the database to fetch unique salesinvoice values
-  pool.query('SELECT DISTINCT salesinvoice FROM procurementdatabase', (error, results, fields) => {
-    if (error) {
-      console.error('Error fetching sales invoices:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    } else {
-      // Extract sales invoices from the query results
-      const salesInvoices = results.map((row) => row.salesinvoice);
-
-      // Send the sales invoices as a JSON response
-      res.json(salesInvoices);
-    }
-  });
-});
-app.get('/suggestions', (req, res) => {
-  const query = req.query.query;
-  pool.query(
-    'SELECT DISTINCT buyinvoice FROM procurementdatabase WHERE buyinvoice LIKE ? ORDER BY buyinvoice ASC LIMIT 10',
-    [`%${query}%`],
-    (err, results, fields) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send('Server error');
-      }
-      // Now, results should already contain unique buyinvoice values, so we can map over them directly
-      const suggestions = results.map(row => row.buyinvoice);
-      res.json(suggestions);
-    }
-  );
-});
-app.get('/get-invoice-data', function(req, res) {
-  const invoiceNumber = req.query.invoice;
-
-  const query = 'SELECT * FROM procurementdatabase WHERE buyinvoice = ?';
-
-  pool.query(query, [invoiceNumber], function(error, results) {
-    if (error) {
-      console.error(error);
-      return res.status(500).send('Error fetching invoice data');
-    } else {
       res.json(results);
+  });
+});
+app.get('/fetch-purchase-invoice-data', requireLogin, (req, res) => {
+  const { buyinvoice } = req.query;
+  const query = `
+    SELECT sku, productname, size, costprice, COUNT(*) AS quantity
+    FROM procurementdatabase
+    WHERE buyinvoice = ?
+    GROUP BY sku, productname, size, costprice
+  `;
+  pool.query(query, [buyinvoice], (error, results) => {
+      if (error) {
+          console.error(error);
+          return res.status(500).json({ error: 'Internal Server Error' });
+      }
+      res.json(results);
+  });
+});
+app.get('/procurementsale-generate', requireLogin, function(req, res) {
+  pool.query(`
+  SELECT salesinvoice, sellto, sku, productname, DATE_FORMAT(salesdate, "%d/%m/%Y") AS formattedDate, SUM(buyquantity) AS totalQuantity, SUM(sellprice) AS totalAmount
+  FROM procurementdatabase
+  WHERE sku IS NOT NULL AND sku != "" AND salesinvoice != ""
+  GROUP BY salesinvoice, sellto, salesdate, sku, productname
+  ORDER BY salesinvoice DESC`, function(error, results, fields) {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error fetching data');
+    } else {
+      const invoiceData = results;
+      res.render('procurementsale-generate', { invoiceData });
     }
   });
 });
-app.get('/procurementsales-payment', function(req, res) {
-  res.render('procurementsales-payment');
+app.get('/procurementsalegenerate', requireLogin, (req, res) => {
+  const invoiceNumber = req.query.invoice_number;
+
+  // Query the buy_record table
+  const saleRecordQuery = `SELECT * FROM procurementdatabase WHERE salesinvoice = '${invoiceNumber}'`;
+  pool.query(saleRecordQuery, (error, saleRecordResults) => {
+    if (error) throw error;
+
+    if (!saleRecordResults.length) {
+      // Render the procurementbuy_template view with no buyRecordResults
+      res.render('procurementsale_template', {
+        saleRecordResults: null,
+        invoiceNumber: invoiceNumber
+      });
+    } else {
+      // Query the items_buy table with grouping by ProductName, SizeUS, and UnitPrice
+      const itemsSaleQuery = `SELECT sku, productname, size, sellprice, SUM(buyquantity) AS TotalQuantity
+        FROM procurementdatabase
+        WHERE salesinvoice = '${invoiceNumber}' AND sku IS NOT NULL AND sku != ""
+        GROUP BY sku, productname, size, sellprice`;
+
+      pool.query(itemsSaleQuery, (error, itemSaleResults) => {
+        if (error) throw error;
+
+        // Calculate the total amount
+        let totalAmount = 0;
+        for (let i = 0; i < itemSaleResults.length; i++) {
+          totalAmount += itemSaleResults[i].sellprice * itemSaleResults[i].TotalQuantity;
+        }
+
+        // Query the purchase_paymentbreakdown table
+        const salesPaymentQuery = `SELECT * FROM procurementsellpaymentbreakdown WHERE salesinvoice = '${invoiceNumber}'`;
+        pool.query(salesPaymentQuery, (error, salesPaymentResults) => {
+          if (error) throw error;
+
+          // Calculate the total amount paid
+          let totalAmountPaid = 0;
+          for (let i = 0; i < salesPaymentResults.length; i++) {
+            totalAmountPaid += parseFloat(salesPaymentResults[i].amount);
+          }
+
+          let shippingfee = saleRecordResults[0].shippingfee;
+          let runnerfee = saleRecordResults[0].runnerfee;
+
+            let totalAmounts = totalAmount + (saleRecordResults[0].runnerfee || 0) + (saleRecordResults[0].shippingfee || 0);
+
+            // Calculate the balance
+            const balance = totalAmounts - totalAmountPaid;
+
+            res.render('procurementsale_template', {
+              invoiceNumber: invoiceNumber,
+              saleRecordResults: saleRecordResults,
+              itemsSaleResults: itemSaleResults,
+              totalAmount: totalAmount,
+              transactions: salesPaymentResults,
+              balance: balance,
+              totalpaid: totalAmountPaid,
+              totalAmounts: totalAmounts,
+              shippingfee: shippingfee,
+              runnerfee: runnerfee
+          });
+        });
+      });
+    }
+  });
+});
+app.get('/procurementdataExport', requireLogin, function(req, res) {
+  // SQL query to select data from procurementdatabase
+  const sql = `SELECT * FROM procurementdatabase ORDER BY id`;
+
+  pool.query(sql, function(error, results) {
+    if (error) {
+      console.error('Error executing query:', error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    const csvData = results.map(row => ({
+      id: row.id,
+      sku: row.sku,
+      productname: row.productname,
+      size: row.size,
+      gender: row.gender,
+      buydate: row.buydate ? moment(row.buydate).format('YYYY-MM-DD') : null,
+      buyinvoice: row.buyinvoice,
+      name: row.name,
+      bank: row.bank,
+      bankname: row.bankname,
+      bankacc: row.bankacc,
+      buyremarks: row.buyremarks,
+      costprice: row.costprice,
+      buyquantity: row.buyquantity,
+      salesdate: row.salesdate ? moment(row.salesdate).format('YYYY-MM-DD') : null,
+      salesinvoice: row.salesinvoice,
+      sellto: row.sellto,
+      phone: row.phone,
+      adres1: row.adres1,
+      adres2: row.adres2,
+      adres3: row.adres3,
+      postcode: row.postcode,
+      city: row.city,
+      state: row.state,
+      country: row.country,
+      salesremarks: row.salesremarks,
+      sellprice: row.sellprice,
+      ship: row.ship,
+      runnerfee: row.runnerfee,
+      shippingfee: row.shippingfee,
+      tracknum: row.tracknum
+    }));
+
+    // Generate a timestamp for the file name
+    const timestamp = moment().format('YYYY-MM-DD_HH-mm-ss');
+    const fileName = `procurementdata_${timestamp}.csv`;
+
+    // Stream the CSV data to the HTTP response
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    fastCsv.write(csvData, { headers: true }).pipe(res);
+  });
+});
+app.post('/procurementdataImport', upload.single('file'), function (req, res) {
+  const { path: csvFilePath } = req.file;
+
+  fs.createReadStream(csvFilePath)
+    .pipe(csv())
+    .on('data', (data) => {
+
+      Object.keys(data).forEach(key => {
+        data[key] = data[key] === '' ? null : data[key];
+      });
+      // Assuming data contains all fields required by procurementdatabase
+      const { id, sku, productname, size, gender, buydate, buyinvoice, name, bank, bankname, bankacc, buyremarks, costprice, buyquantity, salesdate, salesinvoice, sellto, phone, adres1, adres2, adres3, postcode, city, state, country, salesremarks, sellprice, ship, runnerfee, shippingfee, tracknum } = data;
+
+      // Convert numerical strings to appropriate types, e.g., costprice to float
+      const parsedCostPrice = parseFloat(costprice.replace(/[^0-9.-]+/g,""));
+
+      // Insert into procurementdatabase table
+      pool.query('INSERT INTO procurementdatabase (id, sku, productname, size, gender, buydate, buyinvoice, name, bank, bankname, bankacc, buyremarks, costprice, buyquantity, salesdate, salesinvoice, sellto, phone, adres1, adres2, adres3, postcode, city, state, country, salesremarks, sellprice, ship, runnerfee, shippingfee, tracknum) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, sku, productname, size, gender, buydate, buyinvoice, name, bank, bankname, bankacc, buyremarks, parsedCostPrice, buyquantity, salesdate, salesinvoice, sellto, phone, adres1, adres2, adres3, postcode, city, state, country, salesremarks, sellprice, ship, runnerfee, shippingfee, tracknum], 
+        (error, results, fields) => {
+          if (error) {
+            console.error(error);
+          } else {
+            console.log(`Data successfully inserted for buyinvoice ${buyinvoice}`);
+          }
+        });
+    })
+    .on('end', () => {
+      console.log('CSV file successfully processed');
+      res.send('Data imported successfully');
+    });
 });
 
-
-
-
-
-
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  if (!res.headersSent) {
+    res.status(500);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send('Something broke!');
+  } else {
+    console.log("An error occurred, but the response was already sent.");
+  }
+});
 //----------------------Ending--------------------------------------------------------------------------------
 app.get('/profile/:name', requireLogin, function(req, res){
     res.render('profile', {person: req.params.name});
 });
-app.listen(5000, '0.0.0.0', () => {
-  console.log('Server running at http://192.168.0.100:5000/');
+app.listen(2000, '0.0.0.0', () => {
+  console.log('Server running on port 2000');
 });

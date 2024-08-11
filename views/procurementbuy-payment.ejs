@@ -38,11 +38,11 @@
                             <td><%= invoice.formattedbuyDate %></td>
                             <td><%= invoice.buyinvoice %></td>
                             <td><%= invoice.name %></td>
-                            <td><%= invoice.totalAmount %></td>
+                            <td><%= invoice.totalAmount.toFixed(2) %></td>
                             <td><%= invoice.totalPaid %></td>
                             <td><%= invoice.status %></td>
-                            <td><%= invoice.status === 'Overpaid' ? Math.abs(invoice.totalAmount - invoice.totalPaid) : 0 %></td>
-                            <td><%= invoice.status === 'Need to Pay' ? invoice.totalAmount - invoice.totalPaid : 0 %></td>
+                            <td><%= (invoice.status === 'Overpaid' ? Math.abs(invoice.totalAmount - invoice.totalPaid) : 0).toFixed(2) %></td>
+                            <td><%= (invoice.status === 'Need to Pay' ? invoice.totalAmount - invoice.totalPaid : 0).toFixed(2) %></td>
                         </tr>
                     <% }); %>
                 </tbody>

@@ -32,13 +32,16 @@
                   ...totalExpenses.map(row => ({ Date: row.Date, Category: 'Expenses', Debit: '', Credit: row.Amount })),
                   ...totalExpensesPaymentbreakdown.map(row => ({ Date: row.Date, Category: 'Expenses Payment Breakdown', Debit: '', Credit: row.Amount })),
                   ...refund.map(row => ({ Date: row.date, Category: 'Refund', Debit: row.fromSupplier === 'yes' ? row.amount : '', Credit: row.refund2buyer === 'yes' ? row.amount : '' })),
-                  ...totalDrawing.map(row => ({ Date: row.Date, Category: 'Drawing', Debit: row.amount, Credit: '' })),
+                  ...totalDrawing.map(row => ({ Date: row.Date, Category: 'Drawing', Debit: '', Credit: row.Amount })),
                   ...totalDeposit.map(row => ({ Date: row.date, Category: 'Deposit', Debit: '', Credit: row.amount })),
                   ...totalCapital.map(row => ({ Date: row.date, Category: 'Capital', Debit: row.amount, Credit: '' })),
                   ...totalCreditor.map(row => ({ Date: row.Date, Category: 'Other Creditor', Debit: row.Amount, Credit: '' })),
-                  ...totalCreditorpaymentbreak.map(row => ({ Date: row.date, Category: 'Other Creditor Paymentbreakdown', Debit: '', Credit: 'row.amount' })),
+                  ...totalCreditorpaymentbreak.map(row => ({ Date: row.date, Category: 'Other Creditor Paymentbreakdown', Debit: '', Credit: row.amount })),
                   ...totalDebtorpaymentbreak.map(row => ({ Date: row.date, Category: 'Other Debtor Paymentbreakdown', Debit: row.amount, Credit: '' })),
-                  ...totalDebtor.map(row => ({ Date: row.date, Category: 'Other Debtor', Debit: '', Credit: 'row.Amount' }))
+                  ...totalDebtor.map(row => ({ Date: row.date, Category: 'Other Debtor', Debit: '', Credit: 'row.Amount' })),
+                  ...procurementbuypaymentbreakdown.map(row => ({ Date: row.date, Category: 'procurementbuy paymentbreakdown', Debit: '', Credit: row.amount })),
+                  ...procurementsellpaymentbreakdown.map(row => ({ Date: row.date, Category: 'procurementsell paymentbreakdown', Debit: row.amount, Credit: '' })),
+                  ...prorefund.map(row => ({ Date: row.date, Category: 'Procurement Refund', Debit: row.fromsupplier === 'yes' ? row.amount : '', Credit: row.refund2buyer === 'yes' ? row.amount : '' }))
                 ];
               
                 const sortedRows = combinedRows.sort((a, b) => new Date(a.Date) - new Date(b.Date));

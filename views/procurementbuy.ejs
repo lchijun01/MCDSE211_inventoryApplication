@@ -51,7 +51,9 @@
                 <label  class="form_name" for="remarks">Remarks</label><br>
                 <textarea class="form_detail" type="text" name="remarks"></textarea><br>
                 <label class="form_name" style="margin-bottom: 3px;" for="discount">Discount</label>
-                <input class="form_id" style="margin-bottom: 3px;" type="number" name="discount" placeholder="how much!"><br><br>
+                <input class="form_id" style="margin-bottom: 3px;" type="number" name="discount" placeholder="how much!"><br>
+                <label class="form_name" style="margin-bottom: 3px;" for="buydate">Purchase Date</label>
+                <input class="form_id" style="margin-bottom: 3px;" type="date" name="buydate" required><br><br>
                 <div class="button">
                     <button class="form_button" type="submit">Submit</button>
                     <button class="form_button" type="reset">Clear</button>
@@ -162,7 +164,9 @@
             <table class="table table-striped" style="width: 90%;">
                 <thead>
                   <tr>
+                    <th>Date</th>
                     <th>Invoice</th>
+                    <th>Name</th>
                     <th>SKU</th>
                     <th>Product Name</th>
                     <th>Size</th>
@@ -173,12 +177,14 @@
                 <tbody>
                   <% data.forEach(item => { %>
                     <tr>
-                      <td><%= item.buyinvoice %></td>
-                      <td><%= item.sku %></td>
-                      <td><%= item.productname %></td>
-                      <td><%= item.size %></td>
-                      <td><%= item.costprice %></td>
-                      <td><%= item.quantity %></td>
+                        <td><%= item.formattedDate %></td>
+                        <td><%= item.buyinvoice %></td>
+                        <td><%= item.name %></td>
+                        <td><%= item.sku %></td>
+                        <td><%= item.productname %></td>
+                        <td><%= item.size %></td>
+                        <td><%= item.costprice %></td>
+                        <td><%= item.quantity %></td>
                     </tr>
                   <% }) %>
                 </tbody>

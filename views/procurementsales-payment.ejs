@@ -16,6 +16,38 @@
     <body class="main-contents">
         <%- include('partials/nav'); %>
         <main class="main-content">
+          <% if (invoiceData.length === 0) { %>
+            <p>All settle</p>
+        <% } else { %>
+            <table class="table table-striped" style="width: 90%;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Invoice</th>
+                    <th>Name</th>
+                    <th>Total Amount</th>
+                    <th>Total Paid</th>
+                    <th>Status</th>
+                    <th>Overpaid Amount</th>
+                    <th>Need to Pay Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% invoiceData.forEach(function(invoice) { %>
+                    <tr>
+                        <td><%= invoice.formattedbuyDate %></td>
+                        <td><%= invoice.salesinvoice %></td>
+                        <td><%= invoice.sellto %></td>
+                        <td><%= invoice.totalAmount.toFixed(2) %></td>
+                        <td><%= invoice.totalPaid %></td>
+                        <td><%= invoice.status %></td>
+                        <td><%= (invoice.status === 'Overpaid' ? Math.abs(invoice.totalAmount - invoice.totalPaid) : 0).toFixed(2) %></td>
+                        <td><%= (invoice.status === 'Need to Pay' ? invoice.totalAmount - invoice.totalPaid : 0).toFixed(2) %></td>
+                    </tr>
+                <% }); %>
+            </tbody>
+            </table>
+        <% } %>
             <div style="display: flex;justify-content: space-between;width: 80%;">
                 <h1>Procurement Sales - Payment Breakdown</h1>
                 <form action="/procurementSalespayment_search" method="get" class="d-flex mt-4">
@@ -43,6 +75,35 @@
                     <button class="form_button" type="reset">Clear</button>
                 </div>
             </form>
+            <br>
+            <% if (paymentBreakdownData.length === 0) { %>
+                <p>No payment breakdown data available.</p>
+            <% } else { %>
+            <table class="table table-striped" style="width: 90%;">
+                <thead>
+                    <tr>
+                    <th>Date</th>
+                    <th>Invoice</th>
+                    <th>name</th>
+                    <th>Amount</th>
+                    <th>Remarks</th>
+                    <th>Bank References</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <% paymentBreakdownData.forEach(function(payment) { %>
+                <tr>
+                    <td><%= payment.formattedDate %></td>
+                    <td><%= payment.salesinvoice %></td>
+                    <td><%= payment.name %></td>
+                    <td><%= payment.amount %></td>
+                    <td><%= payment.remarks %></td>
+                    <td><%= payment.bankrefs %></td>
+                </tr>
+                <% }); %>
+                </tbody>
+            </table>
+          <% } %>
         </main>
         <script>
             document.getElementById('procurementsales-form').addEventListener('submit', async (event) => {

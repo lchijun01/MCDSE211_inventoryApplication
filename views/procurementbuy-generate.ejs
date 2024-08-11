@@ -31,7 +31,17 @@
             </tr>
           </thead>
           <tbody>
-            
+            <% for (let i = 0; i < invoiceData.length; i++) { %>
+              <tr>
+                <td><%= invoiceData[i].buyinvoice %></td>
+                <td><%= invoiceData[i].name %></td>
+                <td><%= invoiceData[i].formattedDate %></td>
+                <td><%= invoiceData[i].sku %></td>
+                <td><%= invoiceData[i].productname %></td>
+                <td><%= invoiceData[i].totalQuantity %></td>
+                <td><%= invoiceData[i].totalAmount %></td>
+              </tr>
+            <% } %>
           </tbody>
         </table>
       </div>

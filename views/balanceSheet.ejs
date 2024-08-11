@@ -45,7 +45,7 @@
                       <tr>
                         <td>Office Equipment</td>
                         <td></td>
-                        <td style="text-align: end;"><%= (officeEquipment || 0.00) %></td>
+                        <td style="text-align: end;"><%= officeEquipment.toFixed(2) %></td>
                       </tr>
                       <tr>
                         <td>Accumulated Depreciation(-)</td>
@@ -61,7 +61,6 @@
                       </tr>
                   </tfoot>
               </table><br>
-              <a href="/yycurrentassets" target="_blank">SUBMIT Cash in Bank</a><br>
               <a href="/yydeposit" target="_blank">SUBMIT Deposit</a>
             </div>
           </div>
@@ -80,28 +79,23 @@
                       <tr>
                         <td>Closing Stock</td>
                         <td></td>
-                        <td style="text-align: end;"><%= (totalPurchases - totalCost).toFixed(2) %></td>
+                        <td style="text-align: end;"><%= closingstock.toFixed(2) %></td>
                       </tr>
                       <tr>
                         <td>Account Receivable</td>
                         <td></td>
-                        <td style="text-align: end;"><%= (totalSalesno2 - totalSalespaid).toFixed(2) %></td>
+                        <td style="text-align: end;"><%= accreceivable.toFixed(2) %></td>
                       </tr>
                       <tr>
                         <th>Cash in Bank</th>
                         <td></td>
                         <td></td>
                       </tr>
-                      <% let totalCashInBank = 0; %>
-                      <% assetsData.forEach(function(item) { %>
-                        <% totalCashInBank += item.amount; %>
-                        <tr>
-                          <td style="padding-left: 60px;"><%= item.bank %></td>
-                          <td style="text-align: end;"><%= item.amount %></td>
-                          <td style="text-align: end;color: rgb(204, 0, 255);"><%= bankledger.toFixed(2) %></td>
-                          <td>(submit cash in bank must match <a style="color: rgb(204, 0, 255);">bankledger</a>)</td>
-                        </tr>
-                      <% }); %>
+                      <tr>
+                        <td style="padding-left: 60px;">Hong Leong Bank</td>
+                        <td style="text-align: end;"></td>
+                        <td style="text-align: end;"><%= cashInbank.toFixed(2) %></td>
+                      </tr>
                       <tr>
                         <th>Cash in Other Acc</th>
                         <td></td>
@@ -109,26 +103,25 @@
                       </tr>
                       <tr>
                           <td style="padding-left: 60px;">GDEX</td>
-                          <td style="text-align: end;"><%= (totalTopup + bonus2 - totalgdex).toFixed(2) %></td>
-                          <td style="text-align: end;"><%= (totalTopup + bonus2 - totalgdex).toFixed(2) %></td>
+                          <td style="text-align: end;"><%= cashInotherACC.toFixed(2) %></td>
+                          <td style="text-align: end;"><%= cashInotherACC.toFixed(2) %></td>
                       </tr>
                       <tr>
                         <td>Other Debtor</td>
                         <td></td>
-                        <td style="text-align: end;"></td>
+                        <td style="text-align: end;"><%= totalotherdebtor.toFixed(2) %></td>
                       </tr>
                       <tr>
                           <td>Deposit</td>
                           <td style="text-align: end;"></td>
-                          <td style="text-align: end;"><%= (totaldeposit && totaldeposit !== 0 ? totaldeposit : 0).toFixed(2) %></td>
+                          <td style="text-align: end;"><%= totaldeposit.toFixed(2) %></td>
                       </tr>
                   </tbody>
                   <tfoot>
                       <tr>
                         <th></th>
                         <th style="text-align: end;">Total:</th>
-                        <th style="text-align: end;">RM <%= ((totalPurchases - totalCost) + (totalSalesno2 - totalSalespaid) +
-                           (totalTopup + bonus2 - totalgdex) + (totaldeposit && totaldeposit !== 0 ? totaldeposit : 0) + bankledger).toFixed(2) %></th>
+                        <th style="text-align: end;">RM <%= totalCurrestassets.toFixed(2) %></th>
                       </tr>
                   </tfoot>
               </table>
@@ -155,24 +148,24 @@
                     <tr>
                         <td>Account Payables</td>
                         <td></td>
-                        <td style="text-align: end;"><%= (totalPurchasesno2 - totalBuypaid).toFixed(2) %></td>
+                        <td style="text-align: end;"><%= accountpayable %></td>
                     </tr>
                     <tr>
                         <td>Other Creditor</td>
                         <td></td>
-                        <td style="text-align: end;"><%= (totalotcredit && totalotcredit !== 0 ? totalotcredit : 0).toFixed(2) %></td>
+                        <td style="text-align: end;"><%= totalcreditor.toFixed(2) %></td>
                     </tr>
                     <tr>
                         <td>Accruals</td>
                         <td></td>
-                        <td style="text-align: end;"><%= (totalaccrued && totalaccrued !== 0 ? totalaccrued : 0).toFixed(2) %></td>
+                        <td style="text-align: end;"><%= accruals.toFixed(2) %></td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr>
                       <td></td>
                       <th style="text-align: end;">Total:</th>
-                      <th style="text-align: end;">RM <%= (totalPurchasesno2 - totalBuypaid + (totalotcredit && totalotcredit !== 0 ? totalotcredit : 0) + (totalaccrued && totalaccrued !== 0 ? totalaccrued : 0)).toFixed(2) %></th>
+                      <th style="text-align: end;">RM <%= currentLiabi.toFixed(2) %></th>
                     </tr>
                 </tfoot>
               </table>
@@ -192,45 +185,17 @@
                 <tbody>
                     <tr>
                       <td>CAPITAL ACCOUNT</td>
-                      <td style="text-align: end;"><%= totalcapital %></td>
+                      <td style="text-align: end;"><%= totalcapital.toFixed(2) %></td>
                     </tr>
                     <tr>
                       <td>Retained Profit</td>
-                      <td style="text-align: end;"><%= ((((((((totalSales && totalSales !== 0 ? totalSales : 0) + (totalSalesno && totalSalesno !== 0 ? totalSalesno : 0)
-                        - (totalSales && totalSales !== 0 ? totalSales : 0) + (bonus && bonus !== 0 ? bonus : 0)) - (refundsales && refundsales !== 0 ? refundsales : 0)) - 
-                       (((totalPurchasesLastyear && totalPurchasesLastyear !== 0 ? totalPurchasesLastyear : 0) - (totalCostLastyear && totalCostLastyear !== 0 ? totalCostLastyear : 0))
-                        + (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0) + (totalship && totalship !== 0 ? totalship : 0) - 
-                       ((totalPurchases && totalPurchases !== 0 ? totalPurchases : 0) - (totalCost && totalCost !== 0 ? totalCost : 0)) - 
-                       (supRefunds && supRefunds !== 0 ? supRefunds : 0) + ((totalPurchasesno && totalPurchasesno !== 0 ? totalPurchasesno : 0) - 
-                       (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0))))-(totalExpenses && totalExpenses !== 0 ? totalExpenses : 0)) + 
-                       (totalc2p && totalc2p !== 0 ? totalc2p : 0) - (totalp2c && totalp2c !== 0 ? totalp2c : 0)))+(((((((bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bftotalSalesno && bftotalSalesno !== 0 ? bftotalSalesno : 0)
-                       - (bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bfbonus && bfbonus !== 0 ? bfbonus : 0)) - (bfrefundsales && bfrefundsales !== 0 ? bfrefundsales : 0)) - 
-                      (((bftotalPurchasesLastyear && bftotalPurchasesLastyear !== 0 ? bftotalPurchasesLastyear : 0) - (bftotalCostLastyear && bftotalCostLastyear !== 0 ? bftotalCostLastyear : 0))
-                       + (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0) + (bftotalship && bftotalship !== 0 ? bftotalship : 0) - 
-                      ((bftotalPurchases && bftotalPurchases !== 0 ? bftotalPurchases : 0) - (bftotalCost && bftotalCost !== 0 ? bftotalCost : 0)) - 
-                      (bfsupRefunds && bfsupRefunds !== 0 ? bfsupRefunds : 0) + ((bftotalPurchasesno && bftotalPurchasesno !== 0 ? bftotalPurchasesno : 0) - 
-                      (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0))))-(bftotalExpenses && bftotalExpenses !== 0 ? bftotalExpenses : 0)) + 
-                      (bftotalc2p && bftotalc2p !== 0 ? bftotalc2p : 0) - (bftotalp2c && bftotalp2c !== 0 ? bftotalp2c : 0)))).toFixed(2) %></td>
+                      <td style="text-align: end;"><%= retainedCF.toFixed(2) %></td>
                     </tr>
                   </tbody>
                   <tfoot>
                       <tr>
                         <th style="text-align: end;">Total:</th>
-                        <th style="text-align: end;">RM <%= (((((((((totalSales && totalSales !== 0 ? totalSales : 0) + (totalSalesno && totalSalesno !== 0 ? totalSalesno : 0)
-                          - (totalSales && totalSales !== 0 ? totalSales : 0) + (bonus && bonus !== 0 ? bonus : 0)) - (refundsales && refundsales !== 0 ? refundsales : 0)) - 
-                         (((totalPurchasesLastyear && totalPurchasesLastyear !== 0 ? totalPurchasesLastyear : 0) - (totalCostLastyear && totalCostLastyear !== 0 ? totalCostLastyear : 0))
-                          + (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0) + (totalship && totalship !== 0 ? totalship : 0) - 
-                         ((totalPurchases && totalPurchases !== 0 ? totalPurchases : 0) - (totalCost && totalCost !== 0 ? totalCost : 0)) - 
-                         (supRefunds && supRefunds !== 0 ? supRefunds : 0) + ((totalPurchasesno && totalPurchasesno !== 0 ? totalPurchasesno : 0) - 
-                         (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0))))-(totalExpenses && totalExpenses !== 0 ? totalExpenses : 0)) + 
-                         (totalc2p && totalc2p !== 0 ? totalc2p : 0) - (totalp2c && totalp2c !== 0 ? totalp2c : 0)))+(((((((bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bftotalSalesno && bftotalSalesno !== 0 ? bftotalSalesno : 0)
-                         - (bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bfbonus && bfbonus !== 0 ? bfbonus : 0)) - (bfrefundsales && bfrefundsales !== 0 ? bfrefundsales : 0)) - 
-                        (((bftotalPurchasesLastyear && bftotalPurchasesLastyear !== 0 ? bftotalPurchasesLastyear : 0) - (bftotalCostLastyear && bftotalCostLastyear !== 0 ? bftotalCostLastyear : 0))
-                         + (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0) + (bftotalship && bftotalship !== 0 ? bftotalship : 0) - 
-                        ((bftotalPurchases && bftotalPurchases !== 0 ? bftotalPurchases : 0) - (bftotalCost && bftotalCost !== 0 ? bftotalCost : 0)) - 
-                        (bfsupRefunds && bfsupRefunds !== 0 ? bfsupRefunds : 0) + ((bftotalPurchasesno && bftotalPurchasesno !== 0 ? bftotalPurchasesno : 0) - 
-                        (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0))))-(bftotalExpenses && bftotalExpenses !== 0 ? bftotalExpenses : 0)) + 
-                        (bftotalc2p && bftotalc2p !== 0 ? bftotalc2p : 0) - (bftotalp2c && bftotalp2c !== 0 ? bftotalp2c : 0)))) + totalcapital).toFixed(2) %></th>
+                        <th style="text-align: end;">RM <%= (totalcapital + retainedCF).toFixed(2) %></th>
 
                       </tr>
                   </tfoot>
@@ -251,45 +216,17 @@
               <tbody>
                 <tr>
                   <th>Liabilities</th>
-                  <td style="text-align: end;"><%= (totalPurchasesno2 - totalBuypaid + (totalotcredit && totalotcredit !== 0 ? totalotcredit : 0) + (totalaccrued && totalaccrued !== 0 ? totalaccrued : 0)).toFixed(2) %></td>
+                  <td style="text-align: end;"><%= currentLiabi.toFixed(2) %></td>
                 </tr>
                 <tr>
                   <th>Equity</th>
-                  <td style="text-align: end;"><%= (((((((((totalSales && totalSales !== 0 ? totalSales : 0) + (totalSalesno && totalSalesno !== 0 ? totalSalesno : 0)
-                    - (totalSales && totalSales !== 0 ? totalSales : 0) + (bonus && bonus !== 0 ? bonus : 0)) - (refundsales && refundsales !== 0 ? refundsales : 0)) - 
-                   (((totalPurchasesLastyear && totalPurchasesLastyear !== 0 ? totalPurchasesLastyear : 0) - (totalCostLastyear && totalCostLastyear !== 0 ? totalCostLastyear : 0))
-                    + (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0) + (totalship && totalship !== 0 ? totalship : 0) - 
-                   ((totalPurchases && totalPurchases !== 0 ? totalPurchases : 0) - (totalCost && totalCost !== 0 ? totalCost : 0)) - 
-                   (supRefunds && supRefunds !== 0 ? supRefunds : 0) + ((totalPurchasesno && totalPurchasesno !== 0 ? totalPurchasesno : 0) - 
-                   (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0))))-(totalExpenses && totalExpenses !== 0 ? totalExpenses : 0)) + 
-                   (totalc2p && totalc2p !== 0 ? totalc2p : 0) - (totalp2c && totalp2c !== 0 ? totalp2c : 0)))+(((((((bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bftotalSalesno && bftotalSalesno !== 0 ? bftotalSalesno : 0)
-                   - (bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bfbonus && bfbonus !== 0 ? bfbonus : 0)) - (bfrefundsales && bfrefundsales !== 0 ? bfrefundsales : 0)) - 
-                  (((bftotalPurchasesLastyear && bftotalPurchasesLastyear !== 0 ? bftotalPurchasesLastyear : 0) - (bftotalCostLastyear && bftotalCostLastyear !== 0 ? bftotalCostLastyear : 0))
-                   + (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0) + (bftotalship && bftotalship !== 0 ? bftotalship : 0) - 
-                  ((bftotalPurchases && bftotalPurchases !== 0 ? bftotalPurchases : 0) - (bftotalCost && bftotalCost !== 0 ? bftotalCost : 0)) - 
-                  (bfsupRefunds && bfsupRefunds !== 0 ? bfsupRefunds : 0) + ((bftotalPurchasesno && bftotalPurchasesno !== 0 ? bftotalPurchasesno : 0) - 
-                  (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0))))-(bftotalExpenses && bftotalExpenses !== 0 ? bftotalExpenses : 0)) + 
-                  (bftotalc2p && bftotalc2p !== 0 ? bftotalc2p : 0) - (bftotalp2c && bftotalp2c !== 0 ? bftotalp2c : 0)))) + totalcapital).toFixed(2) %></td>
+                  <td style="text-align: end;"><%= (totalcapital + retainedCF).toFixed(2) %></td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
                   <th style="text-align: end;">Total:</th>
-                  <th style="text-align: end;"><%= ((totalPurchasesno2 - totalBuypaid + (totalotcredit && totalotcredit !== 0 ? totalotcredit : 0) + (totalaccrued && totalaccrued !== 0 ? totalaccrued : 0))+(((((((((totalSales && totalSales !== 0 ? totalSales : 0) + (totalSalesno && totalSalesno !== 0 ? totalSalesno : 0)
-                    - (totalSales && totalSales !== 0 ? totalSales : 0) + (bonus && bonus !== 0 ? bonus : 0)) - (refundsales && refundsales !== 0 ? refundsales : 0)) - 
-                   (((totalPurchasesLastyear && totalPurchasesLastyear !== 0 ? totalPurchasesLastyear : 0) - (totalCostLastyear && totalCostLastyear !== 0 ? totalCostLastyear : 0))
-                    + (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0) + (totalship && totalship !== 0 ? totalship : 0) - 
-                   ((totalPurchases && totalPurchases !== 0 ? totalPurchases : 0) - (totalCost && totalCost !== 0 ? totalCost : 0)) - 
-                   (supRefunds && supRefunds !== 0 ? supRefunds : 0) + ((totalPurchasesno && totalPurchasesno !== 0 ? totalPurchasesno : 0) - 
-                   (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0))))-(totalExpenses && totalExpenses !== 0 ? totalExpenses : 0)) + 
-                   (totalc2p && totalc2p !== 0 ? totalc2p : 0) - (totalp2c && totalp2c !== 0 ? totalp2c : 0)))+(((((((bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bftotalSalesno && bftotalSalesno !== 0 ? bftotalSalesno : 0)
-                   - (bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bfbonus && bfbonus !== 0 ? bfbonus : 0)) - (bfrefundsales && bfrefundsales !== 0 ? bfrefundsales : 0)) - 
-                  (((bftotalPurchasesLastyear && bftotalPurchasesLastyear !== 0 ? bftotalPurchasesLastyear : 0) - (bftotalCostLastyear && bftotalCostLastyear !== 0 ? bftotalCostLastyear : 0))
-                   + (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0) + (bftotalship && bftotalship !== 0 ? bftotalship : 0) - 
-                  ((bftotalPurchases && bftotalPurchases !== 0 ? bftotalPurchases : 0) - (bftotalCost && bftotalCost !== 0 ? bftotalCost : 0)) - 
-                  (bfsupRefunds && bfsupRefunds !== 0 ? bfsupRefunds : 0) + ((bftotalPurchasesno && bftotalPurchasesno !== 0 ? bftotalPurchasesno : 0) - 
-                  (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0))))-(bftotalExpenses && bftotalExpenses !== 0 ? bftotalExpenses : 0)) + 
-                  (bftotalc2p && bftotalc2p !== 0 ? bftotalc2p : 0) - (bftotalp2c && bftotalp2c !== 0 ? bftotalp2c : 0)))) + totalcapital)).toFixed(2) %></th>
+                  <th style="text-align: end;">RM <%= (currentLiabi + totalcapital + retainedCF).toFixed(2) %></th>
                 </tr>
               </tfoot>
             </table>
