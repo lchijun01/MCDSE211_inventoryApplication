@@ -84,9 +84,6 @@
   padding-top: 10px;
 }
 
-.container{
-  display: flex;
-}
 .leftside-container{
   padding-right: 50px;
   display: flex;
@@ -126,4 +123,9 @@
 
 .form_name5{
   width:130px;
+}
+
+.form-check-input {
+  transform: scale(1.5);
+  margin: 5px;
 }

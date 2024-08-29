@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <link href="style.css" type="text/css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Home-Profit&Loss</title>
+  </head>
+    <body class="main-contents">
+      <%- include('partials/nav');%>
+      <main class="main-content">
+        <form method="get">
+          <label for="year">Select Year:</label>
+          <select id="year" name="year">
+            <% years.forEach(year => { %>
+              <option value="<%= year.year %>" <%= year.year === selectedYear ? 'selected' : '' %>><%= year.year %></option>
+            <% }) %>
+          </select>
+          <button type="submit">Filter</button>
+        </form>
+        
+        <% if (selectedYear) { %>
+          <h1 style="font-weight: bold;font-size: 70px;">Yong & Yi Partners Enterprise <%= selectedYear %></h1>
+        <% } else { %>
+          <h1 style="font-weight: bold;font-size: 70px;">Yong & Yi Partners Enterprise</h1>
+        <% } %>
+        <div>
+          <h1>Revenue</h1>
+          <table class="table table-striped" style="width: auto;">
+            <thead>
+              <tr>
+                <th></th>
+                <th style="text-align: end;">Amount (RM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Sales</td>
+                <td style="text-align: end;">RM<%= (totalSales - 0.00).toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Sales - Procurement</td>
+                <td style="text-align: end;">RM<%= (totalproSales - 0.00).toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Other Income</td>
+                <td style="text-align: end;">RM<%= otherincomebonuscredit.toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Refund Outwards(-)</td>
+                <td style="text-align: end;">RM<%= (totalrefund_out - 0.00).toFixed(2) %></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th style="text-align: end;">Total:</th>
+                <th style="text-align: end;">
+                  RM <%= revenue.toFixed(2) %>
+                </th>
+              </tr>
+            </tfoot>
+            
+          </table>
+        </div>
+        <br>
+        <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div>
+        <br>
+        <div>
+          <h1>Cost of Goods Sold</h1>
+          <table class="table table-striped" style="width: 30%;">
+            <thead>
+              <tr>
+                <th></th>
+                <th style="text-align: end;">Amount (RM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Opening Stock</td>
+                <td style="text-align: end;"><%= openStock.toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Purchase</td>
+                <td style="text-align: end;"><%= totalPurchase %></td>
+              </tr>
+              <tr>
+                <td>Purchase - Procurement</td>
+                <td style="text-align: end;"><%= totalPurchasepro %></td>
+              </tr>
+              <tr>
+                <td>Postage & Courier</td>
+                <td style="text-align: end;"><%= PostageCourier %></td>
+              </tr>
+              <tr>
+                <th>Credit Note(-)</th>
+                <td style="text-align: end;"></td>
+              </tr>
+              <% if (courierData && typeof courierData === 'string') { %>
+                <% courierData.split(',').forEach(entry => { %>
+                  <% const [courier, amountStr] = entry.split(':'); %>
+                  <% const amount = parseFloat(amountStr); %>
+                  <tr>
+                    <td style="padding-left: 50px;"><%= courier %></td>
+                    <td style="text-align: end;"><%= amount.toFixed(2) %></td>
+                  </tr>
+                <% }); %>
+              <% } %>
+              <tr>
+                <td>Closing Stock(-)</td>
+                <td style="text-align: end;"><%= closeStock.toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Return Inwards(-)</td>
+                <td style="text-align: end;"><%= totalrefund_in %></td>
+              </tr>
+              <tr>
+                <td>Purchases Discounts(-)</td>
+                <td style="text-align: end;"><%= totalDiscount.toFixed(2) %></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th style="text-align: end;">Total:</th>
+                <th style="text-align: end;">RM <%= COGS.toFixed(2) %></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <br>
+        <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div>
+        <br>
+        <div>
+          <h1>Gross Profit ( LOSS )</h1>
+          <table class="table table-striped" style="width: 30%;">
+            <thead>
+              <tr>
+                <th></th>
+                <th style="text-align: end;">Amount (RM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Revenue</td>
+                <td style="text-align: end;"><%= revenue.toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Cost of Goods Sold(-)</td>
+                <td style="text-align: end;"><%= COGS.toFixed(2) %></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th style="text-align: end;">Total:</th>
+                <th style="text-align: end;">RM <%= grossProfit.toFixed(2) %></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <br>
+        <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div>
+        <br>
+        <div>
+          <h1>Expenditure</h1>
+          <table class="table table-striped" style="width: 30%;">
+            <thead>
+              <tr>
+                <th></th>
+                <th style="text-align: end;">Amount (RM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Category</th>
+                <td style="text-align: end;"></td>
+              </tr>
+              <% if (categoryData && typeof categoryData === 'string') { %>
+                <% categoryData.split(',').forEach(entry => { %>
+                  <% const [category, amountStr] = entry.split(':'); %>
+                  <% const amount = parseFloat(amountStr); %>
+                  <tr>
+                    <td style="padding-left: 50px;"><%= category %></td>
+                    <td style="text-align: end;"><%= amount.toFixed(2) %></td>
+                  </tr>
+                <% }); %>
+              <% } %>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th style="text-align: end;">Total:</th>
+                <th style="text-align: end;">RM <%= totalotherExpenses %></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <br>
+        <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div>
+        <br>
+        <div>
+          <h1>Nett Profit & LOSS</h1>
+          <table class="table table-striped" style="width: 30%;">
+            <thead>
+              <tr>
+                <th></th>
+                <th style="text-align: end;">Amount (RM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Gross Profit</td>
+                <td style="text-align: end;"><%= grossProfit.toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Expenditure(-)</td>
+                <td style="text-align: end;"><%= totalotherExpenses %></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th style="text-align: end;">Total Nett Profit:</th>
+                <th style="text-align: end;">RM <%= nettProfit.toFixed(2) %></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <br>
+        <div style="width: 90%; border-bottom: 1px solid rgb(0, 0, 0);"></div>
+        <br>
+        <div>
+          <h1>Retained Profit&Loss C/F</h1>
+          <table class="table table-striped" style="width: 30%;">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th style="text-align: end;">Amount (RM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Nett Profit</td>
+                <td style="text-align: end;"><%= nettProfit.toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Retained Profit B/F</td>
+                <td style="text-align: end;"><%= retainedBF.toFixed(2) %></td>
+              </tr>
+              <tr>
+                <td>Distribution to Owners(-)</td>
+                <td style="text-align: end;"><%= distribution2Owners.toFixed(2) %></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th style="text-align: end;">Total:</th>
+                <th style="text-align: end;">RM <%= (nettProfit + retainedBF - distribution2Owners).toFixed(2) %></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <br>
+      </main>
+    </body>  
+</html>

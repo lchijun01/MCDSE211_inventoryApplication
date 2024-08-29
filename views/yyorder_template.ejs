@@ -15,14 +15,14 @@
 </head>
 <body class="main-contents" style="background-color: black;">
     <%
-const timestamp = buyRecordResults[0].timestamp;
-const newTimestamp = new Date(timestamp);
-newTimestamp.setDate(newTimestamp.getDate() + 30);
-const day = newTimestamp.getDate().toString().padStart(2, '0');
-const month = (newTimestamp.getMonth() + 1).toString().padStart(2, '0');
-const year = newTimestamp.getFullYear().toString().slice(-2);
-const formattedNewTimestamp = `${day}/${month}/${year}`;
-%>
+    const timestamp = buyRecordResults[0].timestamp;
+    const newTimestamp = new Date(timestamp);
+    newTimestamp.setDate(newTimestamp.getDate() + 30);
+    const day = newTimestamp.getDate().toString().padStart(2, '0');
+    const month = (newTimestamp.getMonth() + 1).toString().padStart(2, '0');
+    const year = newTimestamp.getFullYear().toString().slice(-2);
+    const formattedNewTimestamp = `${day}/${month}/${year}`;
+    %>
     <%- include('partials/nav');%>
     <main class="main-content" style="display: flex;">
       <div id="printable-content" style="width:22.5cm ;height: 35.7cm;background-color: white;padding: 1.016cm;">
@@ -82,23 +82,29 @@ const formattedNewTimestamp = `${day}/${month}/${year}`;
               <thead>
                 <tr>
                   <th id="h1" style="width: 60px;color:darkblue">No #</th>
-                  <th style="width: 360px;text-align: center;color:darkblue">Description</th>
+                  <th style="width: 480px;text-align: center;color:darkblue">Description</th>
+                  <th style="width: 80px;text-align: center;color:darkblue">SizeUS</th>
                   <th style="width: 80px;text-align: center;color:darkblue">Qty</th>
-                  <th style="width: 140px;text-align: center;color:darkblue">Unit Price</th>
-                  <th style="width: 140px;text-align: center;color:darkblue">Total Price</th>
+                  <th style="width: 120px;text-align: center;color:darkblue">Unit Price</th>
+                  <th style="width: 120px;text-align: center;color:darkblue">Total Price</th>
                 </tr>
               </thead>
               <tbody>
+                <% let total = 0 %>
                 <% let counter = 1; %>
                 <% for (let i = 0; i < itemsBuyResults.length; i++) { %>
+                <% if (itemsBuyResults[i].ProductName !== 'Discount') { %>
                 <tr>
-                <td style="font-weight: bold;padding-left: 10px;"><%= counter %>.</td>
-                <td><%= itemsBuyResults[i].Content_SKU %><a style="margin-left:15px ;"></a><%= itemsBuyResults[i].ProductName %></td>
-                <td style="text-align: center;"><%= itemsBuyResults[i].Quantity %></td>
-                <td style="text-align: center;">RM <%= itemsBuyResults[i].UnitPrice %></td>
-                <td style="text-align: center;">RM <%= itemsBuyResults[i].Amount %></td>
+                  <td style="font-weight: bold;padding-left: 10px;"><%= counter %>.</td>
+                  <td style="font-weight: bold;"><%= itemsBuyResults[i].Content_SKU %><span style="margin-left:15px;font-size: 14px;"><%= itemsBuyResults[i].ProductName %></span></td>
+                  <td style="text-align: center;"><%= itemsBuyResults[i].SizeUS %></td>
+                  <td style="text-align: center;"><%= itemsBuyResults[i].TotalQuantity %></td>
+                  <td style="text-align: center;"><%= itemsBuyResults[i].UnitPrice.toFixed(2) %></td>
+                  <% total = itemsBuyResults[i].TotalQuantity * itemsBuyResults[i].UnitPrice %>
+                  <td style="text-align: center;"><%= total.toFixed(2) %></td>
                 </tr>
                 <% counter++ %>
+                <% } %>
                 <% } %>
               </tbody>
             </table>
@@ -111,33 +117,36 @@ const formattedNewTimestamp = `${day}/${month}/${year}`;
                 <thead>
                   <tr>
                     <th style="width: 130px;text-align: right;font-weight: 500;">Subtotal</th>
-                    <td style="width: 200px;text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount %></td>
+                    <td style="width: 200px;text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount.toFixed(2) %></td>
                   </tr>
                   <tr>
                     <th style="width: 300px;text-align: right;font-weight: 500;">Shipping & handling</th>
                     <td style="text-align: right;font-weight: bold;padding-right: 10px;">-</td>
                   </tr>
                   <tr>
-                    <th style="width: 130px;text-align: right;font-weight: 500;">VAT</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">-</td>
+                    <th style="width: 130px;text-align: right;font-weight: 500;">Discount</th>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">-RM <%= Math.abs(discountAmount).toFixed(2) %></td>
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;font-weight: 500;">Total</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmount %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalAmounts.toFixed(2) %></td>
                   </tr>
                   <tr>
                     <th style="width: 130px;text-align: right;">Amount Paid</th>
                     <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= totalpaid %></td>
                   </tr>
-                  <% if (balance < 0) { %>
+                  <% if (balance < 0 && balance.toFixed(2) !== '0.00') { %>
+                    <tr>
+                    </tr>
+                  <% } else if (balance < 0) { %>
                   <tr>
                     <th style="width: 130px;text-align: right;">Over Paid</th>
-                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= Math.abs(balance) %></td>
+                    <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= Math.abs(balance).toFixed(2) %></td>
                   </tr>
                   <% } else { %>
                     <tr>
                       <th style="width: 130px;text-align: right;">Balance Left</th>
-                      <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= balance %></td>
+                      <td style="text-align: right;font-weight: bold;padding-right: 10px;">RM <%= balance.toFixed(2) %></td>
                     </tr>
                 </thead>
                 <% }} %>
@@ -149,7 +158,7 @@ const formattedNewTimestamp = `${day}/${month}/${year}`;
       <div>
         <button class="btn btn-success" onclick="printTable()" style="width: 500px;height: 500px;">Print</button>
         <div style="text-align: center;">
-            <a href="/yyinvoice_generate" class="btn btn-danger" style="width: 500px;text-align: center;height: 500px;margin: auto;padding-top: 50%;">Back</a>
+            <a href="/yyorder_generate" class="btn btn-danger" style="width: 500px;text-align: center;height: 500px;margin: auto;padding-top: 50%;">Back</a>
         </div>
       </div>
     </main>

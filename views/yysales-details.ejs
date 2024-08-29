@@ -24,7 +24,7 @@
           </form><br>
         <div style="display: flex;">
             <h3><span style="font-weight: bold;">Name:</span> <%= sellInvoiceResults[0].Name %></h3>
-            <h3 style="padding-left: 50px;"><span style="font-weight: bold;">Total Amount:</span> RM <%= totalAmount %></h3>
+            <h3 style="padding-left: 50px;"><span style="font-weight: bold;">Total Amount:</span> RM <%= totalAmount.toFixed(2) %></h3>
             <h3 style="padding-left: 50px;"><span style="font-weight: bold;">Remarks:</span> <%= sellInvoiceResults[0].Remarks %></h3>
         </div>
         <div class="mt-5">
@@ -39,23 +39,23 @@
         <tr>
             <td><%= transactions[i].Date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) %></td>
             <td><%= transactions[i].Remarks %></td>
-            <td><%= transactions[i].Amount %></td>
+            <td><%= transactions[i].Amount.toFixed(2) %></td>
         </tr>
         <% } %>
         </table>
         
-        <h4><span style="font-weight: bold;">Total Paid:</span> RM <%= totalpaid %></h4><br>
+        <h4><span style="font-weight: bold;">Total Paid:</span> RM <%= totalpaid.toFixed(2) %></h4><br>
         <% if (balance < 0) { %>
-            <h2><p>Amount overpaid: RM <%= Math.abs(balance) %></p></h2>
+            <h2><p>Amount overpaid: RM <%= Math.abs(balance).toFixed(2) %></p></h2>
         <% } else { %>
-            <h2><p>Balance left: RM <%= balance %></p></h2>
+            <h2><p>Balance left: RM <%= balance.toFixed(2) %></p></h2>
         <% } %>
         <% } else if (sellInvoiceResults === null) { %>
             <h1>Sales - Balance Check - Invoice No. <%= invoiceNumber %></h1>
             <p>No invoice found for Invoice Number <%= invoiceNumber %>.</p>
         <% } %>
     </div>
-    <a href="/yysales-balancecheck">Back to Sales Balance Check</a>
+    <a href="/yysales-paymentbreak">Back to Sales Balance Check</a>
     </main>
 </body>
 </html>

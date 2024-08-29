@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Login Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <style>
+      body{
+        background-color: aquamarine;
+      }
+      svg{
+        margin: auto;
+        margin-top: 20px;
+        max-width: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: Arial, Helvetica, sans-serif;
+        font-weight: bold;
+      }
+      h1{
+        font-size: 150px;
+        margin: auto;
+        margin-top: 100px;
+        max-width: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: Arial, Helvetica, sans-serif;
+        font-weight: bold;
+      }
+      form {
+        margin: auto;
+        max-width: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .labelss{
+        font-family: Arial, Helvetica, sans-serif;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Welcome to</h1>
+      <div style="display: none;">
+        <svg width="220px" height="130px"><g fill="#020202" data-v-70b83f88="" class="bordersvg b-d1" transform="translate(0,3)"><path fill-opacity="0" stroke-width="3" d="M 94.23999786376953 44.10999870300293 A 57.119998931884766 57.119998931884766 0 1 1 94.23999786376953 70.1299991607666" stroke="#020202"></path> <g transform="translate(0,44.10999870300293)"><g><rect data-gra="graph-name-bg" stroke-width="2" class="i-icon-bg" x="0" y="0" width="188.47999572753906" height="26.020000457763672" fill-opacity="0"></rect> <!----> <!----> </g> <g transform="translate(10,3)"><g data-gra="path-name" fill-rule="" class="tp-name"><g transform="scale(1)"><g><path d="M10.11-9.57L17.29-18.72 19.76-18.72 11.15-7.05 11.15 0 9.05 0 9.05-7.05 0.44-18.72 2.86-18.72 10.11-9.57ZM37.67-10.43L44.64-18.72 47.35-18.72 39.52-9.36 47.37 0 44.64 0 37.67-8.29 31.64-8.29 31.64 0 29.51 0 29.51-18.72 31.64-18.72 31.64-10.43 37.67-10.43ZM52.23 0L50.1 0 50.1-15.08 52.23-15.08 52.23 0ZM50.1-17.89L50.1-20.02 52.23-20.02 52.23-17.89 50.1-17.89ZM58.24-2.13L58.24-2.13 70.46-2.13 70.46 0 58.24 0Q56.94 0 56.02-0.92 55.09-1.85 55.09-3.15L55.09-3.15 55.09-11.93Q55.09-13.23 56.02-14.16 56.94-15.08 58.24-15.08L58.24-15.08 70.41-15.08 70.41-12.95 58.24-12.95Q57.82-12.95 57.53-12.65 57.23-12.35 57.23-11.93L57.23-11.93 57.23-3.15Q57.23-2.73 57.53-2.43 57.82-2.13 58.24-2.13ZM79.01-8.61L84.94-15.08 87.75-15.08 80.91-7.54 87.72 0 84.94 0 79.01-6.47 74.85-6.47 74.85 0 72.72 0 72.72-20.02 74.85-20.02 74.85-8.61 79.01-8.61ZM112.84-16.61L96.51-16.61 96.51-18.72 115.23-18.72 115.23-15.83 98.9-2.11 115.23-2.11 115.23 0 96.51 0 96.51-2.89 112.84-16.61ZM121-15.08L121-15.08 130.05-15.08Q131.38-15.08 132.3-14.16 133.22-13.23 133.22-11.93L133.22-11.93 133.22-3.15Q133.22-1.85 132.3-0.92 131.38 0 130.05 0L130.05 0 121 0Q119.7 0 118.78-0.92 117.86-1.85 117.86-3.15L117.86-3.15 117.86-11.93Q117.86-13.23 118.78-14.16 119.7-15.08 121-15.08ZM130.05-12.95L130.05-12.95 121-12.95Q120.59-12.95 120.29-12.65 119.99-12.35 119.99-11.93L119.99-11.93 119.99-3.15Q119.99-2.73 120.29-2.43 120.59-2.13 121-2.13L121-2.13 130.05-2.13Q130.47-2.13 130.77-2.43 131.07-2.73 131.07-3.15L131.07-3.15 131.07-11.93Q131.07-12.35 130.77-12.65 130.47-12.95 130.05-12.95ZM135.54-15.08L147.76-15.08Q149.06-15.08 149.98-14.16 150.9-13.23 150.9-11.93L150.9-11.93 150.9 0 148.77 0 148.77-11.93Q148.77-12.35 148.47-12.65 148.17-12.95 147.76-12.95L147.76-12.95 138.71-12.95Q138.29-12.95 137.98-12.65 137.67-12.35 137.67-11.93L137.67-11.93 137.67 0 135.54 0 135.54-15.08ZM156.7-15.08L165.75-15.08Q167.08-15.08 168-14.16 168.92-13.23 168.92-11.93L168.92-11.93 168.92-6.47 155.69-6.47 155.69-3.15Q155.69-2.73 155.99-2.43 156.29-2.13 156.7-2.13L156.7-2.13 168.92-2.13 168.92 0 156.7 0Q155.4 0 154.48-0.92 153.56-1.85 153.56-3.15L153.56-3.15 153.56-11.93Q153.56-13.23 154.48-14.16 155.4-15.08 156.7-15.08L156.7-15.08ZM155.69-11.93L155.69-8.61 166.76-8.61 166.76-11.93Q166.76-12.35 166.47-12.65 166.17-12.95 165.75-12.95L165.75-12.95 156.7-12.95Q156.29-12.95 155.99-12.65 155.69-12.35 155.69-11.93L155.69-11.93Z" transform="translate(-0.4399999976158142, 20.020000457763672)"></path></g> <!----> <!----> <!----> <!----> <!----> <!----> <!----></g></g> <!----></g></g></g><defs v-gra="od"></defs></svg>
+      </div>
+      <form method="POST" action="/login">
+        <h2 style="font-weight: bold;">You sohai want to signup an account?? baahahahah imposible</h2>
+        <div>
+          <label class="labelss" for="username">Username:</label>
+          <input class="form-control" type="text" id="username" name="username" required>
+        </div>
+        <div>
+          <label class="labelss" for="password">Password:</label>
+          <input class="form-control" type="password" id="password" name="password" required>
+        </div>
+        <% if (locals.error) { %>
+            <p style="color: red;font-size: 20px;"><%= locals.error %><br></p>
+          <% } %>
+        <div style="display: flex;margin-top: 5px;">
+          <button type="submit" class="btn btn-primary">Login</button>
+          <a href="/signup" class="btn btn-secondary">Sign Up</a>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

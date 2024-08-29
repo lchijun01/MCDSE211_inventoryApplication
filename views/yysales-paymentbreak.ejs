@@ -16,7 +16,39 @@
   <body class="main-contents">
     <%- include('partials/nav'); %>
     <main class="main-content">
-      <h1>Sales - Payment Breakdown</h1>
+      <div style="display: flex;justify-content: space-between;width: 80%;">
+        <h1>Sales - Payment Breakdown</h1>
+        <form action="/yysearch" method="get" class="d-flex mt-4">
+          <input type="search" name="invoice_number" style="width: 250px;" class="form-control me-2" placeholder="Enter Invoice Number" aria-label="Search">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+      </div>
+      <% if (sell_invoice_data.length > 0) { %>
+      <h1>Not settle yet</h1>
+      <table class="table table-striped" style="width: 90%;">
+        <thead>
+          <tr>
+            <th>Invoice Number</th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Paid Amount</th>
+            <th>Over Paid</th>
+            <th>Total Balance Left</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% sell_invoice_data.forEach((invoice) => { %>
+            <tr>
+              <td><%= invoice.Invoice_number %></td>
+              <td><%= invoice.Name %></td>
+              <td><%= invoice.total_amount %></td>
+              <td><%= invoice.total_paid_amount %></td>
+              <td><%= (invoice.balance_left < 0 ? -invoice.balance_left : 0).toFixed(2) %></td>
+              <td><%= (invoice.balance_left >= 0 ? invoice.balance_left : 0).toFixed(2) %></td>
+            </tr>
+          <% });} %>
+        </tbody>
+      </table>
       <form id="yyspaymentbreak-form" method="POST" action="/yysales-paymentbreak" enctype="multipart/form-data">
         <label class="form_name" for="date">Date</label>
         <input id="date" class="form_id" type="date" name="date" required><br>
@@ -31,53 +63,86 @@
         <div class="button">
           <button class="form_button" type="submit">Submit</button>
           <button class="form_button" type="reset">Clear</button>
-    </div>
-  </form>
-</main>
-</body>
-<script>
-    document.getElementById('yyspaymentbreak-form').addEventListener('submit', async (event) => {
-  event.preventDefault();
+        </div>
+      </form>
+      <br>
+      <form action="/yysales-paymentbreak" method="GET">
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" required>
+      
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" required>
+      
+        <input type="submit" value="Search">
+      </form>
+      <table class="table table-striped" style="width: 90%;">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Invoice No.</th>
+            <th>Amount</th>
+            <th>Remarks</th>
+            <th>File</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% data.forEach(row => { %>
+            <tr>
+              <td><%= row.formattedDate %></td>
+              <td><%= row.Invoice_No %></td>
+              <td><%= row.Amount %></td>
+              <td><%= row.Remarks %></td>
+              <td><%= row.File %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </main>
+  </body>
+  <script>
+      document.getElementById('yyspaymentbreak-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
 
-  const form = document.getElementById('yyspaymentbreak-form');
-  const formData = new FormData(form);
+    const form = document.getElementById('yyspaymentbreak-form');
+    const formData = new FormData(form);
 
-  const fileInput = document.getElementById('file-input');
-  const file = fileInput.files[0];
+    const fileInput = document.getElementById('file-input');
+    const file = fileInput.files[0];
 
-  if (!file) {
-    alert('Please select a file to upload');
-    return;
-  }
+    if (!file) {
+      alert('Please select a file to upload');
+      return;
+    }
 
-  try {
-    // Send form data to your server-side code
-    await fetch('/yysales-paymentbreak', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      // Send form data to your server-side code
+      await fetch('/yysales-paymentbreak', {
+        method: 'POST',
+        body: formData,
+      });
 
-    // Get the invoice number from the form
-    const invoiceNumber = document.getElementById('invoice_no').value;
+      // Get the invoice number from the form
+      const invoiceNumber = document.getElementById('invoice_no').value;
+      const remarks = document.getElementById('remarks').value;
 
-    // Send the image file to Discord
-    const discordFormData = new FormData();
-    discordFormData.append('file', file, file.name);
-    discordFormData.append('payload_json', JSON.stringify({
-      content: `Invoice Number: ${invoiceNumber}`,
-    }));
+      // Send the image file to Discord
+      const discordFormData = new FormData();
+      discordFormData.append('file', file, file.name);
+      discordFormData.append('payload_json', JSON.stringify({
+        content: `Invoice Number: ${invoiceNumber}, Remarks: ${remarks}`,
+      }));
 
-    await fetch('https://discord.com/api/webhooks/1087316915531305030/6ou8V0yEElK6KvcaQrFJe9xsJ6PkNy6tqE7ebYmsDCT4inUNTKLbA0TUJsJg6VTZdGid', {
-      method: 'POST',
-      body: discordFormData,
-    });
+      await fetch('https://discord.com/api/webhooks/1087316915531305030/6ou8V0yEElK6KvcaQrFJe9xsJ6PkNy6tqE7ebYmsDCT4inUNTKLbA0TUJsJg6VTZdGid', {
+        method: 'POST',
+        body: discordFormData,
+      });
 
-    alert('Data saved and file sent to Discord');
-    location.reload();
-  } catch (error) {
-    console.error(error);
-    alert('An error occurred');
-  }
-});
+      alert('Data saved and file sent to Discord');
+      location.reload();
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred');
+    }
+  });
   </script>
 </html>

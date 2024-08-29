@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+      <link href="style.css" type="text/css" rel="stylesheet">
+      <title>Refund TAB</title>
+      <script>
+        if ( window.history.replaceState ) {
+          window.history.replaceState( null, null, window.location.href );
+        }
+      </script>
+    </head>
+    <body class="main-contents">
+        <%- include('partials/nav'); %>
+        <main class="main-content">
+            <h1 style="font-weight: bold;">Refund TAB</h1><br>
+            <div style="display: flex;justify-content: space-between;">
+                <div style="width: 50%;">
+                    <h3 style="font-weight: bold;font-family:Arial, Helvetica, sans-serif">Refund to buyer</h3>
+                    <form action="/prorefund2buyer" method="post" enctype="application/x-www-form-urlencoded" id="refund-to-buyer-form">
+                        <div>
+                            <div style="display: flex;">
+                                <div class="form-group">
+                                    <label for="salesinvoice-input">Invoice:</label>
+                                    <input style="width: 180px;margin-left: 5px;" class="form-control" id="salesinvoice-input" type="text" name="salesinvoice">
+                                </div>
+                                <div class="form-group">
+                                    <label for="amount">Amount:</label>
+                                    <input style="width: 180px;margin-left: 5px;" class="form-control" type="text" name="amount">
+                                </div>
+                            </div>
+                            <div style="display: flex;">
+                                <div class="form-group">
+                                    <label for="remarks">Remarks:</label>
+                                    <input style="width: 180px;margin-left: 5px;" class="form-control" type="text" name="remarks">
+                                </div>
+                                <div class="form-group">
+                                    <label for="date">Date:</label>
+                                    <input style="width: 180px;margin-left: 5px;" class="form-control" type="date" name="date">
+                                </div>
+                            </div>
+                            <br>
+                            <button class="btn btn-success" type="submit">Submit</button>
+                            <button class="btn btn-danger" type="reset">Reset</button>
+                        </div><br>
+                        <div>
+                            <table class="table table-striped" style="width: 90%;" id="sales-invoice-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product Name</th>
+                                        <th>Size US</th>
+                                        <th>Quantity</th>
+                                        <th>Sell Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <h2>Refund to Buyer</h2>
+                            <table class="table table-striped" style="width: 90%;">
+                                <thead>
+                                    <tr>
+                                    <th>Invoice</th> 
+                                    <th>Amount</th>
+                                    <th>Remarks</th>
+                                    <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% data.refund2BuyerData.forEach(row => { %>
+                                    <tr>
+                                        <td><%= row.invoice %></td>
+                                        <td><%= row.amount %></td>
+                                        <td><%= row.remarks %></td>
+                                        <td><%= 
+                                            row.date.getFullYear() + '-' + 
+                                            ('0' + (row.date.getMonth() + 1)).slice(-2) + '-' + 
+                                            ('0' + row.date.getDate()).slice(-2) %>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const salesInvoiceInput = document.getElementById('salesinvoice-input');
+                                salesInvoiceInput.addEventListener('change', function() {
+                                    const salesInvoiceNumber = this.value;
+                                    fetch(`/fetch-sales-invoice-data?salesinvoice=${salesInvoiceNumber}`)
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            const tableBody = document.getElementById("sales-invoice-data-table").querySelector("tbody");
+                                            tableBody.innerHTML = ""; // Clear existing rows
+                                            data.forEach(item => {
+                                                const row = document.createElement("tr");
+                                                row.innerHTML = `
+                                                    <td contenteditable="true">${item.sku}</td>
+                                                    <td contenteditable="true">${item.productname}</td>
+                                                    <td contenteditable="true">${item.size}</td>
+                                                    <td contenteditable="true">${item.buyquantity}</td>
+                                                    <td contenteditable="true">${item.sellprice}</td>
+                                                    <td><button class="btn btn-danger delete-row">Delete</button></td>
+                                                    <input type="hidden" name="field1[]" value="${item.sku}">
+                                                    <input type="hidden" name="field2[]" value="${item.productname}">
+                                                    <input type="hidden" name="field3[]" value="${item.size}">
+                                                    <input type="hidden" name="field4[]" value="${item.buyquantity}">
+                                                    <input type="hidden" name="field5[]" value="${item.sellprice}">
+                                                `;
+                                                tableBody.appendChild(row);
+                                            });
+                        
+                                            // Add delete event listeners
+                                            document.querySelectorAll('.delete-row').forEach(button => {
+                                                button.addEventListener('click', function() {
+                                                    this.closest('tr').remove();
+                                                });
+                                            });
+                        
+                                            // Update hidden input fields when table cell content changes
+                                            tableBody.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+                                                cell.addEventListener('input', function() {
+                                                    const rowIndex = this.parentElement.rowIndex;
+                                                    const inputs = tableBody.querySelectorAll(`tr:nth-child(${rowIndex}) input[type="hidden"]`);
+                                                    inputs.forEach(input => {
+                                                        const columnIndex = Array.from(input.parentElement.children).indexOf(this);
+                                                        input.value = this.textContent.trim();
+                                                    });
+                                                });
+                                            });
+                                        })
+                                        .catch(error => console.error("Error:", error));
+                                });
+                            });
+                        </script>
+                    </form>
+                </div>
+                <div style="width: 50%;">
+                    <h3 style="font-weight: bold;font-family:Arial, Helvetica, sans-serif">Refund from supplier</h3>
+                    <form action="/prorefund" method="post" enctype="application/x-www-form-urlencoded">
+                        <div>
+                            <div style="display: flex;">
+                                <div class="form-group">
+                                    <label for="invoice">Invoice:</label>
+                                    <input style="width: 180px;margin-left: 5px;" class="form-control" id="purchaseinvoice-input" type="text" name="buyinvoice">
+                                </div>
+                                <div class="form-group">
+                                    <label for="amount">Amount:</label>
+                                    <input style="width: 180px;margin-left: 5px;" class="form-control" type="text" name="amount">
+                                </div>
+                            </div>
+                            <div style="display: flex;">
+                                <div class="form-group">
+                                    <label for="remarks">Remarks:</label>
+                                    <input style="width: 180px;margin-left: 5px;" class="form-control" type="text" name="remarks">
+                                </div>
+                                <div class="form-group">
+                                    <label for="date">Date:</label>
+                                    <input style="width: 180px;margin-left: 5px;" class="form-control" type="date" name="date">
+                                </div>
+                            </div>
+                            <br>
+                            <button class="btn btn-success" type="submit">Submit</button>
+                            <button class="btn btn-danger" type="reset">Reset</button>
+                        </div><br>
+                        <div>
+                            <table class="table table-striped" style="width: 90%;" id="purchase-invoice-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product Name</th>
+                                        <th>Size US</th>
+                                        <th>Quantity</th>
+                                        <th>Item Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const purchaseInvoiceInput = document.getElementById('purchaseinvoice-input');
+                                purchaseInvoiceInput.addEventListener('change', function() {
+                                    const purchaseInvoiceNumber = this.value;
+                                    fetch(`/fetch-purchase-invoice-data?buyinvoice=${purchaseInvoiceNumber}`)
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            const tableBody = document.getElementById("purchase-invoice-data-table").querySelector("tbody");
+                                            tableBody.innerHTML = ""; // Clear existing rows
+                                            data.forEach(item => {
+                                                const row = document.createElement("tr");
+                                                row.innerHTML = `
+                                                    <td class="sku-cell" contenteditable="true">${item.sku}</td>
+                                                    <td class="productname-cell" contenteditable="true">${item.productname}</td>
+                                                    <td class="size-cell" contenteditable="true">${item.size}</td>
+                                                    <td class="quantity-cell" contenteditable="true">${item.quantity}</td>
+                                                    <td class="cost-cell" contenteditable="true">${item.costprice}</td>
+                                                    <td><button class="btn btn-danger delete-row">Delete</button></td>
+                                                `;
+                                                // Create hidden inputs for the form submission
+                                                const skuInput = document.createElement('input');
+                                                skuInput.type = 'hidden';
+                                                skuInput.name = 'field1[]';
+                                                skuInput.value = item.sku;
+
+                                                const productnameInput = document.createElement('input');
+                                                productnameInput.type = 'hidden';
+                                                productnameInput.name = 'field2[]';
+                                                productnameInput.value = item.productname;
+
+                                                const sizeInput = document.createElement('input');
+                                                sizeInput.type = 'hidden';
+                                                sizeInput.name = 'field3[]';
+                                                sizeInput.value = item.size;
+
+                                                const quantityInput = document.createElement('input');
+                                                quantityInput.type = 'hidden';
+                                                quantityInput.name = 'field4[]';
+                                                quantityInput.value = item.quantity; // Set the correct value here
+                    
+                                                const costInput = document.createElement('input');
+                                                costInput.type = 'hidden';
+                                                costInput.name = 'field5[]';
+                                                costInput.value = item.costprice; // Set the correct value here
+                    
+                                                // Append the hidden inputs to the row
+                                                row.appendChild(skuInput);
+                                                row.appendChild(productnameInput);
+                                                row.appendChild(sizeInput);
+                                                row.appendChild(quantityInput);
+                                                row.appendChild(costInput);
+                    
+                                                tableBody.appendChild(row);
+                                            });
+                    
+                                            // Add delete event listeners
+                                            document.querySelectorAll('.delete-row').forEach(button => {
+                                                button.addEventListener('click', function() {
+                                                    this.closest('tr').remove();
+                                                });
+                                            });
+                    
+                                            // Update hidden input fields when table cell content changes
+                                            document.querySelectorAll('.quantity-cell, .cost-cell').forEach(cell => {
+                                                cell.addEventListener('input', function() {
+                                                    const row = this.closest('tr');
+                                                    const quantityCell = row.querySelector('.quantity-cell');
+                                                    const costCell = row.querySelector('.cost-cell');
+                    
+                                                    const quantityInput = row.querySelector('input[name="field4[]"]');
+                                                    const costInput = row.querySelector('input[name="field5[]"]');
+                    
+                                                    quantityInput.value = quantityCell.textContent;
+                                                    costInput.value = costCell.textContent;
+                                                });
+                                            });
+                                        })
+                                        .catch(error => console.error("Error:", error));
+                                });
+                            });
+                        </script>
+                    </form><br>
+                    <div>
+                        <h2>From Supplier</h2>
+                        <a href="/proreturned">Returned Items</a>
+                        <table class="table table-striped" style="width: 90%;">
+                            <thead>
+                                <tr>
+                                <th>Invoice</th>
+                                <th>Amount</th>
+                                <th>Remarks</th>
+                                <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% data.fromSupData.forEach(row => { %>
+                                <tr>
+                                    <td><%= row.invoice %></td>
+                                    <td><%= row.amount %></td>
+                                    <td><%= row.remarks %></td>
+                                    <td><%= 
+                                        row.date.getFullYear() + '-' + 
+                                        ('0' + (row.date.getMonth() + 1)).slice(-2) + '-' + 
+                                        ('0' + row.date.getDate()).slice(-2) %>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </body>
+</html>

@@ -17,7 +17,33 @@
         <form action="/yygenerate" method="get" class="d-flex mt-4">
           <input type="search" name="invoice_number" style="width: 250px;" class="form-control me-2" placeholder="Enter Invoice Number" aria-label="Search">
           <button type="submit" class="btn btn-primary">Search</button>
-        </form>  
+        </form>
+        <table class="table table-striped" style="width: 90%;">
+          <thead>
+            <tr>
+              <th>Invoice Number</th>
+              <th>Name</th>
+              <th>Date</th>
+              <th>Content SKU</th>
+              <th>Product Name</th>
+              <th>Total Quantity</th>
+              <th>Total Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% for (let i = 0; i < invoiceData.length; i++) { %>
+              <tr>
+                <td><%= invoiceData[i].Invoice_number %></td>
+                <td><%= invoiceData[i].Name %></td>
+                <td><%= invoiceData[i].formattedDate %></td>
+                <td><%= invoiceData[i].Content_SKU %></td>
+                <td><%= invoiceData[i].product_name %></td>
+                <td><%= invoiceData[i].totalQuantity %></td>
+                <td><%= invoiceData[i].totalAmount %></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
       </div>
     </body>
 </html>

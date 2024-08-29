@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+        <link href="style.css" type="text/css" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <title>Procurement-Purchase</title>
+        <script>
+            if ( window.history.replaceState ) {
+              window.history.replaceState( null, null, window.location.href );
+            }form
+        </script>
+    </head>
+    <body class="main-contents">
+        <%- include('partials/nav'); %>
+        <main class="main-content">
+            <h1>Procurement - purchases</h1>
+            <form style="display:flex;" id="procurement-form" method="POST" action="/procurementbuy" enctype="multipart/form-data">
+                <div><br>
+                <label style="margin-bottom: 3px;font-weight: bold;">Seller Info</label><br>
+                <label class="form_name" style="margin-bottom: 3px;" for="name">Name</label>
+                <input class="form_id" style="margin-bottom: 3px;" type="text" name="name" placeholder=" Seller Name"><br>
+                <label class="form_name" style="margin-bottom: 3px;" for="bankname">Bank Name</label>
+                <input class="form_id" style="margin-bottom: 3px;" type="text" name="bankname" placeholder=" Bank Name"><br>
+                <label class="form_name" style="margin-bottom: 3px;" for="bank">Bank</label>
+                <select class="form_id" style="margin-bottom: 3px;" name="bank">
+                    <option value="">Select a bank</option>
+                    <option value="AffinBank">Affin Bank</option>
+                    <option value="AgroBank">Agro Bank</option>
+                    <option value="Al-RajhiBank">Al-Rajhi Bank</option>
+                    <option value="AllianceBank">Alliance Bank</option>
+                    <option value="AmBank">Am Bank</option>
+                    <option value="Islam">Bank Islam</option>
+                    <option value="CIMB">CIMB Bank</option>
+                    <option value="HongLeongBank">Hong Leong Bank</option>
+                    <option value="HSBCBank">HSBC Bank</option>
+                    <option value="Maybank">MayBank</option>
+                    <option value="OCBCBank">OCBC Bank</option>
+                    <option value="PublicBank">Public Bank</option>
+                    <option value="RHBBank">RHB Bank</option>
+                    <option value="StandardCharteredBank">Standard Chartered Bank</option>
+                    <option value="UOBank">United Overseas Bank</option>
+                    <option value="other">Other</option>
+                </select><br>
+                <label  class="form_name" for="bank">Bank Acc</label>
+                <input class="form_id" style="margin-bottom: 3px;" type="text" name="bankacc" placeholder=" Bank Acc"><br>
+                <label  class="form_name" for="remarks">Remarks</label><br>
+                <textarea class="form_detail" type="text" name="remarks"></textarea><br>
+                <label class="form_name" style="margin-bottom: 3px;" for="discount">Discount</label>
+                <input class="form_id" style="margin-bottom: 3px;" type="number" name="discount" placeholder="how much!"><br>
+                <label class="form_name" style="margin-bottom: 3px;" for="buydate">Purchase Date</label>
+                <input class="form_id" style="margin-bottom: 3px;" type="date" name="buydate" required><br><br>
+                <div class="button">
+                    <button class="form_button" type="submit">Submit</button>
+                    <button class="form_button" type="reset">Clear</button>
+                </div>
+            </div>
+            <div style="padding-left: 30px;">
+                <button type="button" class="btn btn-primary" id="addRow">Add Row</button>
+                <table class="table" id="inputTable">
+                    <thead>
+                        <tr>
+                            <th>Content / SKU</th>
+                            <th>Product Name</th>
+                            <th>Size US</th>
+                            <th>Unit Price</th>
+                            <th>Quantity</th>
+                            <th>Amount</th>
+                            <th>Gender</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" class="form-control sku" style="width: 150px;" name="field1[]"></td>
+                            <td><input type="text" class="form-control productName" style="width: 220px;" name="field2[]"></td>
+                            <td>
+                                <select class="form-control shoe-size-select" name="shoeSize">
+                                    <option value="">Choose</option>
+                                    <option value="2.5">2.5</option>
+                                    <option value="3">3</option>
+                                    <option value="3.5">3.5</option>
+                                    <option value="4">4</option>
+                                    <option value="4.5">4.5</option>
+                                    <option value="5">5</option>
+                                    <option value="5.5">5.5</option>
+                                    <option value="6">6</option>
+                                    <option value="6.5">6.5</option>
+                                    <option value="7">7</option>
+                                    <option value="7.5">7.5</option>
+                                    <option value="8">8</option>
+                                    <option value="8.5">8.5</option>
+                                    <option value="9">9</option>
+                                    <option value="9.5">9.5</option>
+                                    <option value="10">10</option>
+                                    <option value="10.5">10.5</option>
+                                    <option value="11">11</option>
+                                    <option value="11.5">11.5</option>
+                                    <option value="12">12</option>
+                                    <option value="12.5">12.5</option>
+                                    <option value="13">13</option>
+                                    <option value="13.5">13.5</option>
+                                    <option value="14">14</option>
+                                    <option value="14.5">14.5</option>
+                                    <option value="15">15</option>
+                                </select>
+                                <select class="form-control shirt-size-select" style="display: none;" name="shirtSize">
+                                    <option value="XS">XS</option>
+                                    <option value="S">S</option>
+                                    <option value="M">M</option>
+                                    <option value="L">L</option>
+                                    <option value="XL">XL</option>
+                                    <option value="XXL">XXL</option>
+                                </select>
+                                <input type="checkbox" class="size-toggle">
+                                <input type="hidden" name="field3[]">
+                            </td>
+                            <td><input type="text" class="form-control" style="width: 100px;" name="field4[]"></td>
+                            <td><input type="text" class="form-control" style="width: 100px;" name="field5[]"></td>
+                            <td><input type="text" class="form-control" style="width: 100px;" name="field6[]"></td>
+                            <td>
+                                <select type="text" class="form-control" style="width: auto;" name="field7[]">
+                                    <option value="">Choose</option>
+                                    <option value="man">Man</option>
+                                    <option value="woman">Woman</option>
+                                    <option value="gs">Gs</option>
+                                    <option value="td">Toddler</option>
+                                    <option value="yeezy">Yeezy</option>
+                                    <option value="yezyboost">Yeezy Boost</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td style="font-weight: bold;">Total:</td>
+                            <td style="font-weight: bold;"><span id="totalAmount"></span></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="button">
+                    <br><button class="form_button" type="submit">Submit</button>
+                    <button class="form_button" type="reset">Clear</button>
+                </div>
+            </div>
+            </form><br>
+            <form action="/procurementbuy" method="GET">
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date" required>
+                
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date" required>
+                
+                <input type="submit" value="Search">
+            </form>
+            <br>
+            <table class="table table-striped" style="width: 90%;">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Invoice</th>
+                    <th>Name</th>
+                    <th>SKU</th>
+                    <th>Product Name</th>
+                    <th>Size</th>
+                    <th>Cost Price</th>
+                    <th>Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% data.forEach(item => { %>
+                    <tr>
+                        <td><%= item.formattedDate %></td>
+                        <td><%= item.buyinvoice %></td>
+                        <td><%= item.name %></td>
+                        <td><%= item.sku %></td>
+                        <td><%= item.productname %></td>
+                        <td><%= item.size %></td>
+                        <td><%= item.costprice %></td>
+                        <td><%= item.quantity %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+            </table>
+            <script>
+                const table = document.getElementById('inputTable');
+                const totalAmountCell = document.getElementById('totalAmount');
+                
+                function calculateTotal() {
+                    let totalAmount = 0;
+                    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                    for (let i = 0; i < rows.length; i++) {
+                        const unitPriceCell = rows[i].getElementsByTagName('td')[3];
+                        const quantityCell = rows[i].getElementsByTagName('td')[4];
+                        const unitPrice = parseFloat(unitPriceCell.getElementsByTagName('input')[0].value);
+                        const quantity = parseInt(quantityCell.getElementsByTagName('input')[0].value);
+                        const amount = unitPrice * quantity;
+                        if (!isNaN(amount)) {
+                            totalAmount += amount;
+                        }
+                        rows[i].getElementsByTagName('td')[5].getElementsByTagName('input')[0].value = amount.toFixed(2);
+                    }
+                    totalAmountCell.textContent = totalAmount.toFixed(2);
+                }
+                
+                table.addEventListener('input', calculateTotal);
+                calculateTotal();
+            </script>
+            <script>
+                $(document).ready(function() {
+                    // Function to toggle between shoe size and shirt size
+                    function toggleSizeSelect($row, showShirtSize) {
+                        $row.find(".shoe-size-select").toggle(!showShirtSize);
+                        $row.find(".shirt-size-select").toggle(showShirtSize);
+                    }
+
+                    // Function to update the hidden size input based on the checkbox
+                    function updateSizeInput($row) {
+                        const isShirtSize = $row.find(".size-toggle").is(":checked");
+                        const sizeValue = isShirtSize ? $row.find(".shirt-size-select").val() : $row.find(".shoe-size-select").val();
+                        $row.find("input[name='field3[]']").val(sizeValue);
+                    }
+
+                    // Event listener for the size-toggle checkbox change
+                    $("#inputTable").on("change", ".size-toggle", function() {
+                        const $row = $(this).closest("tr");
+                        toggleSizeSelect($row, $(this).is(":checked"));
+                        updateSizeInput($row);
+                    });
+
+                    // Update the size inputs when the form is about to be submitted
+                    $('#procurement-form').on('submit', function() {
+                        $("#inputTable tbody tr").each(function() {
+                            updateSizeInput($(this));
+                        });
+                    });
+
+                    // Add a new row to the table with the necessary elements
+                    $("#addRow").click(function() {
+                        let newRow = `<tr>
+                                <td><input type="text" class="form-control sku" style="width: 150px;" name="field1[]"></td>
+                                <td><input type="text" class="form-control productName" style="width: 220px;" name="field2[]"></td>
+                                <td>
+                                    <select class="form-control shoe-size-select" name="shoeSize">
+                                        <option value="">Choose</option>
+                                        <option value="2.5">2.5</option>
+                                        <option value="3">3</option>
+                                        <option value="3.5">3.5</option>
+                                        <option value="4">4</option>
+                                        <option value="4.5">4.5</option>
+                                        <option value="5">5</option>
+                                        <option value="5.5">5.5</option>
+                                        <option value="6">6</option>
+                                        <option value="6.5">6.5</option>
+                                        <option value="7">7</option>
+                                        <option value="7.5">7.5</option>
+                                        <option value="8">8</option>
+                                        <option value="8.5">8.5</option>
+                                        <option value="9">9</option>
+                                        <option value="9.5">9.5</option>
+                                        <option value="10">10</option>
+                                        <option value="10.5">10.5</option>
+                                        <option value="11">11</option>
+                                        <option value="11.5">11.5</option>
+                                        <option value="12">12</option>
+                                        <option value="12.5">12.5</option>
+                                        <option value="13">13</option>
+                                        <option value="13.5">13.5</option>
+                                        <option value="14">14</option>
+                                        <option value="14.5">14.5</option>
+                                        <option value="15">15</option>
+                                    </select>
+                                    <select class="form-control shirt-size-select" style="display: none;" name="shirtSize">
+                                        <option value="XS">XS</option>
+                                        <option value="S">S</option>
+                                        <option value="M">M</option>
+                                        <option value="L">L</option>
+                                        <option value="XL">XL</option>
+                                        <option value="XXL">XXL</option>
+                                    </select>
+                                    <input type="checkbox" class="size-toggle">
+                                    <input type="hidden" name="field3[]">
+                                </td>
+                                <td><input type="text" class="form-control" style="width: 100px;" name="field4[]"></td>
+                                <td><input type="text" class="form-control" style="width: 100px;" name="field5[]"></td>
+                                <td><input type="text" class="form-control" style="width: 100px;" name="field6[]"></td>
+                                <td>
+                                    <select type="text" class="form-control" style="width: auto;" name="field7[]">
+                                        <option value="">Choose</option>
+                                        <option value="man">Man</option>
+                                        <option value="woman">Woman</option>
+                                        <option value="gs">Gs</option>
+                                        <option value="td">Toddler</option>
+                                        <option value="yeezy">Yeezy</option>
+                                        <option value="yezyboost">Yeezy Boost</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm removeRow">Remove</button>
+                                </td>
+                            </tr>`;
+                        $("#inputTable tbody").append(newRow);
+                    });
+
+                    // Remove a row from the table
+                    $("#inputTable").on("click", ".removeRow", function() {
+                        $(this).closest("tr").remove();
+                    });
+
+                    // Calculate the amount when the unit price or quantity changes
+                    $("#inputTable").on("input", "input[name='field4[]'], input[name='field5[]']", function() {
+                        const $row = $(this).closest("tr");
+                        const unitPrice = parseFloat($row.find("input[name='field4[]']").val()) || 0;
+                        const quantity = parseFloat($row.find("input[name='field5[]']").val()) || 0;
+                        const amount = unitPrice * quantity;
+                        $row.find("input[name='field6[]']").val(amount.toFixed(2));
+                    });
+                    function updateProductName(event) {
+                        const currentRow = event.target.closest('tr');
+                        const skuInput = currentRow.querySelector('.sku');
+                        const productNameInput = currentRow.querySelector('.productName');
+                        const sku = skuInput.value;
+
+                        if (sku.length > 0) {
+                            fetch('/procurementbuyproduct-name?sku=' + encodeURIComponent(sku))
+                                .then(response => response.json())
+                                .then(({ productNames }) => {
+                                    productNameInput.value = productNames;
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching product name:', error);
+                                });
+                        } else {
+                            productNameInput.value = '';
+                        }
+                    }
+                    
+                    $('#inputTable').on('input', '.sku', updateProductName);
+                });
+            </script>
+            <script>
+                $(document).on('change', '.size-toggle', function() {
+                    const row = $(this).closest('tr');
+                    if ($(this).is(':checked')) {
+                        row.find('.shoe-size-select').hide();
+                        row.find('.shirt-size-select').show();
+                    } else {
+                        row.find('.shoe-size-select').show();
+                        row.find('.shirt-size-select').hide();
+                    }
+                });
+                $('#procurement-form').on('submit', function() {
+                    // Iterate over each row
+                    $(this).find('tr').each(function() {
+                        const row = $(this);
+                        if (row.find('.size-toggle').is(':checked')) {
+                            // If checkbox is checked, use the shirt size
+                            row.find('input[name="size"]').val(row.find('.shirt-size-select').val());
+                        } else {
+                            // Otherwise, use the shoe size
+                            row.find('input[name="size"]').val(row.find('.shoe-size-select').val());
+                        }
+                    });
+                });
+
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    var table = document.querySelector('tbody');
+                    table.addEventListener('change', function(e) {
+                        if (e.target.classList.contains('size-toggle')) {
+                            var row = e.target.closest('tr');
+                            var shoeSizeCell = row.querySelector('.shoe-size-cell');
+                            var shirtSizeCell = row.querySelector('.shirt-size-cell');
+                            if (e.target.checked) {
+                                shoeSizeCell.style.display = 'none';
+                                shirtSizeCell.style.display = '';
+                            } else {
+                                shoeSizeCell.style.display = '';
+                                shirtSizeCell.style.display = 'none';
+                            }
+                        }
+                    });
+
+
+
+
+                    // Update function to handle size submission
+                    function updateSizeInput(row) {
+                        const isShirtSize = row.find(".size-toggle").is(":checked");
+                        const sizeValue = isShirtSize ? row.find(".shirt-size-select").val() : row.find(".shoe-size-select").val();
+                        row.find("input[name='field3[]']").val(sizeValue);
+                    }
+
+                    // Attach event listener to form submission
+                    $("#procurement-form").submit(function() {
+                        $("#inputTable tbody tr").each(function() {
+                            updateSizeInput($(this));
+                        });
+                    });
+                });
+            </script>
+        </main>
+    </body>
+</html>
