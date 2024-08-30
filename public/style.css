@@ -1,131 +1,30 @@
-  .main-content{
-    position: relative;
-    height: 100%;
-    left: 260px;
-    width: calc(100% - 260px);
-    transition: all 0.8s ease;
-    padding-left: 50px;
-    padding-top: 20px;
-  }
-  .sidebar.close ~ .main-content{
-    left: 78px;
-    width: calc(100% - 78px);
-  }
-
-  @media (max-width: 400px) {
-    .sidebar.close .nav-links li .sub-menu{
-      display: none;
-    }
-    .sidebar{
-      width: 78px;
-    }
-    .sidebar.close{
-      width: 0;
-    }
-    .main-content{
-      left: 78px;
-      width: calc(100% - 78px);
-      z-index: 100;
-    }
-    .sidebar.close ~ .main-content{
-      width: 100%;
-      left: 0;
-    }
-  }
-.form_name{
-  width:100px;
-  padding-top: 10px;
-}
-.form_id{
-  width: 180px;
-  box-sizing: border-box;
-  border: 1.3px solid rgb(0, 0, 0);
-  outline: none;
-  border-radius: 3px;
-}
-.form_id:focus{
-  border: 1.3px solid rgb(255, 202, 202);
-}
-.form_file{
-  width: 230px;
+.main-content{
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 140px);
+  width: 90%;
+  padding-left: 280px;
+  padding-top: 100px;
+  overflow-x: hidden;
 }
 
 .main-contents{
-  background-color: rgb(221, 255, 252);
+  background-color: rgb(255, 255, 255);
   padding-bottom: 50px;
 }
 
-.form_button{
-  width:100px;
-  border-radius: 20px;
-  border: 1.3px solid rgb(0, 0, 0);
+#addProductRow {
+  border: none;
+  background: none;
+  color: rgb(0, 0, 0);
+  height: auto;
+  display: inline-block;
+  align-items: center;
+  font-weight: bold;
+  font-size: 20px;
+  transition: 0.3s;
 }
-.form_button:hover{
-  width:100px;
-  border-radius: 20px;
-  border: 1.3px solid rgb(116,109,255);
-}
-.button{
-  width: 280px;
-  text-align: center;
-}
-.form_detail{
-  width: 284px;
-  box-sizing: border-box;
-  border: 1.3px solid rgb(0, 0, 0);
-  outline: none;
-  border-radius: 3px;
-}
-.form_detail:focus{
-  border: 1.3px solid rgb(255, 202, 202);
-}
-.formfile_name{
-  width:50px;
-  padding-top: 10px;
-}
-
-.leftside-container{
-  padding-right: 50px;
-  display: flex;
-  flex-direction: column;
-}
-
-.form_name2{
-  width:130px;
-  padding-top: 10px;
-}
-
-.form_name3{
-  width:140px;
-  padding-top: 10px;
-}
-
-.form_detail2{
-  width: 325px;
-  box-sizing: border-box;
-  border: 1.3px solid rgb(0, 0, 0);
-  outline: none;
-  border-radius: 3px;
-}
-
-.form_detail2:focus{
-  border: 1.3px solid rgb(255, 202, 202);
-}
-.form_detail3:focus{
-  border: 1.3px solid rgb(255, 202, 202);
-}
-.sizequan{
-  width: 70px;
-}
-.tablecontent{
-  width: 400px;
-}
-
-.form_name5{
-  width:130px;
-}
-
-.form-check-input {
-  transform: scale(1.5);
-  margin: 5px;
+#addProductRow:hover {
+  color: rgb(81, 214, 90);
+  transition: 0.3s;
 }

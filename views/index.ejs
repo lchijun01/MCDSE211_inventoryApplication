@@ -1,659 +1,287 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
-    <link href="style.css" type="text/css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-bar-chart-value-labels"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-
-
-    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <title>Home-Dashboard</title>
     <style>
-      #a {
-        margin: 0.5rem 1rem;
-      }
+        main {
+        padding-left: 280px;
+        position: relative;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Two columns */
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+            height: 400px;
+        }
+        
+        #a {
+            margin: 0.5rem 1rem;
+        }
+
+        h1 {
+            padding-top: 100px;
+        }
+        
+        .active-container {
+            padding: 20px 40px 20px 20px;
+        }
+
+        .active-container-form {
+            box-shadow: 0 4px 8px;
+            border-radius: 5px;
+            padding: 20px;
+            height: 65vh;
+        }
+
+        .table-container {
+            display: flex;
+            flex-wrap: wrap; /* Allows tables to wrap into new rows */
+            gap: 20px; /* Space between tables */
+            width: 100%;
+            max-height: calc(65vh - 90px); /* Set a fixed or maximum height */
+            overflow: auto;
+        }
+
+        .table-container .table {
+            flex: 1 1 300px; /* Grow to fill space, shrink to 300px, initial width 300px */
+            min-width: 200px; /* Minimum width to prevent tables from getting too small */
+            max-width: 100%; /* Ensures tables don’t exceed the container width */
+        }
     </style>
-  </head>
-  <body class="main-contents">
-    <%- include('partials/nav');%>
+</head>
+<body class="main-contents">
+    <%- include('partials/nav'); %>
     <main class="main-content">
-      <div>
-        <div style="display: flex;font-size: 50px;">
-          <h1 style="border-bottom: 3px solid;width: fit-content;font-weight: bolder;margin-top: 10px;margin-right: 5px;">Yong & Yi Partners Enterprise Dashboard</h1>
-          <i class="bi bi-clipboard-pulse"></i>
-        </div><br>
-        <div>
-          <form action="/" method="get">
-            <label for="startDate">Start Date:</label>
-            <input type="date" name="startDate" id="startDate" required>
-      
-            <label for="endDate">End Date:</label>
-            <input type="date" name="endDate" id="endDate" required>
-      
-            <button type="submit">Get Data</button>
-          </form><br>
-          <h5>Sneaker Sales Analysis <%= startDate ? 'between ' + startDate + ' and ' + endDate : 'for all time' %></h5>
+        <div><h1>Dashboard</h1></div>
+        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn btn-secondary active">
+                <input type="radio" name="options" id="option1" autocomplete="off" checked> Profit & Loss
+            </label>
+            <label class="btn btn-secondary">
+                <input type="radio" name="options" id="option2" autocomplete="off"> Trial Balance
+            </label>
+            <label class="btn btn-secondary">
+                <input type="radio" name="options" id="option3" autocomplete="off"> Balance Sheet
+            </label>
+            <label class="btn btn-secondary">
+                <input type="radio" name="options" id="option4" autocomplete="off"> Bank Ledger
+            </label>
         </div>
-        <% if (rows && rows.length > 0) { %>
-          <table class="table table-striped" style="width: 90%;">
-            <thead>
-              <tr>
-                <th>SKU</th>
-                <th>Product Name</th>
-                <th>Total Quantity</th>
-                <th style="text-align: end;">Total Sales</th>
-                <th style="text-align: end;">Total Profit</th>
-                <th style="text-align: end;">Total Cost</th>
-                <th style="text-align: end;">Average Profit</th>
-                <th style="text-align: end;">Average Price</th>
-                <th style="text-align: end;">Profit Margin</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% let currentSku = '' %>
-              <% let currentProduct = '' %>
-              <% let totalQuantity = 0 %>
-              <% let totalSales = 0 %>
-              <% let totalProfit = 0 %>
-              <% let totalCost = 0 %>
-              <% let averageProfit = 0 %>
-              <% let averagePrice = 0 %>
-              <% let totalSalesAll = 0 %>
-              <% let totalProfitAll = 0 %>
-              <% let totalCostAll = 0 %>
-              <% for (let i = 0; i < rows.length; i++) { %>
-                <% const row = rows[i] %>
-                <% if (currentSku !== row.Content_SKU) { %>
-                  <% if (i > 0) { %>
-                    <tr>
-                      <td><%= currentSku %></td>
-                      <td><%= currentProduct %></td>
-                      <td><%= totalQuantity %></td>
-                      <td style="text-align: end;"><%= totalSales.toFixed(2) %></td>
-                      <td style="text-align: end;"><%= totalProfit.toFixed(2) %></td>
-                      <td style="text-align: end;"><%= totalCost.toFixed(2) %></td>
-                      <td style="text-align: end;"><%= averageProfit.toFixed(2) %></td>
-                      <td style="text-align: end;"><%= averagePrice.toFixed(2) %></td>
-                      <td style="text-align: end;"><%= (totalQuantity > 0) ? ((totalProfit / totalSales) * 100).toFixed(2) + '%' : '0.00%' %></td>
-                    </tr>
-                  <% } %>
-                  <% totalSalesAll += totalSales %>
-                  <% totalProfitAll += totalProfit %>
-                  <% totalCostAll += totalCost %>
-                  <% currentSku = row.Content_SKU %>
-                  <% currentProduct = row.product_name %>
-                  <% totalQuantity = 0 %>
-                  <% totalSales = 0 %>
-                  <% totalProfit = 0 %>
-                  <% totalCost = 0 %>
-                  <% averageProfit = 0 %>
-                  <% averagePrice = 0 %>
-                <% } %>
-                <% totalQuantity += row.totalQuantity %>
-                <% totalSales += row.totalSales %>
-                <% totalProfit += row.totalProfit %>
-                <% totalCost += row.totalCost %>
-                <% averageProfit += row.averageProfit %>
-                <% averagePrice += row.averagePrice %>
-                <% if (i === rows.length - 1) { %>
-                  <tr>
-                    <td><%= currentSku %></td>
-                    <td><%= currentProduct %></td>
-                    <td><%= totalQuantity %></td>
-                    <td style="text-align: end;"><%= totalSales.toFixed(2) %></td>
-                    <td style="text-align: end;"><%= totalProfit.toFixed(2) %></td>
-                    <td style="text-align: end;"><%= totalCost.toFixed(2) %></td>
-                    <td style="text-align: end;"><%= (totalQuantity > 0) ? (totalProfit / totalQuantity).toFixed(2) : '0.00' %></td>
-                    <td style="text-align: end;"><%= (totalQuantity > 0) ? (totalSales / totalQuantity).toFixed(2) : '0.00' %></td>
-                    <td style="text-align: end;"><%= (totalQuantity > 0) ? ((totalProfit / totalSales) * 100).toFixed(2) + '%' : '0.00%' %></td>
-                  </tr>
-                <% } %>
-              <% } %>
-              <% totalSalesAll += totalSales %>
-              <% totalProfitAll += totalProfit %>
-              <% totalCostAll += totalCost %>
-            </tbody>
-            <tfoot>
-              <tr>
-                <th></th>
-                <th></th>
-                <th style="text-align: end;">TOTAL :</th>
-                <th style="text-align: end;"><%= totalSalesAll.toFixed(2) %></th>
-                <th style="text-align: end;"><%= totalProfitAll.toFixed(2) %></th>
-                <th style="text-align: end;"><%= totalCostAll.toFixed(2) %></th>
-                <th></th>
-                <th></th>
-              </tr>
-            </tfoot>
-          </table>
-          <select id="chartType">
-            <option value="bar">Bar</option>
-            <option value="pie">Pie</option>
-            <option value="doughnut">Doughnut</option>
-          </select>
-          <% if (rows && rows.length > 0) { %>
-            <div style="width: 95%;">
-              <canvas id="myChart"></canvas>
+        <div class="active-container">
+            <div id="profitLoss" style="display: block;">
+                <%- include('profit&loss'); %>
             </div>
-            <script>
-              const ctx = document.getElementById('myChart');
-              const skus = [
-                <% for (let i = 0; i < rows.length; i++) { %>
-                  '<%= rows[i].Content_SKU %>',
-                <% } %>
-              ];
-              const productNames = [
-                <% for (let i = 0; i < rows.length; i++) { %>
-                  '<%= rows[i].product_name %>',
-                <% } %>
-              ];
-              const quantities = [
-                <% for (let i = 0; i < rows.length; i++) { %>
-                  <%= rows[i].totalQuantity %>,
-                <% } %>
-              ];
-            
-              let myChart;
-            
-              function createChart(type) {
-                const ctx = document.getElementById('myChart');
-                if (myChart) {
-                  myChart.destroy(); // Destroy the old chart before creating a new one
-                }
-                myChart = new Chart(ctx, {
-                  type: type,
-                  data: {
-                    labels: skus,
+            <div id="trialBalance" style="display: none;">
+                <%- include('trial_balance'); %>
+            </div>
+            <div id="balanceSheet" style="display: none;">
+                <%- include('balance_sheet'); %>
+            </div>
+            <div id="bankLedger" style="display: none;">
+                <%- include('bank_ledger'); %>
+            </div>
+        </div>
+
+        <script>
+            $(document).ready(function() {
+                // Show corresponding content based on selected radio button
+                $('input[name="options"]').change(function() {
+                    var selectedOption = $('input[name="options"]:checked').attr('id');
+
+                    // Hide all content divs
+                    $('#profitLoss, #trialBalance, #balanceSheet, #bankLedger').hide();
+
+                    // Show the selected content
+                    if (selectedOption === 'option1') {
+                        $('#profitLoss').show();
+                    } else if (selectedOption === 'option2') {
+                        $('#trialBalance').show();
+                    } else if (selectedOption === 'option3') {
+                        $('#balanceSheet').show();
+                    } else if (selectedOption === 'option4') {
+                        $('#bankLedger').show();
+                    }
+                });
+            });
+        </script>
+
+        <div class="chart-grid">
+            <div class="chart-container">
+                <canvas id="salesLineChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="categoryPieChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="inventoryBarChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="satisfactionDoughnutChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="topProductsBarChart"></canvas>
+            </div>
+        </div>
+        <script>
+            var ctx = document.getElementById('salesLineChart').getContext('2d');
+            var salesLineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
                     datasets: [{
-                      label: '#Total Sold Quantity',
-                      data: quantities,
-                      borderWidth: 1
-                    }]
-                  },
-                  options: {
-                    indexAxis: 'y', // Display the data from left to right
-                    scales: {
-                      x: {
-                        beginAtZero: true
-                      }
-                    },
-                    plugins: {
-                      tooltip: {
-                        callbacks: {
-                          title: function(tooltipItem) {
-                            return productNames[tooltipItem[0].index];
-                          }
-                        }
-                      }
-                    }
-                  }
-                });
-              }
-            
-              // Create the initial chart
-              createChart('bar');
-            
-              // Update the chart when the selected type changes
-              document.getElementById('chartType').addEventListener('change', function() {
-                createChart(this.value);
-              });
-            </script>
-        <% } %>
-        <% } else { %>
-          <p>No data found for the selected date range.</p>
-        <% } %>
-      </div>
-      <br><br>
-        <h1>SKU Sales Data</h1>
-        <table class="table table-striped" style="width: 90%;">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Product Name</th>
-              <th>Average Days to Sell</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% for (let i = 0; i < data.length; i++) { %>
-              <tr>
-                <td><%= data[i].sku %></td>
-                <td><%= data[i].product_name %></td>
-                <td><%= (data[i].average_days_to_sold).toFixed(0) %></td>
-              </tr>
-            <% } %>
-          </tbody>
-        </table>
-        <br><br>
-      <div>
-        <div>
-          <div style="display: flex;">
-            <h1 style="font-weight: bold;font-size: 40px;border-bottom: 3px solid">Financial Overview</h1>
-            <form method="get" action="/" style="margin-left: 15px;margin-top: 10px;" onsubmit="saveScrollPosition()">
-              <label for="year">Select Year:</label>
-              <select id="year" name="year">
-                <% years.forEach(year => { %>
-                  <option value="<%= year.year %>" <%= year.year === selectedYear ? 'selected' : '' %>><%= year.year %></option>
-                <% }) %>
-              </select>
-              <button type="submit">Filter</button> 
-            </form>
-            <script>
-              function saveScrollPosition() {
-                sessionStorage.setItem('scrollPosition', window.scrollY);
-              }
-
-              // Restore scroll position after page reloads
-              window.onload = function() {
-                var scrollPosition = sessionStorage.getItem('scrollPosition');
-                if (scrollPosition) {
-                  window.scrollTo(0, scrollPosition);
-                  sessionStorage.removeItem('scrollPosition');
-                }
-              };
-            </script>
-          </div>
-          <a id="a" href="/profitlossstate" class="btn btn-success">Profit & Loss</a>
-          <a id="a" href="/balanceSheet" class="btn btn-success">Balance Sheet</a>
-          <a id="a" href="/trialbalance" class="btn btn-success">Trial Balance</a>
-          <a id="a" href="/bankledger" class="btn btn-success">Bank Ledger</a>
-          <br><br>
-            <div style="width: 95%;">
-              <div>
-                <h1 style="color: rgb(0, 4, 58);;width: 100%">Earnings & Revenue</h1>
-              </div>
-              <div style="width: 70%;">
-                <canvas id="revenueChart"></canvas>
-                <script>
-                  document.addEventListener('DOMContentLoaded', function() {
-                    const revenueData = <%= ((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0)).toFixed(2) %>;
-                    const costOfGoodsData = <%= ((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno1 - total_purchasesWOnosku) - (Math.abs(total_buydiscount))).toFixed(2) %>;
-                    const grossProfitloss = <%= (((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0)) - ((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno1 - total_purchasesWOnosku)) - (Math.abs(total_buydiscount))).toFixed(2) %>;
-                    const expendirure = <%= totalExpenses.toFixed(2) %>;
-                    const nettProfit = <%= ((((totalSales + totalSalesno - totalSales + bonus) - (refundsales && refundsales !== 0 ? refundsales : 0)) - ((totalPurchasesLastyear - totalCostLastyear) + total_purchasesWOnosku + totalship - (totalPurchases - totalCost) - (supRefunds && supRefunds !== 0 ? supRefunds : 0) + (totalPurchasesno1 - total_purchasesWOnosku)) - (Math.abs(total_buydiscount)))-totalExpenses).toFixed(2) %>;
-                                    
-                    const ctx = document.getElementById('revenueChart').getContext('2d');
-                    const formatYAxis = value => {
-                      if (Math.abs(value) >= 1000) {
-                        return (value / 1000) + 'k';
-                      }
-                      return value;
-                    };
-                    
-                    const chart = new Chart(ctx, {
-                      type: 'bar',
-                      data: {
-                        labels: ['Revenue', 'Cost of Goods Sold', 'Gross Profit & Loss', 'Expenditure', 'Nett Profit & Loss'],
-                        datasets: [{
-                          label: 'Amount',
-                          data: [revenueData, costOfGoodsData, grossProfitloss, expendirure, nettProfit],
-                          backgroundColor: [
-                            'rgba(255, 120, 52, 0.6)',
-                            'rgba(255, 46, 52, 0.6)',
-                            'rgba(255, 118, 199, 0.6)',
-                            'rgba(112, 0, 255, 0.6)',
-                            'rgba(75, 192, 192, 0.6)',
-                          ],
-                          borderColor: [
-                            'rgba(0, 0, 0, 1)',
-                            'rgba(0, 0, 0, 1)',
-                            'rgba(0, 0, 0, 1)',
-                            'rgba(0, 0, 0, 1)',
-                            'rgba(0, 0, 0, 1)',
-                          ],
-                          borderWidth: 1
-                        }]
-                      },
-                      options: {
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              stepSize: 100000,
-                              callback: formatYAxis
-                            }
-                          },
-                          x: {
-                            ticks: {
-                              font: {
-                                size: 20,
-                              },
-                            },
-                          }
-                        },
-                        plugins: {
-                          datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            font: {
-                              weight: 'bold'
-                            },
-                            color: 'black',
-                            clamp: true,
-                            formatter: function(value, context) {
-                              const label = context.chart.data.labels[context.dataIndex];
-                              return label + ": " + `RM${value.toFixed(2)}`;
-                            }
-                          }
-                        }
-                      },
-                    });
-                  });
-                </script>
-              </div>
-            </div>
-            <div style="width: 70%;">
-              <h1 style="color: rgb(0, 4, 58);">Financial Position</h1>
-              <div style="display: flex;">
-                <div style="width: 50%">
-                  <canvas id="balanceAssetsChart"></canvas>
-                  <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                      <% let totalCashInBank = 0; %>
-                      <% assetsData.forEach(function(item) { %>
-                        <% totalCashInBank += item.amount; %>
-                      <% }); %>
-
-                      const cashinbank = <%= totalCashInBank %>;
-                      const inventory = <%= (totalPurchases - totalCost).toFixed(2) %>;
-                      const accrecei = <%= (totalSalesno2 - totalSalespaid).toFixed(2) %>;
-                      const depo = <%= (totaldeposit && totaldeposit !== 0 ? totaldeposit : 0).toFixed(2) %>;
-                      const gdex = <%= (totalTopup + bonus2 - totalgdex).toFixed(2) %>;
-
-                      const ctx = document.getElementById('balanceAssetsChart').getContext('2d');
-                      const chart = new Chart(ctx, {
-                        type: 'pie',
-                        data: {
-                          labels: ['Inventory', 'Office Equipment', 'Cash at bank', 'Cash at Other ACC', 'Account Receivable', 'Other Assets'],
-                          datasets: [{
-                            label: 'Amount',
-                            data: [inventory, 0, cashinbank, gdex, accrecei, depo],
-                            backgroundColor: [
-                              'rgba(231, 76, 60, 0.5)',
-                              'rgba(229, 152, 102, 0.5)',
-                              'rgba(247, 220, 111, 0.5)',
-                              'rgba(133, 193, 233, 0.5)',
-                              'rgba(130, 224, 170, 0.5)',
-                              'rgba(195, 155, 211, 0.5)',
-                            ],
-                            borderColor: [
-                              'rgba(0, 0, 0, 1)',
-                              'rgba(0, 0, 0, 1)',
-                              'rgba(0, 0, 0, 1)',
-                              'rgba(0, 0, 0, 1)',
-                              'rgba(0, 0, 0, 1)',
-                              'rgba(0, 0, 0, 1)',
-                            ],
-                            borderWidth: 1
-                          }]
-                        },
-                        options: {
-                          plugins: {
-                            title: {
-                              display: true,
-                              text: 'Assets',
-                              position: 'top',
-                              font: {
-                                size: 35
-                              }
-                            },
-                            datalabels: {
-                              display: true, // Display the data labels
-                              color: '#000', // Set the color of the labels
-                              formatter: function(value, context) {
-                                // Display the value with two decimal places
-                                return value.toFixed(2);
-                              },
-                              font: {
-                                weight: 'bold' // Set the font weight of the labels
-                              }
-                            }
-                          }
-                        }
-                      });
-                    });
-                  </script>
-                </div>
-                <div style="width: 50%">
-                  <canvas id="balanceLiaEquiChart"></canvas>
-                  <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-
-                      const accpayable = <%= (totalPurchasesno2 - totalBuypaid).toFixed(2) %>;
-                      const otherLiabilities = <%= ((totalotcredit && totalotcredit !== 0 ? totalotcredit : 0)+(totalaccrued && totalaccrued !== 0 ? totalaccrued : 0)).toFixed(2) %>;
-                      const equity = <%= (((((((((totalSales && totalSales !== 0 ? totalSales : 0) + (totalSalesno && totalSalesno !== 0 ? totalSalesno : 0)
-                              - (totalSales && totalSales !== 0 ? totalSales : 0) + (bonus && bonus !== 0 ? bonus : 0)) - (refundsales && refundsales !== 0 ? refundsales : 0)) - 
-                            (((totalPurchasesLastyear && totalPurchasesLastyear !== 0 ? totalPurchasesLastyear : 0) - (totalCostLastyear && totalCostLastyear !== 0 ? totalCostLastyear : 0))
-                              + (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0) + (totalship && totalship !== 0 ? totalship : 0) - 
-                            ((totalPurchases && totalPurchases !== 0 ? totalPurchases : 0) - (totalCost && totalCost !== 0 ? totalCost : 0)) - 
-                            (supRefunds && supRefunds !== 0 ? supRefunds : 0) + ((totalPurchasesno1 && totalPurchasesno1 !== 0 ? totalPurchasesno1 : 0) - 
-                            (total_purchasesWOnosku && total_purchasesWOnosku !== 0 ? total_purchasesWOnosku : 0))))-(totalExpenses && totalExpenses !== 0 ? totalExpenses : 0)) + 
-                            (totalc2p && totalc2p !== 0 ? totalc2p : 0) - (totalp2c && totalp2c !== 0 ? totalp2c : 0)))+(((((((bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bftotalSalesno && bftotalSalesno !== 0 ? bftotalSalesno : 0)
-                            - (bftotalSales && bftotalSales !== 0 ? bftotalSales : 0) + (bfbonus && bfbonus !== 0 ? bfbonus : 0)) - (bfrefundsales && bfrefundsales !== 0 ? bfrefundsales : 0)) - 
-                            (((bftotalPurchasesLastyear && bftotalPurchasesLastyear !== 0 ? bftotalPurchasesLastyear : 0) - (bftotalCostLastyear && bftotalCostLastyear !== 0 ? bftotalCostLastyear : 0))
-                            + (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0) + (bftotalship && bftotalship !== 0 ? bftotalship : 0) - 
-                            ((bftotalPurchases && bftotalPurchases !== 0 ? bftotalPurchases : 0) - (bftotalCost && bftotalCost !== 0 ? bftotalCost : 0)) - 
-                            (bfsupRefunds && bfsupRefunds !== 0 ? bfsupRefunds : 0) + ((bftotalPurchasesno && bftotalPurchasesno !== 0 ? bftotalPurchasesno : 0) - 
-                            (bftotal_purchasesWOnosku && bftotal_purchasesWOnosku !== 0 ? bftotal_purchasesWOnosku : 0))))-(bftotalExpenses && bftotalExpenses !== 0 ? bftotalExpenses : 0)) + 
-                            (bftotalc2p && bftotalc2p !== 0 ? bftotalc2p : 0) - (bftotalp2c && bftotalp2c !== 0 ? bftotalp2c : 0)))) + totalcapital).toFixed(2) %>;
-                      
-
-                            const ctx = document.getElementById('balanceLiaEquiChart').getContext('2d');
-                            const chart = new Chart(ctx, {
-                              type: 'pie',
-                              data: {
-                                labels: ['Account Payables', 'Other Liabilities', 'Equity'],
-                                datasets: [{
-                                  label: 'Amount',
-                                  data: [accpayable, otherLiabilities, equity],
-                                  backgroundColor: [
-                                    'rgba(75, 192, 192, 0.2)',
-                                    'rgba(255, 99, 132, 0.2)',
-                                    'rgba(195, 155, 211, 0.2)',
-                                  ],
-                                  borderColor: [
-                                    'rgba(0, 0, 0, 1)',
-                                    'rgba(0, 0, 0, 1)',
-                                    'rgba(0, 0, 0, 1)',
-                                  ],
-                                  borderWidth: 1
-                                }]
-                              },
-                              options: {
-                                plugins: {
-                                  title: {
-                                    display: true,
-                                    text: 'Liabilities + Equity',
-                                    position: 'top',
-                                    font: {
-                                      size: 35,
-                                    }
-                                  },
-                                  datalabels: {
-                                    color: 'black',
-                                    font: {
-                                      size: 14 // Adjust the font size of the labels
-                                    },
-                                    formatter: function(value, context) {
-                                      return value.toFixed(2);
-                                    },
-                                    anchor: 'end',
-                                    align: 'start',
-                                    offset: 10,
-                                    borderWidth: 1,
-                                    borderColor: 'rgba(0, 0, 0, 0.8)',
-                                    borderRadius: 4,
-                                    backgroundColor: 'white',
-                                    padding: {
-                                      top: 4,
-                                      bottom: 4,
-                                      right: 8,
-                                      left: 8
-                                    },
-                                    labels: {
-                                      title: {
-                                        font: {
-                                          weight: 'bold'
-                                        }
-                                      }
-                                    },
-                                    listeners: {
-                                      click: function(context) {
-                                        // Handle label click event if needed
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            });
-                          });
-                  </script>
-                </div>
-              </div>
-            </div>
-        </div>
-      </div>
-        <div style="width: 100%;">
-          <h1 style="color: rgb(0, 4, 58);">Performance Summary</h1>
-          <div style="width: 70%;">
-            <canvas id="combinedChart"></canvas>
-            <script>
-              document.addEventListener('DOMContentLoaded', function() {
-                const salesData = JSON.parse('<%- JSON.stringify(salesData) %>');
-                const salesData2 = JSON.parse('<%- JSON.stringify(salesData2) %>');
-                const bonusData = JSON.parse('<%- JSON.stringify(bonusData) %>');
-                const refundData = JSON.parse('<%- JSON.stringify(refundData) %>');
-                const netProfits = JSON.parse('<%- JSON.stringify(netProfits) %>');
-                const years = JSON.parse('<%- JSON.stringify(ayears) %>');
-                const equity = JSON.parse('<%- JSON.stringify(equitys) %>');
-
-                const sales = salesData.map(data => data.sales);
-                const sales2 = salesData2.map(data => data.sales);
-                const bonus = bonusData.map(data => data.bonus);
-                const refund = refundData.map(data => data.refundsales);
-                const adjustedSales = sales.map((value, index) => value + sales2[index] - sales[index] + bonus[index] - (refund[index] || 0));
-                const netProfit = adjustedSales.map((value, index) => value - netProfits[index]);
-                const percentage = adjustedSales.map((value, index) => (netProfit[index] / value) * 100);
-                const totalassets = JSON.parse('<%- JSON.stringify(totalAssetss) %>');
-                const percentage2 = totalassets.map((value, index) => (netProfit[index] / value) * 100);
-                const percentage3 = equity.map((value, index) => (netProfit[index] / value) * 100);
-
-                const formatYAxis = value => {
-                  if (Math.abs(value) >= 1000) {
-                    return (value / 1000) + 'k';
-                  }
-                  return value;
-                };
-
-                const ctx = document.getElementById('combinedChart').getContext('2d');
-                new Chart(ctx, {
-                  type: 'line',
-                  data: {
-                    labels: years,
-                    datasets: [
-                      {
-                        label: 'Revenue',
-                        data: adjustedSales,
-                        fill: false,
+                        label: 'Monthly Sales',
+                        data: [1500, 2000, 1800, 2200, 3000, 2500, 2700],
                         borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 3
-                      },
-                      {
-                        label: 'Net Profit',
-                        data: netProfit,
-                        fill: false,
-                        borderColor: 'rgba(192, 75, 192, 1)',
-                        borderWidth: 3
-                      },
-                      {
-                        label: 'Total Assets',
-                        data: totalassets,
-                        fill: false,
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 3
-                      },
-                      {
-                        label: 'Total Equity',
-                        data: equity,
-                        fill: false,
-                        borderColor: 'rgba(44, 120, 52, 1)',
-                        borderWidth: 3
-                      }
-                    ]
-                  },
-                  options: {
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        ticks: {
-                          stepSize: 100000,
-                          callback: formatYAxis
-                        }
-                      },
-                      x: {
-                        ticks: {
-                          font: {
-                            size: 20,
-                          },
-                        },
-                      },
-                    },
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
                     plugins: {
-                      tooltip: {
-                        intersect: false,
-                        mode: 'index',
-                        callbacks: {
-                          label: function(context) {
-                            const datasetLabel = context.dataset.label || '';
-                            const value = context.parsed.y || 0;
-                            const index = context.dataIndex;
-                            const perc = percentage[index];
-                            const perc2 = percentage2[index];
-                            let tooltipText = '';
-                            
-                            if (datasetLabel === 'Revenue') {
-                              tooltipText = `Revenue: RM${value.toFixed(2)}`;
-                            } else if (datasetLabel === 'Net Profit') {
-                              tooltipText = `Net Profit: RM${value.toFixed(2)}`;
-                            } else if (datasetLabel === 'Total Assets') {
-                              tooltipText = `Total Assets: RM${value.toFixed(2)}`;
-                            }  else if (datasetLabel === 'Total Equity') {
-                              tooltipText = `Total Equity: RM${value.toFixed(2)}`;
-                            } 
-                            
-                            return tooltipText;
-                          },
-                          footer: function(tooltipItems) {
-                            const index = tooltipItems[0].dataIndex;
-                            const perc = percentage[index];
-                            const perc2 = percentage2[index];
-                            const perc3 = percentage3[index];
-                            return `Net Profit Margin: ${perc.toFixed(2)}%\nReturn on Assets: ${perc2.toFixed(2)}%\nReturn on Capital: ${perc3.toFixed(2)}%`;
-                          }
-                        },
-                        bodyFont: {
-                          size: 18
-                        },
-                        footerFont: {
-                          size: 18
-                        },
-                        titleFont: {
-                          size: 23
+                        legend: {
+                            display: true
                         }
-                      }
                     }
-                  }
-                });
-              });
-            </script>
-          </div>
-        </div>
-      <div>
+                }
+            });
+
+            var ctx = document.getElementById('categoryPieChart').getContext('2d');
+            var categoryPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Electronics', 'Clothing', 'Books', 'Home Appliances', 'Toys'],
+                    datasets: [{
+                        data: [300, 50, 100, 80, 150],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+
+            var ctx = document.getElementById('inventoryBarChart').getContext('2d');
+            var inventoryBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Laptops', 'Smartphones', 'Tablets', 'Monitors', 'Keyboards'],
+                    datasets: [{
+                        label: 'Stock Level',
+                        data: [100, 150, 75, 50, 200],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    responsive: true
+                }
+            });
+
+            var ctx = document.getElementById('satisfactionDoughnutChart').getContext('2d');
+            var satisfactionDoughnutChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Very Satisfied', 'Satisfied', 'Neutral', 'Dissatisfied', 'Very Dissatisfied'],
+                    datasets: [{
+                        data: [40, 35, 15, 5, 5],
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+
+            var ctx = document.getElementById('topProductsBarChart').getContext('2d');
+            var topProductsBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'],
+                    datasets: [{
+                        label: 'Sales',
+                        data: [500, 400, 300, 200, 100],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    },
+                    responsive: true
+                }
+            });
+        </script>
     </main>
-  </body>
+</body>
 </html>
