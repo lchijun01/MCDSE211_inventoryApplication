@@ -1,4 +1,9 @@
-create database(mysql) :
+After clone:
+- npm install
+Start App:
+- nodemon app
+-------------------------------
+Create Database(mysql):
 
 CREATE DATABASE mcdse211 
     CHARACTER SET utf8mb4 
