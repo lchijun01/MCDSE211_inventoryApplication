@@ -39,7 +39,7 @@ const pool = mysql.createPool({
     host: 'localhost',
     user: 'root',
     password: 'abc123',
-    database: 'cjinventorysystemv1'
+    database: 'mcdse211'
 });
 const urlencodedParser = bodyParser.urlencoded({extended: true});
 app.set('view engine', 'ejs');
