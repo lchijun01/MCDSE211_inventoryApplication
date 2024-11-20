@@ -93,7 +93,7 @@ app.get('/login', (req, res) => {
   res.render('login');
 });
 // Dashboard
-app.get('/', (req, res) => {
+app.get('/', requireLogin, (req, res) => {
   res.render('index');
 });
 // Sales
@@ -642,6 +642,34 @@ app.get('/download-invoice-pdf', (req, res) => {
         res.send(buffer);
       });
     });
+  });
+});
+
+
+
+app.get('/api/purchase-products', (req, res) => {
+  const query = `
+    SELECT pp.product, pp.quantity AS total_quantity, COALESCE(SUM(s.quantity), 0) AS total_sold
+    FROM purchase_products pp
+    LEFT JOIN sales s ON pp.product = s.product
+    GROUP BY pp.product, pp.quantity`;
+
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Server Error');
+    }
+
+    const products = results.map(row => {
+      const availableQuantity = row.total_quantity - row.total_sold;
+      return {
+        product: row.product,
+        availableQuantity: availableQuantity,
+        price: row.price // Assuming 'price' is in the 'purchase_products' table
+      };
+    });
+
+    res.json(products);
   });
 });
 

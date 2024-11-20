@@ -70,6 +70,167 @@
     <%- include('partials/nav'); %>
     <main class="main-content">
         <div><h1>Dashboard</h1></div>
+            <div style="width: 90%; margin: auto; padding: 20px;">
+              <h1>Sales Dashboard</h1>
+              <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
+                <!-- Bar Chart -->
+                <div style="width: 45%;">
+                  <canvas id="barChart"></canvas>
+                </div>
+                <!-- Line Chart -->
+                <div style="width: 45%;">
+                  <canvas id="lineChart"></canvas>
+                </div>
+                <!-- Pie Chart -->
+                <div style="width: 45%;">
+                  <canvas id="pieChart"></canvas>
+                </div>
+              </div>
+            </div>
+          
+            <script>
+              // Example Data for Charts
+              const exampleData = {
+                bar: {
+                  labels: ['January', 'February', 'March', 'April', 'May'],
+                  datasets: [{
+                    label: 'Monthly Sales',
+                    data: [5000, 4000, 3000, 7000, 8000],
+                    backgroundColor: ['#4CAF50', '#FFC107', '#FF5722', '#03A9F4', '#9C27B0']
+                  }]
+                },
+                line: {
+                  labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                  datasets: [{
+                    label: 'Weekly Earnings',
+                    data: [200, 450, 700, 300, 800],
+                    borderColor: '#03A9F4',
+                    fill: false,
+                    tension: 0.1
+                  }]
+                },
+                pie: {
+                  labels: ['Online', 'In-Store', 'Wholesale'],
+                  datasets: [{
+                    data: [50, 30, 20],
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                  }]
+                }
+              };
+          
+              // Create Bar Chart
+              new Chart(document.getElementById('barChart'), {
+                type: 'bar',
+                data: exampleData.bar,
+                options: {
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Monthly Sales' }
+                  }
+                }
+              });
+          
+              // Create Line Chart
+              new Chart(document.getElementById('lineChart'), {
+                type: 'line',
+                data: exampleData.line,
+                options: {
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Weekly Earnings' }
+                  }
+                }
+              });
+          
+              // Create Pie Chart
+              new Chart(document.getElementById('pieChart'), {
+                type: 'pie',
+                data: exampleData.pie,
+                options: {
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Sales Distribution' }
+                  }
+                }
+              });
+            </script>
+
+<div style="width: 80%; margin: auto; padding: 20px;">
+    <h1>Stock Level Dashboard</h1>
+    <div>
+      <!-- Stock Level Chart -->
+      <canvas id="stockAlertChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Example Stock Data
+    const products = ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'];
+    const stockLevels = [120, 15, 45, 5, 200]; // Example stock levels
+    const lowStockThreshold = 30; // Threshold for low stock alerts
+
+    // Generate colors for stock levels
+    const backgroundColors = stockLevels.map(stock => 
+      stock < lowStockThreshold ? '#FF5722' : '#4CAF50' // Red for low stock, green for sufficient stock
+    );
+
+    const borderColors = stockLevels.map(stock =>
+      stock < lowStockThreshold ? '#E64A19' : '#388E3C'
+    );
+
+    // Stock Level Chart Configuration
+    new Chart(document.getElementById('stockAlertChart'), {
+      type: 'bar',
+      data: {
+        labels: products,
+        datasets: [{
+          label: 'Stock Level',
+          data: stockLevels,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false // Hide legend
+          },
+          title: {
+            display: true,
+            text: 'Stock Levels by Product (Low Stock Alert)'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const stock = context.raw;
+                return `${context.label}: ${stock} units` + (stock < lowStockThreshold ? ' (Low Stock!)' : '');
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Products'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Quantity'
+            }
+          }
+        }
+      }
+    });
+  </script>
     </main>
 </body>
 </html>

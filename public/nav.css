@@ -157,3 +157,25 @@ ul {
 .link_name {
     font-weight: bold;
 }
+
+@media (max-width: 768px) {
+    .sidebar {
+      width: 60px; /* Default width for small screens */
+    }
+  
+    .sidebar.active {
+      left: -260px; /* Hide sidebar off-screen */
+    }
+  
+    .logo-details img {
+      width: 30px; /* Smaller logo size */
+    }
+  
+    .scrollable-element {
+      padding-top: 40px; /* Adjust padding */
+    }
+  
+    .bottom-left {
+      font-size: 12px; /* Smaller text */
+    }
+  }
