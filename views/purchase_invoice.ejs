@@ -11,6 +11,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.0/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <title>Purchase - Invoice</title>
+  <script>
+    if (window.history.replaceState) {
+        // Prevents the form from being resubmitted on page refresh
+        window.history.replaceState(null, null, window.location.href);
+    }
+  </script>
+
 </head>
 <body class="main-contents">
   <%- include('partials/nav'); %>

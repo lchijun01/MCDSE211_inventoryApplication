@@ -9,69 +9,110 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
+      background-color: #f8f9fa; /* Light background to make the invoice stand out */
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
+
     .invoice-container {
-      width: 210mm;
-      height: 296.7mm;
-      padding: 10mm;
+      width: 90%;
+      max-width: 800px;
+      padding: 20px;
+      margin: 20px auto;
       border: 1px solid #ddd;
-      margin: 0 !important;
       background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
     }
+
     .header, .footer {
       text-align: center;
       padding: 10px 0;
     }
+
     .header {
       border-bottom: 2px solid #333;
+      margin-bottom: 20px;
     }
+
     .footer {
       border-top: 1px solid #ddd;
-      position: absolute;
-      bottom: 10mm;
-      width: 90%;
+      margin-top: 20px;
     }
+
     .invoice-details {
-      margin: 10mm 0;
+      margin: 20px 0;
     }
+
     .invoice-details table {
       width: 100%;
       border-collapse: collapse;
     }
+
     .invoice-details th, .invoice-details td {
       padding: 10px;
       text-align: left;
       border: 1px solid #ddd;
     }
+
     .invoice-summary {
       text-align: right;
       margin-top: 20px;
     }
+
     .invoice-summary table {
       width: 100%;
       border-collapse: collapse;
     }
+
     .invoice-summary th, .invoice-summary td {
       padding: 10px;
       text-align: right;
       border: 1px solid #ddd;
     }
-  </style>
-  <script>
-      if (window.history.replaceState) {
-          // Prevents the form from being resubmitted on page refresh
-          window.history.replaceState(null, null, window.location.href);
+
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+      .invoice-container {
+        width: 95%;
+        padding: 15px;
       }
-  </script>
+
+      .header h1 {
+        font-size: 24px;
+      }
+
+      .invoice-details th, .invoice-details td,
+      .invoice-summary th, .invoice-summary td {
+        padding: 8px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .invoice-container {
+        width: 100%;
+        padding: 10px;
+      }
+
+      .header h1 {
+        font-size: 20px;
+      }
+
+      .invoice-details th, .invoice-details td,
+      .invoice-summary th, .invoice-summary td {
+        padding: 6px;
+        font-size: 12px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div id="invoice-container" class="invoice-container">
-    <!-- Header Section -->
+  <div class="invoice-container" data-invoice-number="<%= invoice.invoice_number %>">
     <div class="header">
       <h1>Invoice</h1>
     </div>
-
-    <!-- Supplier and Invoice Details -->
     <div class="invoice-details">
       <table>
         <tr>
@@ -79,17 +120,15 @@
           <td><%= invoice.invoice_number %></td>
         </tr>
         <tr>
-          <th>Supplier Name:</th>
-          <td><%= invoice.supplier_name %></td>
+          <th>Buyer Name:</th>
+          <td><%= invoice.buyer_name %></td>
         </tr>
         <tr>
-          <th>Purchase Date:</th>
-          <td><%= new Date(invoice.purchase_date).toISOString().slice(0, 10) %></td>
+          <th>Sales Date:</th>
+          <td><%= new Date(invoice.sales_date).toISOString().slice(0, 10) %></td>
         </tr>
       </table>
     </div>
-
-    <!-- Product Details -->
     <h2>Product Details</h2>
     <table class="invoice-details">
       <thead>
@@ -111,8 +150,6 @@
         <% }); %>
       </tbody>
     </table>
-
-    <!-- Invoice Summary -->
     <div class="invoice-summary">
       <table>
         <tr>
@@ -121,8 +158,6 @@
         </tr>
       </table>
     </div>
-
-    <!-- Footer Section -->
     <div class="footer">
       <p>Thank you for your business!</p>
     </div>

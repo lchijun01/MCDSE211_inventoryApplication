@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Login Page</title>
+    <title>Register Page</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
@@ -24,9 +24,10 @@
         width: 100%;
       }
       h2 {
-        font-size: 24px;
+        font-size: 18px;
         font-family: Arial, Helvetica, sans-serif;
         font-weight: bold;
+        margin-top: 20px;
         margin-bottom: 20px;
         color: #333;
       }
@@ -53,14 +54,11 @@
       }
       .btn-container {
         display: flex;
-        justify-content: space-between; /* Align buttons side by side with space between */
-        width: 100%; /* Make sure the container takes full width */
-        max-width: 300px; /* Limit the width of the buttons container */
-        margin: 0 auto; /* Center the buttons container */
+        justify-content: center;
+        width: 100%;
       }
-
       .overlay-image {
-        width: 120px; /* Adjust the size of the logo */
+        width: 80px; /* Adjust the size of the image */
         height: auto;
         margin: 0 auto; /* Center the image */
         display: block;
@@ -69,12 +67,6 @@
         font-size: 18px;
         border-radius: 6px;
         margin-top: 10px;
-        width: 100%; /* Make buttons take full width */
-      }
-      .signup-link {
-        margin-top: 10px;
-        font-size: 14px;
-        color: #555;
       }
     </style>
     <script>
@@ -87,26 +79,32 @@
   <body>
     <div class="container">
       <img src="logo.png" alt="Overlay Image" class="overlay-image">
-      <h2>Welcome Back to Inventory System v1.0</h2>
-      <form method="POST" action="/login">
+      <h2>Welcome to Inventory System v1.0</h2>
+      <form method="POST" action="/register">
         <div>
           <label class="labelss" for="username">Username:</label>
           <input class="form-control" type="text" id="username" name="username" required>
         </div>
         <div>
+            <label class="labelss" for="email">Email:</label>
+            <input class="form-control" type="email" id="email" name="email" required>
+        </div>
+        <div>
           <label class="labelss" for="password">Password:</label>
           <input class="form-control" type="password" id="password" name="password" required>
+        </div>
+        <div>
+          <label class="labelss" for="confirmPassword">Confirm Password:</label>
+          <input class="form-control" type="password" id="confirmPassword" name="confirmPassword" required>
         </div>
         <% if (locals.error) { %>
           <p class="error-message"><%= locals.error %></p>
         <% } %>
         <div class="btn-container">
-          <!-- Login Button -->
-          <button type="submit" class="btn btn-outline-dark">Login</button>
-          <!-- Sign Up Button -->
-          <a href="/register" class="btn btn-outline-secondary">Sign Up</a>
+          <button type="submit" class="btn btn-outline-dark">Sign Up</button>
         </div>
       </form>
+      <p>Already have an account? <a href="/login">Login here</a></p>
     </div>
   </body>
 </html>

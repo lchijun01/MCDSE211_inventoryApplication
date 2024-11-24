@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-  <head>
+<head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="nav.css">
     <!-- Boxiocns CDN Link -->
@@ -10,69 +10,119 @@
     <script src="https://kit.fontawesome.com/4299264dfd.js" crossorigin="anonymous"></script>
     <link href="nav.css" type="text/css" rel="stylesheet">
     <style>
-      img {
-        width: 70px;
-        background-color: white;
-        cursor: pointer;
-      }
-      .sidebar {
-        user-select: none;
-      }
-      .logo-details a {
-        text-decoration: none;
-      }
-      .logo-details a:hover {
-        color: black;
-      }
+        img {
+            width: 70px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .sidebar {
+            user-select: none;
+        }
+
+        .logo-details a {
+            text-decoration: none;
+        }
+
+        .logo-details a:hover {
+            color: black;
+        }
+
+        /* Hamburger Icon */
+        .hamburger-icon {
+            display: none;
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        /* Sidebar Styling for Mobile View */
+        @media (max-width: 480px) {
+          img {
+            display: none;
+          }
+            .hamburger-icon {
+                display: block; /* Show hamburger icon on small screens */
+            }
+
+            .sidebar {
+                position: fixed;
+                width: 0; /* Hide sidebar initially */
+                height: 100%;
+                top: 0;
+                left: 0;
+                background: white;
+                overflow: hidden;
+                transition: width 0.3s ease-in-out;
+                z-index: 999;
+            }
+
+            .sidebar.active {
+                width: 200px; /* Show sidebar when active */
+            }
+
+            .scrollable-element {
+                display: block; /* Display sidebar content */
+            }
+        }
     </style>
-   </head>
+</head>
 <body>
-  <div class="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="logo-details">
-      <a href="/" class="logo_name"><img src="/logo.png" alt="">Inventory System</a>
-      <form class="logout-form" method="POST" action="/logout">
-          <button type="submit">Logout</button>
-      </form>
+        <div class="hamburger-icon" id="hamburgerIcon">
+            &#9776; <!-- Triple bar icon -->
+        </div>
+        <a href="/" class="logo_name"><img src="/logo.png" alt="">Inventory System</a>
+        <form class="logout-form" method="POST" action="/logout">
+            <button type="submit">Logout</button>
+        </form>
     </div>
-    <div class="scrollable-element">
-      <ul class="nav-links">
+    <div class="scrollable-element" id="scrollableElement">
+        <ul class="nav-links">
+            <li class="li-cat">
+                <div class="iocn-link">
+                    <a href="#">
+                        <i class="bi bi-bar-chart"></i>
+                        <span class="link_name">Sales</span>
+                    </a>
+                </div>
+                <ul class="sub-menu">
+                    <li><a href="/sales">Sales</a></li>
+                    <li><a href="/sales-paymentbreakdown">Payment Breakdown</a></li>
+                    <li><a href="/sales-invoice">Invoice</a></li>
+                </ul>
+            </li>
 
-
-        <li class="li-cat">
-          <div class="iocn-link">
-            <a href="#">
-              <i class="bi bi-bar-chart"></i>
-              <span class="link_name">Sales</span>
-            </a>
-          </div>
-          <ul class="sub-menu">
-            <li><a href="/sales">Sales</a></li>
-            <li><a href="/sales-paymentbreakdown">Payment Breakdown</a></li>
-            <li><a href="/sales-invoice">Invoice</a></li>
-          </ul>
-        </li>
-
-
-
-        <li class="li-cat">
-          <div class="iocn-link">
-            <a href="#">
-              <i class="bi bi-cart"></i>
-              <span class="link_name">Purchase</span>
-            </a>
-          </div>
-          <ul class="sub-menu">
-            <li><a href="/purchase">Purchase</a></li>
-            <li><a href="/purchase-paymentbreakdown">Payment Breakdown</a></li>
-            <li><a href="/purchase-invoice">Invoice</a></li>
-          </ul>
-        </li>
-
-      </ul>
-      <div id="bottom" class="bottom-left">
-        <a class="bottom">©Team CJ & Desmond</a>
-      </div>
+            <li class="li-cat">
+                <div class="iocn-link">
+                    <a href="#">
+                        <i class="bi bi-cart"></i>
+                        <span class="link_name">Purchase</span>
+                    </a>
+                </div>
+                <ul class="sub-menu">
+                    <li><a href="/purchase">Purchase</a></li>
+                    <li><a href="/purchase-paymentbreakdown">Payment Breakdown</a></li>
+                    <li><a href="/purchase-invoice">Invoice</a></li>
+                </ul>
+            </li>
+        </ul>
+        <div id="bottom" class="bottom-left">
+            <a class="bottom">©Team CJ & Desmond</a>
+        </div>
     </div>
-  </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const hamburgerIcon = document.getElementById('hamburgerIcon');
+        const sidebar = document.getElementById('sidebar');
+
+        hamburgerIcon.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+    });
+</script>
 </body>
 </html>

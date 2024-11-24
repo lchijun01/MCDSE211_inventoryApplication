@@ -4,233 +4,269 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <title>Home-Dashboard</title>
     <style>
+      main {
+          padding-left: 280px;
+          position: relative;
+      }
+
+      .chart-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 20px;
+          padding: 20px;
+      }
+
+      .chart-container {
+          width: 100%;
+          max-width: 600px;
+          margin: auto;
+          height: 400px;
+      }
+      
+      h1 {
+          padding-top: 100px;
+      }
+      
+      .table-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 20px;
+          width: 100%;
+          max-height: calc(65vh - 90px);
+          overflow: auto;
+      }
+      @media (max-width: 480px) {
         main {
-        padding-left: 280px;
-        position: relative;
+            padding-left: 10px;
+            position: relative;
         }
-
-        .chart-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* Two columns */
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .chart-container {
-            width: 100%;
-            max-width: 600px;
-            margin: auto;
-            height: 400px;
-        }
-        
-        #a {
-            margin: 0.5rem 1rem;
-        }
-
-        h1 {
-            padding-top: 100px;
-        }
-        
-        .active-container {
-            padding: 20px 40px 20px 20px;
-        }
-
-        .active-container-form {
-            box-shadow: 0 4px 8px;
-            border-radius: 5px;
-            padding: 20px;
-            height: 65vh;
-        }
-
-        .table-container {
-            display: flex;
-            flex-wrap: wrap; /* Allows tables to wrap into new rows */
-            gap: 20px; /* Space between tables */
-            width: 100%;
-            max-height: calc(65vh - 90px); /* Set a fixed or maximum height */
-            overflow: auto;
-        }
-
-        .table-container .table {
-            flex: 1 1 300px; /* Grow to fill space, shrink to 300px, initial width 300px */
-            min-width: 200px; /* Minimum width to prevent tables from getting too small */
-            max-width: 100%; /* Ensures tables don’t exceed the container width */
-        }
-    </style>
+      }
+  </style>
 </head>
-<body class="main-contents">
+<body>
     <%- include('partials/nav'); %>
     <main class="main-content">
         <div><h1>Dashboard</h1></div>
-            <div style="width: 90%; margin: auto; padding: 20px;">
-              <h1>Sales Dashboard</h1>
-              <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
-                <!-- Bar Chart -->
-                <div style="width: 45%;">
-                  <canvas id="barChart"></canvas>
-                </div>
-                <!-- Line Chart -->
-                <div style="width: 45%;">
-                  <canvas id="lineChart"></canvas>
-                </div>
-                <!-- Pie Chart -->
-                <div style="width: 45%;">
-                  <canvas id="pieChart"></canvas>
-                </div>
-              </div>
+
+        <div class="container">
+            <h2>Inventory Dashboard</h2>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Total Purchased</th>
+                        <th>Total Sold</th>
+                        <th>Stock Left</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (stockData && stockData.length > 0) { %>
+                        <% stockData.forEach(function(product) { %>
+                            <tr>
+                                <td><%= product.product_name %></td>
+                                <td><%= product.total_purchased %></td>
+                                <td><%= product.total_sold %></td>
+                                <td><%= product.stock_left %></td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4">No data available.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="container">
+            <h2>Restocking Alerts</h2>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Avg. 7 Days Sales Quantity</th>
+                        <th>Current Stock</th>
+                        <th>Days of Stock Left</th>
+                        <th>Restock Alert</th>
+                    </tr>
+                </thead>
+                <tbody id="restockingTable">
+                    <!-- Rows will be appended here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        <div class="container">
+          <h2>Sales Data</h2>
+          <select id="salesInterval" class="form-select" aria-label="Select Sales Interval">
+              <option value="daily">Daily</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+          </select>
+          <div class="chart-container">
+              <canvas id="salesChart"></canvas>
+          </div>
+        </div>
+        
+        <div class="container">
+            <h2>Current Stock Value</h2>
+            <div class="chart-container">
+                <canvas id="stockChart"></canvas>
             </div>
-          
-            <script>
-              // Example Data for Charts
-              const exampleData = {
-                bar: {
-                  labels: ['January', 'February', 'March', 'April', 'May'],
-                  datasets: [{
-                    label: 'Monthly Sales',
-                    data: [5000, 4000, 3000, 7000, 8000],
-                    backgroundColor: ['#4CAF50', '#FFC107', '#FF5722', '#03A9F4', '#9C27B0']
-                  }]
-                },
-                line: {
-                  labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-                  datasets: [{
-                    label: 'Weekly Earnings',
-                    data: [200, 450, 700, 300, 800],
-                    borderColor: '#03A9F4',
-                    fill: false,
-                    tension: 0.1
-                  }]
-                },
-                pie: {
-                  labels: ['Online', 'In-Store', 'Wholesale'],
-                  datasets: [{
-                    data: [50, 30, 20],
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
-                  }]
+        </div>
+      
+        <script>
+          document.addEventListener("DOMContentLoaded", () => {
+            fetch('/api/restocking-alerts')
+              .then(response => response.json())
+              .then(data => {
+                console.log("Restocking Data:", data); // Debug to check data
+                const tableBody = document.getElementById('restockingTable');
+                
+                if (data.length === 0) {
+                  const row = document.createElement('tr');
+                  row.innerHTML = `<td colspan="5">No restocking alerts available</td>`;
+                  tableBody.appendChild(row);
+                } else {
+                  data.forEach(item => {
+                    const row = document.createElement('tr');
+                    const daysOfStockLeft = item.days_of_stock_left !== null ? item.days_of_stock_left.toFixed(2) : 'Unknown';
+                    const restockAlert = item.days_of_stock_left === null ? '<span class="text-success">No Restock Needed</span>' : (item.days_of_stock_left < 7 ? '<span class="text-danger">Restock Needed</span>' : '<span class="text-success">Sufficient Stock</span>');
+        
+                    row.innerHTML = `
+                      <td>${item.product_name}</td>
+                      <td>${item.avg_7_days_quantity.toFixed(2)}</td>
+                      <td>${item.current_stock}</td>
+                      <td>${daysOfStockLeft}</td>
+                      <td>${restockAlert}</td>
+                    `;
+                    tableBody.appendChild(row);
+                  });
                 }
-              };
-          
-              // Create Bar Chart
-              new Chart(document.getElementById('barChart'), {
-                type: 'bar',
-                data: exampleData.bar,
-                options: {
-                  responsive: true,
-                  plugins: {
-                    legend: { position: 'top' },
-                    title: { display: true, text: 'Monthly Sales' }
-                  }
-                }
+              })
+              .catch(error => {
+                console.error('Error fetching restocking alerts:', error);
+                const tableBody = document.getElementById('restockingTable');
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="5" class="text-danger">Error fetching restocking alerts. Please try again later.</td>`;
+                tableBody.appendChild(row);
               });
-          
-              // Create Line Chart
-              new Chart(document.getElementById('lineChart'), {
-                type: 'line',
-                data: exampleData.line,
-                options: {
-                  responsive: true,
-                  plugins: {
-                    legend: { position: 'top' },
-                    title: { display: true, text: 'Weekly Earnings' }
-                  }
+          });
+        </script>
+        <script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Sales Chart
+    const salesCtx = document.getElementById('salesChart').getContext('2d');
+    let salesChart;
+
+    const loadSalesData = (interval) => {
+        fetch(`/api/sales-data?interval=${interval}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Sales Data:', data);
+
+                if (salesChart) {
+                    salesChart.destroy(); // Destroy previous chart instance
                 }
-              });
-          
-              // Create Pie Chart
-              new Chart(document.getElementById('pieChart'), {
-                type: 'pie',
-                data: exampleData.pie,
-                options: {
-                  responsive: true,
-                  plugins: {
-                    legend: { position: 'top' },
-                    title: { display: true, text: 'Sales Distribution' }
-                  }
-                }
-              });
-            </script>
 
-<div style="width: 80%; margin: auto; padding: 20px;">
-    <h1>Stock Level Dashboard</h1>
-    <div>
-      <!-- Stock Level Chart -->
-      <canvas id="stockAlertChart"></canvas>
-    </div>
-  </div>
+                const labels = data.map(item => item.date);
+                const sales = data.map(item => item.total_sales);
 
-  <script>
-    // Example Stock Data
-    const products = ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'];
-    const stockLevels = [120, 15, 45, 5, 200]; // Example stock levels
-    const lowStockThreshold = 30; // Threshold for low stock alerts
+                salesChart = new Chart(salesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: `Total Sales (${interval})`,
+                            data: sales,
+                            fill: false,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Total Sales'
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching sales data:', error);
+            });
+    };
 
-    // Generate colors for stock levels
-    const backgroundColors = stockLevels.map(stock => 
-      stock < lowStockThreshold ? '#FF5722' : '#4CAF50' // Red for low stock, green for sufficient stock
-    );
+    // Initially load daily sales data
+    loadSalesData('daily');
 
-    const borderColors = stockLevels.map(stock =>
-      stock < lowStockThreshold ? '#E64A19' : '#388E3C'
-    );
-
-    // Stock Level Chart Configuration
-    new Chart(document.getElementById('stockAlertChart'), {
-      type: 'bar',
-      data: {
-        labels: products,
-        datasets: [{
-          label: 'Stock Level',
-          data: stockLevels,
-          backgroundColor: backgroundColors,
-          borderColor: borderColors,
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            display: false // Hide legend
-          },
-          title: {
-            display: true,
-            text: 'Stock Levels by Product (Low Stock Alert)'
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const stock = context.raw;
-                return `${context.label}: ${stock} units` + (stock < lowStockThreshold ? ' (Low Stock!)' : '');
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            title: {
-              display: true,
-              text: 'Products'
-            }
-          },
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Quantity'
-            }
-          }
-        }
-      }
+    // Update chart when dropdown selection changes
+    document.getElementById('salesInterval').addEventListener('change', (event) => {
+        const selectedInterval = event.target.value;
+        loadSalesData(selectedInterval);
     });
-  </script>
+
+    // Current Stock Value Chart
+    const stockCtx = document.getElementById('stockChart').getContext('2d');
+
+    fetch('/api/current-stock-value')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Stock Value Data:', data);
+
+            const labels = data.map(item => item.product);
+            const stockValues = data.map(item => item.current_stock_value);
+
+            new Chart(stockCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Current Stock Value',
+                        data: stockValues,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Product'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Value in Currency'
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching stock value data:', error);
+        });
+});
+        </script>
+
     </main>
 </body>
 </html>

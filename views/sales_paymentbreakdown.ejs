@@ -10,16 +10,17 @@
   <title>Sales - Payment Breakdown</title>
   <script>
     if (window.history.replaceState) {
-      window.history.replaceState(null, null, window.location.href);
+        // Prevents the form from being resubmitted on page refresh
+        window.history.replaceState(null, null, window.location.href);
     }
   </script>
 </head>
 <body class="main-contents">
-  <%- include('partials/nav');%>
+  <%- include('partials/nav'); %>
   <main class="main-content">
     <h1>Sales - Payment Breakdown</h1>
 
-    <!-- Unpaid Purchases Table -->
+    <!-- Unpaid Sales Table -->
     <div class="container" style="margin-top: 20px;">
       <h2>Unpaid Sales</h2>
       <table class="table table-striped">
@@ -35,24 +36,26 @@
           </tr>
         </thead>
         <tbody>
+          <% unpaidSales.forEach(function(sale) { %>
             <tr>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
+              <td><%= sale.invoice_number %></td>
+              <td><%= sale.buyer_name %></td>
+              <td><%= new Date(sale.sales_date).toISOString().slice(0, 10) %></td>
+              <td><%= sale.total_amount.toFixed(2) %></td>
+              <td><%= sale.total_paid.toFixed(2) %></td>
+              <td><%= sale.amount_due.toFixed(2) %></td>
               <td>
-                <button class="btn btn-primary pay-now-btn" data-invoice="" data-amount="">
+                <button class="btn btn-primary pay-now-btn" data-invoice="<%= sale.invoice_number %>" data-amount="<%= sale.amount_due %>">
                   Pay Now
                 </button>
               </td>
             </tr>
+          <% }); %>
         </tbody>
       </table>
     </div>
 
-    <!-- Settled Purchases Table -->
+    <!-- Settled Sales Table -->
     <div class="container" style="margin-top: 20px;">
       <h2>Settled Sales</h2>
       <table class="table table-striped">
@@ -67,23 +70,24 @@
           </tr>
         </thead>
         <tbody>
+          <% settledSales.forEach(function(sale) { %>
             <tr>
               <td>
-                <a style="cursor: pointer;" class="btn-primary" data-bs-toggle="collapse" href="#collapseInvoice" role="button" aria-expanded="false" aria-controls="collapseInvoice">
-                
+                <a style="cursor: pointer;" class="btn-primary" data-bs-toggle="collapse" href="#collapseInvoice<%= sale.invoice_number %>" role="button" aria-expanded="false" aria-controls="collapseInvoice<%= sale.invoice_number %>">
+                  <%= sale.invoice_number %>
                 </a>
               </td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
+              <td><%= sale.buyer_name %></td>
+              <td><%= new Date(sale.sales_date).toISOString().slice(0, 10) %></td>
+              <td><%= sale.total_amount.toFixed(2) %></td>
+              <td><%= sale.total_paid.toFixed(2) %></td>
               <td>
-                <a style="cursor: pointer;" class="btn-info view-files-btn" data-invoice="">View Files</a>
+                <a style="cursor: pointer;" class="btn-info view-files-btn" data-invoice="<%= sale.invoice_number %>">View Files</a>
               </td>
             </tr>
             <tr style="border: transparent !important;">
               <td colspan="6" style="margin: 0;padding: 0;">
-                <div  id="collapseInvoice" class="collapse">
+                <div id="collapseInvoice<%= sale.invoice_number %>" class="collapse">
                   <table class="table table-hover table-bordered">
                     <thead class="table-dark">
                       <tr>
@@ -93,20 +97,22 @@
                       </tr>
                     </thead>
                     <tbody>
+                      <% sale.payment_history.forEach(function(payment) { %>
                         <tr>
-                          <td></td>
-                          <td></td>
-                          <td></td>
+                          <td><%= new Date(payment.paid_date).toISOString().slice(0, 10) %></td>
+                          <td><%= payment.amount.toFixed(2) %></td>
+                          <td><%= payment.paid_by %></td>
                         </tr>
+                      <% }); %>
                     </tbody>
                   </table>
                 </div>
               </td>
             </tr>
+          <% }); %>
         </tbody>        
       </table>
     </div>
-    
 
     <!-- Payment Modal -->
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
@@ -117,7 +123,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="payment-form" method="POST" action="/submit-payment" enctype="multipart/form-data">
+            <form id="payment-form" method="POST" action="/submit-sales-payment" enctype="multipart/form-data">
               <div class="form-group">
                 <label for="invoiceNumber">Invoice Number:</label>
                 <input type="text" class="form-control" id="invoiceNumber" name="invoiceNumber" readonly>
@@ -142,7 +148,7 @@
                 <label for="paymentFile">Upload Payment File (PDF/Image):</label>
                 <input type="file" class="form-control" id="paymentFile" name="paymentFile" accept=".pdf,image/*">
               </div>
-              <button type="submit" class="btn btn-primary">Submit Payment</button>
+              <button type="submit" class="btn btn-primary mt-3">Submit Payment</button>
             </form>
           </div>
         </div>
@@ -156,7 +162,6 @@
           <div class="modal-header">
             <h5 class="modal-title" id="viewFilesModalLabel">View Payment Files</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            <!-- Pass the invoiceNumber to the downloadFiles function -->
             <button id="downloadFilesBtn" class="btn btn-secondary" style="margin-left: auto;">Download Files</button>
           </div>
           <div class="modal-body">
@@ -178,6 +183,72 @@
         </div>
       </div>
     </div>
+
+    <!-- Script to handle buttons -->
+    <script>
+      $(document).ready(function() {
+        let currentInvoiceNumber;
+
+        // Set today's date as default for the payment form
+        const today = new Date().toISOString().split('T')[0];
+        $('#paidDate').val(today);
+
+        // Handle Pay Now button click
+        $('.pay-now-btn').click(function() {
+          const invoiceNumber = $(this).data('invoice');
+          const amountDue = $(this).data('amount');
+
+          $('#invoiceNumber').val(invoiceNumber);
+          $('#amountPaid').val(amountDue);
+
+          $('#paymentModal').modal('show');
+        });
+
+        // Handle View Files button click
+        $('.view-files-btn').click(function() {
+          currentInvoiceNumber = $(this).data('invoice');
+
+          $.ajax({
+            url: `/get-sales-payment-files?invoice_number=${currentInvoiceNumber}`,
+            method: 'GET',
+            success: function(files) {
+              const carouselInner = $('#fileCarouselInner');
+              carouselInner.empty();
+              if (files.length > 0) {
+                files.forEach((file, index) => {
+                  const activeClass = index === 0 ? 'active' : '';
+                  carouselInner.append(`
+                    <div class="carousel-item ${activeClass}">
+                      <img src="/uploads/${file}" class="d-block w-100" alt="Payment File">
+                    </div>
+                  `);
+                });
+                $('#fileCarousel').show();
+                $('#noFilesMessage').hide();
+              } else {
+                $('#fileCarousel').hide();
+                $('#noFilesMessage').show();
+              }
+              $('#viewFilesModal').modal('show');
+            },
+            error: function(err) {
+              console.error('Error fetching payment files:', err);
+            }
+          });
+        });
+
+        // Function to handle file downloads
+        $('#downloadFilesBtn').click(function() {
+          if (currentInvoiceNumber) {
+            console.log('Downloading files for invoice:', currentInvoiceNumber);
+            window.location.href = `/download-sales-payment-files?invoice_number=${currentInvoiceNumber}`;
+          } else {
+            console.error('No invoice number set for download.');
+          }
+        });
+      });
+    </script>
   </main>
-</body>  
+</body>
 </html>
+
