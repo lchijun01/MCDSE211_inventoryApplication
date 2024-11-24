@@ -2,7 +2,6 @@
   display: flex;
   flex-direction: column;
   height: calc(100% - 140px);
-  width: 90%;
   padding-left: 280px;
   padding-top: 100px;
   overflow-x: hidden;
@@ -11,6 +10,12 @@
 .main-contents{
   background-color: rgb(255, 255, 255);
   padding-bottom: 50px;
+}
+/* CSS for Scrollable Table */
+.scrollable-table-container {
+  overflow-x: auto;
+  white-space: nowrap; /* Prevent wrapping of content */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling for mobile devices */
 }
 
 #addProductRow {
@@ -33,9 +38,11 @@
   margin: 0 15px;
 }
 
-@media (max-width: 768px) {
+/* Phone Size Adjustments */
+@media (max-width: 480px) {
   .main-content {
-    padding-left: 60px; /* Default padding for smaller screens */
+    padding-left: 10px; /* Less padding on smaller devices */
+    padding-top: 60px; /* Reduce padding */
   }
 
   .main-content.sidebar-active {
@@ -43,10 +50,24 @@
   }
 
   .main-contents {
-    padding-top: 60px; /* Adjusted for smaller screens */
+    padding-top: 40px; /* Reduce padding for small screens */
+    padding-bottom: 20px;
   }
 
   #addProductRow {
-    font-size: 16px; /* Adjust font size for smaller screens */
+    font-size: 14px; /* Smaller text for add product row */
+  }
+
+  h1 {
+    font-size: 20px; /* Smaller header size for dashboard title */
+  }
+
+  .table {
+    font-size: 12px; /* Reduce table font size */
+  }
+
+  .chart-container {
+    max-width: 100%; /* Allow chart to take full width on small screens */
+    height: 300px; /* Reduce height */
   }
 }

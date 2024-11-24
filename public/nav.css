@@ -158,24 +158,57 @@ ul {
     font-weight: bold;
 }
 
-@media (max-width: 768px) {
-    .sidebar {
-      width: 60px; /* Default width for small screens */
-    }
-  
-    .sidebar.active {
-      left: -260px; /* Hide sidebar off-screen */
-    }
-  
-    .logo-details img {
-      width: 30px; /* Smaller logo size */
-    }
-  
-    .scrollable-element {
-      padding-top: 40px; /* Adjust padding */
-    }
-  
-    .bottom-left {
-      font-size: 12px; /* Smaller text */
-    }
+ /* Sidebar and Scrollable Element Mobile View */
+@media (max-width: 480px) {
+  .sidebar {
+      position: fixed;
+      width: 0; /* Initially hidden */
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: #fff;
+      transition: width 0.3s ease-in-out;
+      z-index: 1000;
   }
+
+  .sidebar.active {
+      width: 200px; /* Width when sidebar is active */
+  }
+
+  .scrollable-element {
+      display: none; /* Hide by default */
+  }
+
+  .sidebar.active .scrollable-element {
+      display: block; /* Show sidebar contents when active */
+  }
+
+  .hamburger-icon {
+      display: block; /* Show hamburger icon */
+      cursor: pointer;
+      margin-left: 10px;
+  }
+
+  .logo-details {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      width: 100%;
+  }
+
+  .logout-form button {
+      font-size: 12px; /* Smaller button for mobile */
+      padding: 3px 8px;
+  }
+
+  .nav-links li a {
+      padding: 8px 15px; /* Reduce padding for links */
+      font-size: 14px; /* Smaller font size for links */
+  }
+
+  .bottom-left {
+      font-size: 10px; /* Smaller text */
+  }
+}
